@@ -39,11 +39,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 .requestEmail()
                 .build();
 
-        // Build a GoogleSignInClient with the options specified by gso.
         googleSignInClient = GoogleSignIn.getClient(this, gso);
-
         firebaseAuth = FirebaseAuth.getInstance();
-
         findViewById(R.id.sign_in_button).setOnClickListener(this);
     }
 
@@ -100,7 +97,10 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                         // Sign in success, update UI with the signed-in user's information
                         Log.d("LoginActivity", "signInWithCredential:success");
                         FirebaseUser user = firebaseAuth.getCurrentUser();
-                        Snackbar.make(findViewById(R.id.main_layout), "Success", Snackbar.LENGTH_SHORT).show();
+
+                        //show main activity
+                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                        startActivity(intent);
                     } else {
                         // If sign in fails, display a message to the user.
                         Log.w("LoginActivity", "signInWithCredential:failure", task.getException());

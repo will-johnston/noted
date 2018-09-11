@@ -6,11 +6,17 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 public class MainActivity extends AppCompatActivity {
+
+    private FirebaseAuth firebaseAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,9 +34,25 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //show login activity
-        Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
+        firebaseAuth = FirebaseAuth.getInstance();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        //check if user is logged in
+        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+        if(currentUser == null) {
+            //show login activity
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        }
+        else {
+            String displayName = currentUser.getDisplayName();
+
+            Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
+        }
     }
 
     @Override
