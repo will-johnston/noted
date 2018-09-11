@@ -11,6 +11,9 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -74,6 +77,26 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
 
+        switch (id) {
+            case R.id.action_settings:
+                return true;
+            case R.id.action_logout:
+                onLogout();
+                return true;
+        }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    private void onLogout() {
+        // Firebase sign out
+        firebaseAuth.signOut();
+
+        // Google sign out
+        GoogleAuthSingleton.getInstance().client.signOut();
+
+        //show login activity
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
     }
 }

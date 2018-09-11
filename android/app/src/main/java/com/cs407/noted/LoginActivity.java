@@ -24,7 +24,6 @@ import com.google.firebase.auth.GoogleAuthProvider;
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
     static final int RC_SIGN_IN = 0;
 
-    private GoogleSignInClient googleSignInClient;
     private FirebaseAuth firebaseAuth;
 
     @Override
@@ -39,7 +38,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 .requestEmail()
                 .build();
 
-        googleSignInClient = GoogleSignIn.getClient(this, gso);
+        GoogleAuthSingleton.getInstance().client = GoogleSignIn.getClient(this, gso);
         firebaseAuth = FirebaseAuth.getInstance();
         findViewById(R.id.sign_in_button).setOnClickListener(this);
     }
@@ -62,7 +61,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void signIn() {
-        Intent signInIntent = googleSignInClient.getSignInIntent();
+        Intent signInIntent = GoogleAuthSingleton.getInstance().client.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
