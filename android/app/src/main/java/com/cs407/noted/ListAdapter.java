@@ -9,15 +9,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Collections;
 import java.util.List;
 
+import static android.webkit.ConsoleMessage.MessageLevel.LOG;
+
 public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> {
     private List<ListItem> itemList;
+    Context context;
 
-    public ListAdapter(List<ListItem> itemList) {
+    public ListAdapter(List<ListItem> itemList, Context context) {
         this.itemList = itemList;
+        this.context = context;
     }
     @NonNull
     @Override
@@ -32,6 +37,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         ListItem listItem = itemList.get(position);
         holder.title.setText(listItem.getTitle());
         holder.icon.setImageResource(listItem.getIconId());
+
     }
 
     @Override
@@ -39,7 +45,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         return itemList.size();
     }
 
-    class MyViewHolder extends RecyclerView.ViewHolder {
+    class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         TextView title;
         ImageView icon;
 
@@ -47,6 +53,12 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
             super(itemView);
             title = itemView.findViewById(R.id.listTitle);
             icon = itemView.findViewById(R.id.listIcon);
+            itemView.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View v) {
+            Toast.makeText(context, "clicked", Toast.LENGTH_SHORT).show();
         }
     }
 }
