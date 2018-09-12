@@ -4,12 +4,20 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
+
+    private RecyclerView recyclerView;
+    private ListAdapter listAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,7 +25,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
+        recyclerView = findViewById(R.id.recycler_view);
+        listAdapter = new ListAdapter(getData());
+        recyclerView.setAdapter(listAdapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -26,6 +37,19 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+    }
+
+    public static List<ListItem> getData() {
+        List<ListItem> data = new ArrayList<>();
+        int[] icons = {R.drawable.file, R.drawable.image, R.drawable.folder, R.drawable.folder,  R.drawable.file, R.drawable.image};
+        String[] titles = {"File 1", "Image 1", "Folder 1", "Folder 2", "File 2", "Image 2"};
+        for (int i = 0; i < titles.length && i < icons.length;i++) {
+            ListItem item = new ListItem();
+            item.setIconId(icons[i]);
+            item.setTitle(titles[i]);
+            data.add(item);
+        }
+        return data;
     }
 
     @Override
