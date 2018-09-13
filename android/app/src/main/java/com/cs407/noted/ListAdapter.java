@@ -5,9 +5,12 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,9 +25,8 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
     Context context;
 
 
-    public ListAdapter(List<ListItem> itemList, Context context) {
+    public ListAdapter(List<ListItem> itemList) {
         this.itemList = itemList;
-        this.context = context;
     }
 
     public List<ListItem> getItemList() {
@@ -44,20 +46,60 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         this.notifyDataSetChanged();
     }
 
+    public void removeItemFromList(ListItem item) {
+        itemList.remove(item);
+        this.notifyDataSetChanged();
+
+    }
+
     @NonNull
     @Override
     public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
+        context = parent.getContext();
+        View view = LayoutInflater.from(context)
                 .inflate(R.layout.custom_list_item, parent, false);
         return new MyViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull final MyViewHolder holder, int position) {
         ListItem listItem = itemList.get(position);
         holder.title.setText(listItem.getTitle());
         holder.icon.setImageResource(listItem.getIconId());
+        final ImageButton button = holder.menuButton;
+        holder.menuButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createPopup(button, holder);
+            }
+        });
 
+
+    }
+
+    public void createPopup(ImageButton button, final MyViewHolder holder) {
+        PopupMenu popup = new PopupMenu(context, button);
+
+        popup.inflate(R.menu.list_actions);
+
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.action_remove:
+                        int position = holder.getAdapterPosition();
+                        itemList.remove(position);
+                        notifyItemRemoved(position);
+                        notifyDataSetChanged();
+                        return true;
+                    default:
+                        return false;
+                }
+
+            }
+        });
+
+        popup.show();
     }
 
     @Override
@@ -68,13 +110,18 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
     class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         TextView title;
         ImageView icon;
+        ImageButton menuButton;
+
 
         public MyViewHolder(View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.listTitle);
             icon = itemView.findViewById(R.id.listIcon);
+            menuButton = itemView.findViewById(R.id.menuButton);
             itemView.setOnClickListener(this);
         }
+
+
 
         @Override
         public void onClick(View v) {

@@ -10,11 +10,14 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.util.Log;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.PopupMenu;
+import android.widget.TextView;
 
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.getbase.floatingactionbutton.FloatingActionButton;
@@ -37,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         recyclerView = findViewById(R.id.recycler_view);
         data = getData();
-        listAdapter = new ListAdapter(data,this);
+        listAdapter = new ListAdapter(data);
         recyclerView.setAdapter(listAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         setUpFloatingActionMenu();
@@ -51,9 +54,7 @@ public class MainActivity extends AppCompatActivity {
         int[] icons = {R.drawable.file, R.drawable.image, R.drawable.folder};
         String[] titles = {"File 1", "Image 1", "Folder 1"};
         for (int i = 0; i < titles.length && i < icons.length;i++) {
-            ListItem item = new ListItem();
-            item.setIconId(icons[i]);
-            item.setTitle(titles[i]);
+            ListItem item = new ListItem(titles[i], icons[i]);
             data.add(item);
         }
         return data;
@@ -104,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
                         int icon = R.drawable.folder;
-                        ListItem item = new ListItem();
+                        ListItem item = new ListItem(input_text, icon);
                         item.setTitle(input_text);
                         item.setIconId(icon);
                         listAdapter.addItemToList(item);
@@ -139,9 +140,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
                         int icon = R.drawable.file;
-                        ListItem item = new ListItem();
-                        item.setTitle(input_text);
-                        item.setIconId(icon);
+                        ListItem item = new ListItem(input_text, icon);
                         listAdapter.addItemToList(item);
                     }
                 });
@@ -157,5 +156,4 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
 }

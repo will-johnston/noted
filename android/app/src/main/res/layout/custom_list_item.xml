@@ -30,4 +30,13 @@
         android:textSize="16dp"
         android:text="Placeholder"/>
 
+    <ImageButton
+        android:id="@+id/menuButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="?android:attr/actionOverflowButtonStyle"
+        android:layout_centerVertical="true"
+        android:layout_alignParentRight="true"
+        android:onClick="showPopup" />
+
 </RelativeLayout>
