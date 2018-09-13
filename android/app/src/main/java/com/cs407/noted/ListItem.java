@@ -4,6 +4,16 @@ public class ListItem {
     private String title;
     private int iconId;
 
+    public ListItem(String title, int iconId) {
+        this.title = title;
+        this.iconId = iconId;
+    }
+
+    public ListItem(String title) {
+        this.title = title;
+    }
+
+
     // getters and setters
     public int getIconId() {
         return iconId;

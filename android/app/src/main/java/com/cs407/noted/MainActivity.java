@@ -81,9 +81,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public enum ListItemType {
-        DOCUMENT, FOLDER, IMAGE
-    }
 
     public void setUpFloatingActionMenu() {
         final FloatingActionsMenu floatingActionsMenu = (FloatingActionsMenu) findViewById(R.id.fam);
