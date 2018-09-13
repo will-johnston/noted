@@ -17,13 +17,33 @@ import java.util.List;
 import static android.webkit.ConsoleMessage.MessageLevel.LOG;
 
 public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> {
+
     private List<ListItem> itemList;
     Context context;
+
 
     public ListAdapter(List<ListItem> itemList, Context context) {
         this.itemList = itemList;
         this.context = context;
     }
+
+    public List<ListItem> getItemList() {
+        return itemList;
+    }
+
+    public void setItemList(List<ListItem> itemList) {
+        this.itemList.clear();
+        this.itemList.addAll(itemList);
+        this.notifyDataSetChanged();
+    }
+
+    public void addItemToList(ListItem item) {
+        itemList.add(item);
+        Toast.makeText(context, "added item", Toast.LENGTH_SHORT).show();
+        Log.e("added text", "added text");
+        this.notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

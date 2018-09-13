@@ -9,9 +9,11 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
@@ -25,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private ListAdapter listAdapter;
-    private String m_Text = "";
+    private List<ListItem> data;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,53 +36,20 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         recyclerView = findViewById(R.id.recycler_view);
-        listAdapter = new ListAdapter(getData(), this);
-
+        data = getData();
+        listAdapter = new ListAdapter(data,this);
         recyclerView.setAdapter(listAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        setUpFloatingActionMenu();
 
-
-        final FloatingActionsMenu floatingActionsMenu = (FloatingActionsMenu) findViewById(R.id.fam);
-        final FloatingActionButton action_folder = (FloatingActionButton) findViewById(R.id.action_folder);
-        final FloatingActionButton action_doc = (FloatingActionButton) findViewById(R.id.action_doc);
-        //TODO: add this to other click listeners actionB.setVisibility(action_folder.getVisibility() == View.GONE ? View.VISIBLE : View.GONE);
-        action_folder.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                floatingActionsMenu.collapse();
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Enter Folder Name");
-
-                // Set up the input
-                final EditText input = new EditText(MainActivity.this);
-                input.setInputType(InputType.TYPE_CLASS_TEXT);
-                builder.setView(input);
-
-                // Set up the buttons
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        m_Text = input.getText().toString();
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-
-                builder.show();
-            }
-        });
 
 
     }
 
     public static List<ListItem> getData() {
         List<ListItem> data = new ArrayList<>();
-        int[] icons = {R.drawable.file, R.drawable.image, R.drawable.folder, R.drawable.folder,  R.drawable.file, R.drawable.image};
-        String[] titles = {"File 1", "Image 1", "Folder 1", "Folder 2", "File 2", "Image 2"};
+        int[] icons = {R.drawable.file, R.drawable.image, R.drawable.folder};
+        String[] titles = {"File 1", "Image 1", "Folder 1"};
         for (int i = 0; i < titles.length && i < icons.length;i++) {
             ListItem item = new ListItem();
             item.setIconId(icons[i]);
@@ -111,4 +80,85 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    public enum ListItemType {
+        DOCUMENT, FOLDER, IMAGE
+    }
+
+    public void setUpFloatingActionMenu() {
+        final FloatingActionsMenu floatingActionsMenu = (FloatingActionsMenu) findViewById(R.id.fam);
+        final FloatingActionButton action_folder = (FloatingActionButton) findViewById(R.id.action_folder);
+        final FloatingActionButton action_doc = (FloatingActionButton) findViewById(R.id.action_doc);
+        action_folder.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatingActionsMenu.collapse();
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Enter Folder Name");
+
+                // Set up the input
+                final EditText input = new EditText(MainActivity.this);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+
+                // Set up the buttons
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String input_text = input.getText().toString();
+                        int icon = R.drawable.folder;
+                        ListItem item = new ListItem();
+                        item.setTitle(input_text);
+                        item.setIconId(icon);
+                        listAdapter.addItemToList(item);
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                builder.show();
+
+
+            }
+        });
+        action_doc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatingActionsMenu.collapse();
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Enter Document Name");
+
+                // Set up the input
+                final EditText input = new EditText(MainActivity.this);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+
+                // Set up the buttons
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String input_text = input.getText().toString();
+                        int icon = R.drawable.file;
+                        ListItem item = new ListItem();
+                        item.setTitle(input_text);
+                        item.setIconId(icon);
+                        listAdapter.addItemToList(item);
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                builder.show();
+                // addListItem(ListItemType.DOCUMENT);
+            }
+        });
+    }
+
 }
