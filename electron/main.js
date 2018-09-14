@@ -6,24 +6,39 @@ const url = require('url');
 const { ipcMain } = require('electron');
 const { Menu } = require('electron');
 const https = require('https');
+const request = require('request');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win
+let useDevelopmentServer;       //bool, whether angular is serving the file or whether we are accessing it statically
 
 function createWindow() {
     // Create the browser window.
     //`file://${__dirname}/dist/assets/logo.png`
-    win = new BrowserWindow({ width: 800, height: 600 , icon: 'file://' + path.join(__dirname, '/dist/electron/assets/logo.png')});
+    if (useDevelopmentServer) {
+        win = new BrowserWindow({ width: 800, height: 600 , icon: 'http://127.0.0.1:4200/assets/logo.png'});
+        win.loadURL(url.format({
+            //pathname: path.join(__dirname, '/app/index.html'),
+            //'${__dirname}/dist/index.html' //for angular
+            pathname: '127.0.0.1:4200/',
+            protocol: 'http:',
+            slashes: true
+        }));
+    }
 
-    // and load the index.html of the app.
-    win.loadURL(url.format({
-        //pathname: path.join(__dirname, '/app/index.html'),
-        //'${__dirname}/dist/index.html' //for angular
-        pathname: path.join(__dirname, '/dist/electron/index.html'),
-        protocol: 'file:',
-        slashes: true
-    }));
+    else {
+        win = new BrowserWindow({ width: 800, height: 600 , icon: 'file://' + path.join(__dirname, '/dist/electron/assets/logo.png')});
+
+        // and load the index.html of the app.
+        win.loadURL(url.format({
+            //pathname: path.join(__dirname, '/app/index.html'),
+            //'${__dirname}/dist/index.html' //for angular
+            pathname: path.join(__dirname, '/dist/electron/index.html'),
+            protocol: 'file:',
+            slashes: true
+        }));
+    }
 
     // Open the DevTools.
     win.webContents.openDevTools()
@@ -36,7 +51,57 @@ function createWindow() {
         win = null
     })
 }
+function parseArgs() {
+    useDevelopmentServer = null;
+    process.argv.forEach(function (val, index) {
+        //Index 2, whether angular is serving the file already
+        if (index == 2) {
+            console.log("value of useDevServer " + val);
+            if (val == true)
+                useDevelopmentServer = true;
+            else
+                useDevelopmentServer = false;
+        }
+      });
+    if (useDevelopmentServer == null) {
+        useDevelopmentServer = false;
+        console.error("Didn't specify useDevelopmentServer argument before running, treating as false");
+    }
+    console.log("useDevelopment server is " + useDevelopmentServer);
+}
+function shittySleep(cycles) {
+    for (var i = 0; i < cycles; i++) {
+        for (var j = 0; j < cycles; j++) {
+            for (var k = 0; k < cycles; k++) {
+                //do nothing and feel guity about it
+            }
+        }
+    }
+}
+function waitForServer() {
+    for (var i = 0; i < 10; i++) {
+        //try {
+        var status = request.get('http://127.0.0.1:4200')
+            .on('response', function(response) {
+                if (response.statusCode == 200)
+                    return true;
+                return false;
+            })
+            .on('error', function(err) {
+                console.log("Not ready on attempt " + i);
+                return false;
+            });
+        if (status == true) {
+            break;
+        }
+        //catch (err) {}
+        shittySleep(1000);
+    }
+}
 
+parseArgs();
+if (useDevelopmentServer)
+    waitForServer();
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
