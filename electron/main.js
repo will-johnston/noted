@@ -13,11 +13,14 @@ let win
 
 function createWindow() {
     // Create the browser window.
-    win = new BrowserWindow({ width: 800, height: 600 })
+    //`file://${__dirname}/dist/assets/logo.png`
+    win = new BrowserWindow({ width: 800, height: 600 , icon: 'file://' + path.join(__dirname, '/dist/electron/assets/logo.png')});
 
     // and load the index.html of the app.
     win.loadURL(url.format({
-        pathname: path.join(__dirname, '/app/index.html'),
+        //pathname: path.join(__dirname, '/app/index.html'),
+        //'${__dirname}/dist/index.html' //for angular
+        pathname: path.join(__dirname, '/dist/electron/index.html'),
         protocol: 'file:',
         slashes: true
     }));
