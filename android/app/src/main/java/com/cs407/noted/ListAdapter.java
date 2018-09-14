@@ -73,7 +73,20 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 createPopup(button, holder);
             }
         });
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(context, "clicked", Toast.LENGTH_SHORT).show();
+            }
+        });
 
+        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                createPopup(button, holder);
+                return true;
+            }
+        });
 
     }
 
@@ -107,25 +120,20 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         return itemList.size();
     }
 
-    class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    class MyViewHolder extends RecyclerView.ViewHolder {
         TextView title;
         ImageView icon;
         ImageButton menuButton;
-
+        View listItem;
 
         public MyViewHolder(View itemView) {
             super(itemView);
+
+            listItem = itemView.findViewById(R.id.listItemView);
             title = itemView.findViewById(R.id.listTitle);
             icon = itemView.findViewById(R.id.listIcon);
             menuButton = itemView.findViewById(R.id.menuButton);
-            itemView.setOnClickListener(this);
-        }
-
-
-
-        @Override
-        public void onClick(View v) {
-            Toast.makeText(context, "clicked", Toast.LENGTH_SHORT).show();
+            // itemView.setOnClickListener(this);
         }
     }
 }
