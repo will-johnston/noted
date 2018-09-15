@@ -56,8 +56,7 @@ function parseArgs() {
     process.argv.forEach(function (val, index) {
         //Index 2, whether angular is serving the file already
         if (index == 2) {
-            console.log("value of useDevServer " + val);
-            if (val == true)
+            if (val === 'true')
                 useDevelopmentServer = true;
             else
                 useDevelopmentServer = false;
