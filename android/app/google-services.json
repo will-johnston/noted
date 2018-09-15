@@ -31,6 +31,7 @@
           }
         },
         {
+
           "client_id": "83083800156-0jfb9ga71q6e7jvq525lsbr3gvd6bn1d.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -52,6 +53,7 @@
               "client_type": 3
             }
           ]
+
         },
         "ads_service": {
           "status": 2
