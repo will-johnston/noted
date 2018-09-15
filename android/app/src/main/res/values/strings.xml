@@ -2,4 +2,7 @@
     <string name="app_name">noted</string>
     <string name="action_settings">Settings</string>
     <string name="action_sign_out">Sign out</string>
+    <string name="remove">Remove</string>
+    <string name="rename">Rename</string>
+    <string name="share">Share</string>
 </resources>
