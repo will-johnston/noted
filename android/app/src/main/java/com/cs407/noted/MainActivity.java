@@ -81,14 +81,14 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_settings:
                 return true;
             case R.id.action_logout:
-                onLogout();
+                onSignOut();
                 return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    private void onLogout() {
+    private void onSignOut() {
         // Firebase sign out
         firebaseAuth.signOut();
 
