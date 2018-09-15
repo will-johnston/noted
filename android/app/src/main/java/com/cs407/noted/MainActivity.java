@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -11,6 +12,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.text.InputType;
+import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
 import android.widget.EditText;
@@ -52,6 +54,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
@@ -61,13 +70,10 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_logout:
                 onSignOut();
                 return true;
-            default:
-                return false;
         }
-      
-      return super.onOptionsItemSelected(item);
-    }
 
+        return super.onOptionsItemSelected(item);
+    }
 
     public void setUpFloatingActionMenu() {
         final FloatingActionsMenu floatingActionsMenu = (FloatingActionsMenu) findViewById(R.id.fam);
