@@ -1,15 +1,30 @@
 package com.cs407.noted;
 
+import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.InputType;
 import android.view.View;
-import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.EditText;
+
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
+import com.getbase.floatingactionbutton.FloatingActionButton;
+
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    private RecyclerView recyclerView;
+    private ListAdapter listAdapter;
+    private Folder root;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,36 +32,108 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        getSupportActionBar().setDisplayShowHomeEnabled(false);
+        recyclerView = findViewById(R.id.recycler_view);
+        root = new Folder("noted", R.drawable.folder,null);
+        listAdapter = new ListAdapter(null, root);
+        recyclerView.setAdapter(listAdapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        setUpFloatingActionMenu();
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                listAdapter.goToParentDirectory();
+            default:
+                return false;
         }
+    }
 
-        return super.onOptionsItemSelected(item);
+
+    public void setUpFloatingActionMenu() {
+        final FloatingActionsMenu floatingActionsMenu = (FloatingActionsMenu) findViewById(R.id.fam);
+        final FloatingActionButton action_folder = (FloatingActionButton) findViewById(R.id.action_folder);
+        final FloatingActionButton action_doc = (FloatingActionButton) findViewById(R.id.action_doc);
+        action_folder.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatingActionsMenu.collapse();
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Enter Folder Name");
+
+                // Set up the input
+                final EditText input = new EditText(MainActivity.this);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+
+                // Set up the buttons
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String input_text = input.getText().toString();
+                        int icon = R.drawable.folder;
+                        ListItem item = new Folder(input_text, icon, null,null);
+
+                        item.setTitle(input_text);
+                        item.setIconId(icon);
+                        listAdapter.addItemToList(item);
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                builder.show();
+
+
+            }
+        });
+        action_doc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatingActionsMenu.collapse();
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Enter Document Name");
+
+                // Set up the input
+                final EditText input = new EditText(MainActivity.this);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+
+                // Set up the buttons
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String input_text = input.getText().toString();
+                        int icon = R.drawable.file;
+                        ListItem item = new ListItem(input_text, icon);
+                        listAdapter.addItemToList(item);
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                builder.show();
+            }
+        });
+    }
+
+
+    public void toggleHomeButton(boolean enable) {
+        getSupportActionBar().setDisplayHomeAsUpEnabled(enable);
+        getSupportActionBar().setDisplayShowHomeEnabled(enable);
+    }
+
+    public void changeActionBarTitle(String title) {
+        getSupportActionBar().setTitle(title);
     }
 }
