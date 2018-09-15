@@ -1,8 +1,17 @@
 package com.cs407.noted;
 
+import java.util.List;
+
 public class ListItem {
     private String title;
     private int iconId;
+    private ListItem parent;
+
+    public ListItem(String title, int iconId, ListItem parent) {
+        this.title = title;
+        this.iconId = iconId;
+        this.parent = parent;
+    }
 
     public ListItem(String title, int iconId) {
         this.title = title;
@@ -31,5 +40,11 @@ public class ListItem {
         this.title = title;
     }
 
+    public void setParent(ListItem parent) {
+        this.parent = parent;
+    }
 
+    public ListItem getParent() {
+        return parent;
+    }
 }

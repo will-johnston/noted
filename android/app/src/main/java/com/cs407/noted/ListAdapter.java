@@ -13,36 +13,64 @@ import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
-import static android.webkit.ConsoleMessage.MessageLevel.LOG;
 
 public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> {
-
     private List<ListItem> itemList;
+    private Folder parent;
     Context context;
 
-
-    public ListAdapter(List<ListItem> itemList) {
-        this.itemList = itemList;
+    public ListAdapter(List<ListItem> itemList, Folder parent) {
+        this.itemList = itemList == null ? new ArrayList<ListItem>() : itemList;
+        this.parent = parent;
     }
 
     public List<ListItem> getItemList() {
         return itemList;
     }
 
+    public void goToParentDirectory() {
+        // we need to go up two levels, then get the top level's children
+        Log.e("got to parent function", "got to parent function");
+        if (parent != null) {
+            if (parent instanceof Folder) {
+                Log.e("parent dir", "parent not null & is a folder");
+                ListItem grandparent = parent.getParent();
+                if (grandparent != null) {
+                    if (grandparent instanceof Folder) {
+                        Log.e("grandparent dir", "grandparent not null & is a folder");
+                        // this is the list we want to load
+                        List<ListItem> parent_and_siblings = ((Folder) grandparent).children;
+                        setItemList(parent_and_siblings);
+
+                        // check to see if we need to toggleHomeButton
+                        if (context instanceof MainActivity) {
+                            if (grandparent.getParent() == null) {
+                                // we are at the root directory
+                                ((MainActivity) context).toggleHomeButton(false);
+                            }
+                            ((MainActivity) context).changeActionBarTitle(grandparent.getTitle());
+                        }
+                        // change parent node
+                        this.parent = (Folder) grandparent;
+                    }
+                }
+            }
+        }
+    }
+
     public void setItemList(List<ListItem> itemList) {
-        this.itemList.clear();
-        this.itemList.addAll(itemList);
+        this.itemList = itemList == null ? new ArrayList<ListItem>() : itemList;
         this.notifyDataSetChanged();
     }
 
     public void addItemToList(ListItem item) {
+        item.setParent(this.parent);
+        // this.parent.addChild(item);
         itemList.add(item);
-        Toast.makeText(context, "added item", Toast.LENGTH_SHORT).show();
-        Log.e("added text", "added text");
+        parent.setChildren(itemList);
         this.notifyDataSetChanged();
     }
 
@@ -76,7 +104,28 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(context, "clicked", Toast.LENGTH_SHORT).show();
+                // get list item at holder position
+                int position = holder.getAdapterPosition();
+                ListItem item = itemList.get(position);
+
+                // if type is folder, change list to list item's children
+                if (item instanceof Folder) {
+                    Toast.makeText(context, "folder!", Toast.LENGTH_SHORT).show();
+                    List<ListItem> children = ((Folder) item).getChildren();
+                    setItemList(children);
+                    parent = (Folder) item;
+                    if (context instanceof MainActivity) {
+                        ((MainActivity) context).toggleHomeButton(true);
+                        ((MainActivity) context).changeActionBarTitle(item.getTitle());
+                    }
+
+                } else {
+                    Toast.makeText(context, "not folder!", Toast.LENGTH_SHORT).show();
+                }
+
+                // if type is document, load rich text editor
+
+                // if type is image, load image
             }
         });
 
@@ -133,7 +182,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
             title = itemView.findViewById(R.id.listTitle);
             icon = itemView.findViewById(R.id.listIcon);
             menuButton = itemView.findViewById(R.id.menuButton);
-            // itemView.setOnClickListener(this);
         }
     }
 }

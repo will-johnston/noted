@@ -1,23 +1,17 @@
 package com.cs407.noted;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
-import android.util.Log;
-import android.view.MenuInflater;
 import android.view.View;
-import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.PopupMenu;
-import android.widget.TextView;
 
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.getbase.floatingactionbutton.FloatingActionButton;
@@ -30,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private ListAdapter listAdapter;
-    private List<ListItem> data;
+    private Folder root;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,48 +32,24 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        getSupportActionBar().setDisplayShowHomeEnabled(false);
         recyclerView = findViewById(R.id.recycler_view);
-        data = getData();
-        listAdapter = new ListAdapter(data);
+        root = new Folder("noted", R.drawable.folder,null);
+        listAdapter = new ListAdapter(null, root);
         recyclerView.setAdapter(listAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         setUpFloatingActionMenu();
-
-
-
-    }
-
-    public static List<ListItem> getData() {
-        List<ListItem> data = new ArrayList<>();
-        int[] icons = {R.drawable.file, R.drawable.image, R.drawable.folder};
-        String[] titles = {"File 1", "Image 1", "Folder 1"};
-        for (int i = 0; i < titles.length && i < icons.length;i++) {
-            ListItem item = new ListItem(titles[i], icons[i]);
-            data.add(item);
-        }
-        return data;
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                listAdapter.goToParentDirectory();
+            default:
+                return false;
         }
-
-        return super.onOptionsItemSelected(item);
     }
 
 
@@ -105,7 +75,8 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
                         int icon = R.drawable.folder;
-                        ListItem item = new ListItem(input_text, icon);
+                        ListItem item = new Folder(input_text, icon, null,null);
+
                         item.setTitle(input_text);
                         item.setIconId(icon);
                         listAdapter.addItemToList(item);
@@ -152,8 +123,17 @@ public class MainActivity extends AppCompatActivity {
                 });
 
                 builder.show();
-                // addListItem(ListItemType.DOCUMENT);
             }
         });
+    }
+
+
+    public void toggleHomeButton(boolean enable) {
+        getSupportActionBar().setDisplayHomeAsUpEnabled(enable);
+        getSupportActionBar().setDisplayShowHomeEnabled(enable);
+    }
+
+    public void changeActionBarTitle(String title) {
+        getSupportActionBar().setTitle(title);
     }
 }
