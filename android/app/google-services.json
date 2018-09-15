@@ -15,6 +15,7 @@
       },
       "oauth_client": [
         {
+
           "client_id": "83083800156-phue9eqds8278evftkmiq1lhj3jvafnq.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -53,7 +54,6 @@
               "client_type": 3
             }
           ]
-
         },
         "ads_service": {
           "status": 2

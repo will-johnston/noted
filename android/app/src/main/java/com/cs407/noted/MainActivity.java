@@ -1,5 +1,6 @@
 package com.cs407.noted;
 
+import android.content.Intent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.text.InputType;
 import android.view.View;
 import android.view.MenuItem;
@@ -20,8 +22,15 @@ import com.getbase.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 public class MainActivity extends AppCompatActivity {
 
+    private FirebaseAuth firebaseAuth;
     private RecyclerView recyclerView;
     private ListAdapter listAdapter;
     private Folder root;
@@ -47,9 +56,16 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case android.R.id.home:
                 listAdapter.goToParentDirectory();
+            case R.id.action_settings:
+                return true;
+            case R.id.action_logout:
+                onSignOut();
+                return true;
             default:
                 return false;
         }
+      
+      return super.onOptionsItemSelected(item);
     }
 
 
@@ -125,6 +141,26 @@ public class MainActivity extends AppCompatActivity {
                 builder.show();
             }
         });
+
+        firebaseAuth = FirebaseAuth.getInstance();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        //check if user is logged in
+        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+        if(currentUser == null) {
+            //show login activity
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        }
+        else {
+            String displayName = currentUser.getDisplayName();
+
+            Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
+        }
     }
 
 
@@ -135,5 +171,17 @@ public class MainActivity extends AppCompatActivity {
 
     public void changeActionBarTitle(String title) {
         getSupportActionBar().setTitle(title);
+    }
+
+    private void onSignOut() {
+        // Firebase sign out
+        firebaseAuth.signOut();
+
+        // Google sign out
+        GoogleAuthSingleton.getInstance().client.signOut();
+
+        //show login activity
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
     }
 }
