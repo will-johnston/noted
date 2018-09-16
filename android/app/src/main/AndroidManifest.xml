@@ -27,7 +27,10 @@
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
 
-        <activity android:name=".NoteActivity"></activity>
+        <activity android:name=".DocumentActivity" />
+        <activity android:name=".ImageActivity"></activity>
+        <activity android:name="com.onegravity.rteditor.media.choose.MediaChooserActivity"/>
+        <activity android:name="com.onegravity.rteditor.media.crop.CropImageActivity"/>
     </application>
 
 </manifest>
