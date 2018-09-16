@@ -4,7 +4,7 @@ This is the Electron codebase for the noted project. If you're looking for the A
 
 ## Documentation
 Trying to document as much as possible to avoid any confusion. 
-[Documentation]('documentation/')
+[Documentation](documentation/)
 
 ## Setup
 `npm install`
