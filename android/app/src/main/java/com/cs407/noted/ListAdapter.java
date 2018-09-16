@@ -3,7 +3,6 @@ package com.cs407.noted;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,31 +17,28 @@ import java.util.List;
 
 
 public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> {
-    private List<ListItem> itemList;
-    private Folder parent;
+    private List<File> itemList;
+    private File parent;
     Context context;
 
-    public ListAdapter(List<ListItem> itemList, Folder parent) {
-        this.itemList = itemList == null ? new ArrayList<ListItem>() : itemList;
+    public ListAdapter(List<File> itemList, File parent) {
+        this.itemList = itemList == null ? new ArrayList<File>() : itemList;
         this.parent = parent;
     }
 
-    public List<ListItem> getItemList() {
+    public List<File> getItemList() {
         return itemList;
     }
 
     public void goToParentDirectory() {
         // we need to go up two levels, then get the top level's children
-        Log.e("got to parent function", "got to parent function");
         if (parent != null) {
-            if (parent instanceof Folder) {
-                Log.e("parent dir", "parent not null & is a folder");
-                ListItem grandparent = parent.getParent();
+            if (parent.getType() == FileType.FOLDER) {
+                File grandparent = parent.getParent();
                 if (grandparent != null) {
-                    if (grandparent instanceof Folder) {
-                        Log.e("grandparent dir", "grandparent not null & is a folder");
+                    if (grandparent.getType() == FileType.FOLDER) {
                         // this is the list we want to load
-                        List<ListItem> parent_and_siblings = ((Folder) grandparent).children;
+                        List<File> parent_and_siblings = grandparent.getChildren();
                         setItemList(parent_and_siblings);
 
                         // check to see if we need to toggleHomeButton
@@ -54,19 +50,19 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                             ((MainActivity) context).changeActionBarTitle(grandparent.getTitle());
                         }
                         // change parent node
-                        this.parent = (Folder) grandparent;
+                        this.parent = grandparent;
                     }
                 }
             }
         }
     }
 
-    public void setItemList(List<ListItem> itemList) {
-        this.itemList = itemList == null ? new ArrayList<ListItem>() : itemList;
+    public void setItemList(List<File> itemList) {
+        this.itemList = itemList == null ? new ArrayList<File>() : itemList;
         this.notifyDataSetChanged();
     }
 
-    public void addItemToList(ListItem item) {
+    public void addItemToList(File item) {
         item.setParent(this.parent);
         // this.parent.addChild(item);
         itemList.add(item);
@@ -74,7 +70,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         this.notifyDataSetChanged();
     }
 
-    public void removeItemFromList(ListItem item) {
+    public void removeItemFromList(File item) {
         itemList.remove(item);
         this.notifyDataSetChanged();
 
@@ -91,9 +87,9 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull final MyViewHolder holder, int position) {
-        ListItem listItem = itemList.get(position);
-        holder.title.setText(listItem.getTitle());
-        holder.icon.setImageResource(listItem.getIconId());
+        File file = itemList.get(position);
+        holder.title.setText(file.getTitle());
+        holder.icon.setImageResource(getIconId(file.getType()));
         final ImageButton button = holder.menuButton;
         holder.menuButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -106,21 +102,21 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
             public void onClick(View v) {
                 // get list item at holder position
                 int position = holder.getAdapterPosition();
-                ListItem item = itemList.get(position);
+                File item = itemList.get(position);
 
                 // if type is folder, change list to list item's children
-                if (item instanceof Folder) {
-                    Toast.makeText(context, "folder!", Toast.LENGTH_SHORT).show();
-                    List<ListItem> children = ((Folder) item).getChildren();
+                if (item.getType() == FileType.FOLDER) {
+                    Toast.makeText(context, "Folder!", Toast.LENGTH_SHORT).show();
+                    List<File> children = item.getChildren();
                     setItemList(children);
-                    parent = (Folder) item;
+                    parent = item;
                     if (context instanceof MainActivity) {
                         ((MainActivity) context).toggleHomeButton(true);
                         ((MainActivity) context).changeActionBarTitle(item.getTitle());
                     }
 
                 } else {
-                    Toast.makeText(context, "not folder!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "Not folder!", Toast.LENGTH_SHORT).show();
                 }
 
                 // if type is document, load rich text editor
@@ -162,6 +158,19 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         });
 
         popup.show();
+    }
+
+    public int getIconId(FileType type) {
+        switch (type) {
+            case FOLDER:
+                return R.drawable.folder;
+            case DOCUMENT:
+                return R.drawable.file;
+            case IMAGE:
+                return R.drawable.image;
+            default:
+                return R.drawable.file;
+        }
     }
 
     @Override
