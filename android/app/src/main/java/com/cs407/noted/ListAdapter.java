@@ -1,6 +1,7 @@
 package com.cs407.noted;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -124,8 +125,16 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 }
 
                 // if type is document, load rich text editor
+                //if(item instanceof Document) { //how do we find if it's a document?
+                    Intent intent = new Intent(context, DocumentActivity.class);
+                    context.startActivity(intent);
+                //}
 
                 // if type is image, load image
+                /*if(item instanceof Image) { //how do we find if it's an image?
+                    Intent intent = new Intent(context, ImageActivity.class);
+                    context.startActivity(intent);
+                }*/
             }
         });
 
