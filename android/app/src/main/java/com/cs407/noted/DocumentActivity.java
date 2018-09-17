@@ -109,6 +109,7 @@ public class DocumentActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item){
         //called when the back button is clicked
         //we should save the document here
+        String text = mEditor.getHtml();
         Toast.makeText(this, "Saved", Toast.LENGTH_LONG).show();
 
         //go back to main activity
