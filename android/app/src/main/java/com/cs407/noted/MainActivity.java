@@ -164,8 +164,7 @@ public class MainActivity extends AppCompatActivity {
         }
         else {
             String displayName = currentUser.getDisplayName();
-
-            Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
+            //Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
         }
     }
 
@@ -184,6 +183,7 @@ public class MainActivity extends AppCompatActivity {
         firebaseAuth.signOut();
 
         // Google sign out
+        //app crashes here because the client variable doesn't persist
         GoogleAuthSingleton.getInstance().client.signOut();
 
         //show login activity
