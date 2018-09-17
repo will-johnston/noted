@@ -1,10 +1,13 @@
 package com.cs407.noted;
 
-import android.graphics.Color;
+import android.content.Intent;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import jp.wasabeef.richeditor.RichEditor;
 
@@ -18,19 +21,16 @@ public class DocumentActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_document);
 
-        mEditor = (RichEditor) findViewById(R.id.editor);
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
+
+        mEditor = findViewById(R.id.editor);
         mEditor.setEditorHeight(200);
         mEditor.setEditorFontSize(22);
-        //mEditor.setEditorFontColor(Color.RED);
-        //mEditor.setEditorBackgroundColor(Color.BLUE);
-        //mEditor.setBackgroundColor(Color.BLUE);
-        //mEditor.setBackgroundResource(R.drawable.bg);
         mEditor.setPadding(10, 10, 10, 10);
-        //mEditor.setBackground("https://raw.githubusercontent.com/wasabeef/art/master/chip.jpg");
         mEditor.setPlaceholder("Insert text here...");
-        //mEditor.setInputEnabled(false);
 
-        mPreview = (TextView) findViewById(R.id.preview);
+        mPreview = findViewById(R.id.preview);
         mEditor.setOnTextChangeListener(new RichEditor.OnTextChangeListener() {
             @Override public void onTextChange(String text) {
                 mPreview.setText(text);
@@ -103,5 +103,19 @@ public class DocumentActivity extends AppCompatActivity {
                 mEditor.setNumbers();
             }
         });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        //called when the back button is clicked
+        //we should save the document here
+        Toast.makeText(this, "Saved", Toast.LENGTH_LONG).show();
+
+        //go back to main activity
+        Intent myIntent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivityForResult(myIntent, 0);
+
+        return true;
+
     }
 }
