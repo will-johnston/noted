@@ -12,6 +12,10 @@ import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,10 +37,10 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
     public void goToParentDirectory() {
         // we need to go up two levels, then get the top level's children
         if (parent != null) {
-            if (parent.getType() == FileType.FOLDER) {
+            if (parent.getType() == FileType.FOLDER.toString()) {
                 File grandparent = parent.getParent();
                 if (grandparent != null) {
-                    if (grandparent.getType() == FileType.FOLDER) {
+                    if (grandparent.getType() == FileType.FOLDER.toString()) {
                         // this is the list we want to load
                         List<File> parent_and_siblings = grandparent.getChildren();
                         setItemList(parent_and_siblings);
@@ -70,10 +74,47 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         this.notifyDataSetChanged();
     }
 
+    public void addItemToListAndFirebase(File item, DatabaseReference ref) {
+        // update item
+        item.setParent(this.parent);
+
+        // push reference down a level to add the file
+        String key = ref.push().getKey();
+        ref = ref.child(key);
+
+        // add key in order to traverse down the filesystem
+        item.setId(key);
+
+        // add to firebase
+        addFileToFirebase(item, ref);
+
+        // add locally
+        itemList.add(item);
+        parent.setChildren(itemList);
+        this.notifyDataSetChanged();
+    }
+
+    private void addFileToFirebase(File item, DatabaseReference ref) {
+        // add the item to the database at the reference point
+        ref.child("title").setValue(item.getTitle());
+        ref.child("type").setValue(item.getType());
+        ref.child("lastEditedBy").setValue(item.getLastEditedBy());
+        ref = ref.child("children");
+        List<File> children = item.getChildren();
+        if (children != null) {
+            for (int i = 0; i < children.size(); i++) {
+                addFileToFirebase(children.get(i), ref);
+            }
+        }
+
+        // move back one spot in the reference
+        ref = ref.getParent();
+    }
+
+
     public void removeItemFromList(File item) {
         itemList.remove(item);
         this.notifyDataSetChanged();
-
     }
 
     @NonNull
@@ -105,14 +146,21 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 File item = itemList.get(position);
 
                 // if type is folder, change list to list item's children
-                if (item.getType() == FileType.FOLDER) {
+                if (item.getType() == FileType.FOLDER.toString()) {
                     Toast.makeText(context, "Folder!", Toast.LENGTH_SHORT).show();
                     List<File> children = item.getChildren();
                     setItemList(children);
                     parent = item;
+
+
+
                     if (context instanceof MainActivity) {
+                        // update toolbar
                         ((MainActivity) context).toggleHomeButton(true);
                         ((MainActivity) context).changeActionBarTitle(item.getTitle());
+
+                        // update firebase reference
+                        ((MainActivity) context).updateDatabaseRefForward(item.getId());
                     }
 
                 } else {
@@ -160,13 +208,13 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         popup.show();
     }
 
-    public int getIconId(FileType type) {
+    public int getIconId(String type) {
         switch (type) {
-            case FOLDER:
+            case "FOLDER":
                 return R.drawable.folder;
-            case DOCUMENT:
+            case "DOCUMENT":
                 return R.drawable.file;
-            case IMAGE:
+            case "IMAGE":
                 return R.drawable.image;
             default:
                 return R.drawable.file;

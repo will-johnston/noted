@@ -10,6 +10,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
@@ -29,26 +30,31 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth firebaseAuth;
     private RecyclerView recyclerView;
     private ListAdapter listAdapter;
+    private FirebaseUser currentUser;
+    private FirebaseDatabase database;
+    private DatabaseReference myRef;  // this will store the database reference at the current path
     private File root;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // toolbar setup
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         getSupportActionBar().setDisplayShowHomeEnabled(false);
+
+        // recycler view setup
         recyclerView = findViewById(R.id.recycler_view);
-        root = new File("noted",null, FileType.FOLDER);
+        root = new File("noted",null, FileType.FOLDER.toString());
         listAdapter = new ListAdapter(null, root);
         recyclerView.setAdapter(listAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        setUpFloatingActionMenu();
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("message");
 
-        myRef.setValue("Hello, World!");
+        // fab setup
+        setUpFloatingActionMenu();
     }
 
     @Override
@@ -63,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case android.R.id.home:
                 listAdapter.goToParentDirectory();
+                updateDatabaseRefBackwards();
             case R.id.action_settings:
                 return true;
             case R.id.action_logout:
@@ -95,10 +102,8 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
                         int icon = R.drawable.folder;
-                        File item = new File(input_text, null, FileType.FOLDER,null);
-
-                        item.setTitle(input_text);
-                        listAdapter.addItemToList(item);
+                        File item = new File(input_text, null, FileType.FOLDER.toString(),null);
+                        listAdapter.addItemToListAndFirebase(item, myRef);
                     }
                 });
                 builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -108,8 +113,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 builder.show();
-
-
             }
         });
         action_doc.setOnClickListener(new View.OnClickListener() {
@@ -130,8 +133,8 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
                         int icon = R.drawable.file;
-                        File item = new File(input_text, FileType.DOCUMENT);
-                        listAdapter.addItemToList(item);
+                        File item = new File(input_text, null, FileType.DOCUMENT.toString(), null);
+                        listAdapter.addItemToListAndFirebase(item, myRef);
                     }
                 });
                 builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -140,7 +143,6 @@ public class MainActivity extends AppCompatActivity {
                         dialog.cancel();
                     }
                 });
-
                 builder.show();
             }
         });
@@ -153,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
 
         //check if user is logged in
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+        currentUser = firebaseAuth.getCurrentUser();
         if(currentUser == null) {
             //show login activity
             Intent intent = new Intent(this, LoginActivity.class);
@@ -163,6 +165,11 @@ public class MainActivity extends AppCompatActivity {
             String displayName = currentUser.getDisplayName();
 
             Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
+
+            // database setup
+            database = FirebaseDatabase.getInstance();
+            String path = String.format("users/%s", currentUser.getUid());
+            myRef = database.getReference(path);
         }
     }
 
@@ -174,6 +181,19 @@ public class MainActivity extends AppCompatActivity {
 
     public void changeActionBarTitle(String title) {
         getSupportActionBar().setTitle(title);
+    }
+
+    /* used for when a user clicks to go to a child directory */
+    public void updateDatabaseRefForward(String child) {
+        // move reference to the file, and then to the children attribute
+        myRef = myRef.child(child).child("children");
+    }
+
+    /* used for when a user clicks to go to parent directory */
+    public void updateDatabaseRefBackwards() {
+        // we want to do this twice, since we go from children attribute to folder
+        // and then folder to actual parent dir
+        myRef = myRef.getParent().getParent();
     }
 
     private void onSignOut() {
