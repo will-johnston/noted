@@ -10,6 +10,15 @@ public class File {
     private String type;  // using type instead of inheritance to make Firebase easier to manage
     private List<File> children;
 
+    public File(String id, String title, String lastEditedBy, String type, List<File> children) {
+        this.id = id;
+        this.title = title;
+        this.lastEditedBy = lastEditedBy;
+        this.type = type;
+        this.children = children;
+    }
+
+
     public File(String title, File parent, String type, List<File> children) {
         this.title = title;
         this.parent = parent;

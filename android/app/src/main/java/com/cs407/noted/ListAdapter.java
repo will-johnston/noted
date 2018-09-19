@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,10 +38,10 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
     public void goToParentDirectory() {
         // we need to go up two levels, then get the top level's children
         if (parent != null) {
-            if (parent.getType() == FileType.FOLDER.toString()) {
+            if (parent.getType().equals(FileType.FOLDER.toString())) {
                 File grandparent = parent.getParent();
                 if (grandparent != null) {
-                    if (grandparent.getType() == FileType.FOLDER.toString()) {
+                    if (grandparent.getType().equals(FileType.FOLDER.toString())) {
                         // this is the list we want to load
                         List<File> parent_and_siblings = grandparent.getChildren();
                         setItemList(parent_and_siblings);
@@ -63,6 +64,9 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
 
     public void setItemList(List<File> itemList) {
         this.itemList = itemList == null ? new ArrayList<File>() : itemList;
+//        for (File file: itemList) {
+//            file.setParent(this.parent);
+//        }
         this.notifyDataSetChanged();
     }
 
@@ -86,7 +90,8 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         item.setId(key);
 
         // add to firebase
-        addFileToFirebase(item, ref);
+        addFileToFirebase(item, ref);  // write to database
+        // ref.addValueEventListener(fileListener);  // add listener for reading from database
 
         // add locally
         itemList.add(item);
@@ -106,9 +111,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 addFileToFirebase(children.get(i), ref);
             }
         }
-
-        // move back one spot in the reference
-        ref = ref.getParent();
     }
 
 
@@ -146,7 +148,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 File item = itemList.get(position);
 
                 // if type is folder, change list to list item's children
-                if (item.getType() == FileType.FOLDER.toString()) {
+                if (item.getType().equals(FileType.FOLDER.toString())) {
                     Toast.makeText(context, "Folder!", Toast.LENGTH_SHORT).show();
                     List<File> children = item.getChildren();
                     setItemList(children);
