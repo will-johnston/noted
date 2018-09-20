@@ -37,13 +37,7 @@
 
         <include layout="@layout/content_main" />
 
-
-
     </android.support.constraint.ConstraintLayout>
-
-
-
-
 
     <com.getbase.floatingactionbutton.FloatingActionsMenu
         android:id="@+id/fam"
@@ -101,8 +95,5 @@
             fab:fab_colorPressed="@color/pink_pressed"/>
 
     </com.getbase.floatingactionbutton.FloatingActionsMenu>
-
-
-
 
 </android.support.design.widget.CoordinatorLayout>
