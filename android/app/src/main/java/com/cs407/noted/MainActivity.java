@@ -314,6 +314,33 @@ public class MainActivity extends AppCompatActivity {
                 imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
                 //ImageView iv = (ImageView) findViewById(R.id.image);
                 //iv.setImageBitmap(imageBitmap);
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Enter Image Name");
+
+                // Set up the input
+                final EditText input = new EditText(MainActivity.this);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+
+                // Set up the buttons
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String input_text = input.getText().toString();
+                        int icon = R.drawable.image;
+                        Image item = new Image(input_text, icon);
+                        listAdapter.addItemToList(item);
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                builder.show();
             }
             catch (IOException e) {
 
