@@ -237,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(DialogInterface dialog, int which) {
                     String input_text = input.getText().toString();
                     int icon = R.drawable.image;
-                    ListItem item = new ListItem(input_text, icon);
+                    Image item = new Image(input_text, icon);
                     listAdapter.addItemToList(item);
                 }
             });

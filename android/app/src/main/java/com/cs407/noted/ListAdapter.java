@@ -125,12 +125,10 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                     Intent intent = new Intent(context, DocumentActivity.class);
                     context.startActivity(intent);
                 }
-
-                // if type is image, load image
-                /*if(item instanceof Image) { //how do we find if it's an image?
+                else if(item instanceof Image) {
                     Intent intent = new Intent(context, ImageActivity.class);
                     context.startActivity(intent);
-                }*/
+                }
             }
         });
 
