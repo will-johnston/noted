@@ -142,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
                         int icon = R.drawable.file;
-                        ListItem item = new ListItem(input_text, icon);
+                        Document item = new Document(input_text, icon);
                         listAdapter.addItemToList(item);
                     }
                 });
