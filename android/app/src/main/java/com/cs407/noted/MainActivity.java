@@ -8,8 +8,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -27,6 +30,8 @@ import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     private ListAdapter listAdapter;
     private Folder root;
     private static final int PICK_IMAGE = 1;
+    private static final int TAKE_PICTURE = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
         final FloatingActionButton action_folder = (FloatingActionButton) findViewById(R.id.action_folder);
         final FloatingActionButton action_doc = (FloatingActionButton) findViewById(R.id.action_doc);
         final FloatingActionButton action_select_image = (FloatingActionButton) findViewById(R.id.action_select_image);
+        final FloatingActionButton action_take_picture = (FloatingActionButton) findViewById(R.id.action_take_picture);
         action_folder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -164,6 +171,26 @@ public class MainActivity extends AppCompatActivity {
                 intent.setType("image/*");
                 intent.setAction(Intent.ACTION_GET_CONTENT);
                 startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+            }
+        });
+        action_take_picture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatingActionsMenu.collapse();
+                StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+                StrictMode.setVmPolicy(builder.build());
+
+                try {
+                    File tempFile = File.createTempFile("my_app", ".jpg");
+                    Uri uri = Uri.fromFile(tempFile);
+
+                    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+                    startActivityForResult(takePictureIntent, TAKE_PICTURE);
+                }
+                catch(IOException e) {
+
+                }
             }
         });
     }
@@ -249,6 +276,9 @@ public class MainActivity extends AppCompatActivity {
             });
 
             builder.show();
+        }
+        else if(requestCode == TAKE_PICTURE) {
+            Toast.makeText(getApplicationContext(), "done", Toast.LENGTH_LONG).show();
         }
     }
 }
