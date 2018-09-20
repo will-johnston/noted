@@ -13,110 +13,122 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> {
-    private List<File> itemList;
+    private List<File> fileList;
     private File parent;
     Context context;
 
-    public ListAdapter(List<File> itemList, File parent) {
-        this.itemList = itemList == null ? new ArrayList<File>() : itemList;
+    public ListAdapter(List<File> fileList, File parent) {
+        this.fileList = fileList == null ? new ArrayList<File>() : fileList;
         this.parent = parent;
     }
 
     public List<File> getItemList() {
-        return itemList;
+        return fileList;
     }
 
-    public void goToParentDirectory() {
-        // we need to go up two levels, then get the top level's children
-        if (parent != null) {
-            if (parent.getType().equals(FileType.FOLDER.toString())) {
-                File grandparent = parent.getParent();
-                if (grandparent != null) {
-                    if (grandparent.getType().equals(FileType.FOLDER.toString())) {
-                        // this is the list we want to load
-                        List<File> parent_and_siblings = grandparent.getChildren();
-                        setItemList(parent_and_siblings);
+//    public void goToParentDirectory() {
+//        // we need to go up two levels, then get the top level's children
+//        if (parent != null) {
+//            if (parent.getType().equals(FileType.FOLDER.toString())) {
+//                FileOld grandparent = parent.getParent();
+//                if (grandparent != null) {
+//                    if (grandparent.getType().equals(FileType.FOLDER.toString())) {
+//                        // this is the list we want to load
+//                        List<FileOld> parent_and_siblings = grandparent.getChildren();
+//                        setItemList(parent_and_siblings);
+//
+//                        // check to see if we need to toggleHomeButton
+//                        if (context instanceof MainActivity) {
+//                            if (grandparent.getParent() == null) {
+//                                // we are at the root directory
+//                                ((MainActivity) context).toggleHomeButton(false);
+//                            }
+//                            ((MainActivity) context).changeActionBarTitle(grandparent.getTitle());
+//                        }
+//                        // change parent node
+//                        this.parent = grandparent;
+//                    }
+//                }
+//            }
+//        }
+//    }
 
-                        // check to see if we need to toggleHomeButton
-                        if (context instanceof MainActivity) {
-                            if (grandparent.getParent() == null) {
-                                // we are at the root directory
-                                ((MainActivity) context).toggleHomeButton(false);
-                            }
-                            ((MainActivity) context).changeActionBarTitle(grandparent.getTitle());
-                        }
-                        // change parent node
-                        this.parent = grandparent;
-                    }
+    public void setItemList(List<File> fileList) {
+        if (this.fileList == null) {
+            this.fileList = new ArrayList<File>();
+        } else {
+            this.fileList.clear();
+            this.fileList.addAll(fileList);
+        }
+        this.notifyDataSetChanged();
+    }
+
+
+    public void addFileToView(File file) {
+        // if item's parent is root, we need to add the child to the root locally
+        // since it's not in firebase
+        if (this.parent.getId().equals("root")) {
+            this.parent.addChild(file);
+        }
+
+        // only update the list if the file should be in this directory
+        if (this.parent.getId().equals(file.getParent().getId())) {
+            fileList.add(file);
+            this.notifyDataSetChanged();
+        }
+    }
+
+
+    public void addNewFile(File file, DatabaseReference ref) {
+        // update file
+        file.setParent(this.parent);
+        String key = ref.push().getKey();
+        file.setId(key);
+        ref.child(key).setValue(file);
+        if (!this.parent.getId().equals("root")) {
+            // we want to update the parent's children here
+
+            // this will start a childChanged call on the main activity
+        }
+
+
+    }
+
+
+
+//    public void removeItemFromList(FileOld item) {
+//        fileList.remove(item);
+//        this.notifyDataSetChanged();
+//    }
+
+    public List<FileOld> getCorrectFileList(List<FileOld> files) {
+        if (files == null) {
+            return null;
+        }
+        String parentId = parent.getId();
+        for (FileOld file: files) {
+            if (file.getId().equals(parentId)) {
+                return file.getChildren();
+            } else {
+                // see if we found it in deeper layer
+                List<FileOld> list = getCorrectFileList(file.getChildren());
+                if (list != null) {
+                    return list;
                 }
             }
         }
-    }
-
-    public void setItemList(List<File> itemList) {
-        this.itemList = itemList == null ? new ArrayList<File>() : itemList;
-//        for (File file: itemList) {
-//            file.setParent(this.parent);
-//        }
-        this.notifyDataSetChanged();
-    }
-
-    public void addItemToList(File item) {
-        item.setParent(this.parent);
-        // this.parent.addChild(item);
-        itemList.add(item);
-        parent.setChildren(itemList);
-        this.notifyDataSetChanged();
-    }
-
-    public void addItemToListAndFirebase(File item, DatabaseReference ref) {
-        // update item
-        item.setParent(this.parent);
-
-        // push reference down a level to add the file
-        String key = ref.push().getKey();
-        ref = ref.child(key);
-
-        // add key in order to traverse down the filesystem
-        item.setId(key);
-
-        // add to firebase
-        addFileToFirebase(item, ref);  // write to database
-        // ref.addValueEventListener(fileListener);  // add listener for reading from database
-
-        // add locally
-        itemList.add(item);
-        parent.setChildren(itemList);
-        this.notifyDataSetChanged();
-    }
-
-    private void addFileToFirebase(File item, DatabaseReference ref) {
-        // add the item to the database at the reference point
-        ref.child("title").setValue(item.getTitle());
-        ref.child("type").setValue(item.getType());
-        ref.child("lastEditedBy").setValue(item.getLastEditedBy());
-        ref = ref.child("children");
-        List<File> children = item.getChildren();
-        if (children != null) {
-            for (int i = 0; i < children.size(); i++) {
-                addFileToFirebase(children.get(i), ref);
-            }
-        }
-    }
-
-
-    public void removeItemFromList(File item) {
-        itemList.remove(item);
-        this.notifyDataSetChanged();
+        return null;
     }
 
     @NonNull
@@ -130,7 +142,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull final MyViewHolder holder, int position) {
-        File file = itemList.get(position);
+        File file = fileList.get(position);
         holder.title.setText(file.getTitle());
         holder.icon.setImageResource(getIconId(file.getType()));
         final ImageButton button = holder.menuButton;
@@ -145,24 +157,30 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
             public void onClick(View v) {
                 // get list item at holder position
                 int position = holder.getAdapterPosition();
-                File item = itemList.get(position);
+                File file = fileList.get(position);
 
-                // if type is folder, change list to list item's children
-                if (item.getType().equals(FileType.FOLDER.toString())) {
+                // if type is folder, change list to list file's children
+                if (file.getType().equals(FileType.FOLDER.toString())) {
                     Toast.makeText(context, "Folder!", Toast.LENGTH_SHORT).show();
-                    List<File> children = item.getChildren();
+                    List<File> children;
+                    if (file.getChildren() != null) {
+                        children = new ArrayList<>();
+                        children.addAll(file.getChildren().values());
+                    } else {
+                        children = new ArrayList<>();
+                    }
                     setItemList(children);
-                    parent = item;
+                    parent = file;
 
 
 
                     if (context instanceof MainActivity) {
                         // update toolbar
                         ((MainActivity) context).toggleHomeButton(true);
-                        ((MainActivity) context).changeActionBarTitle(item.getTitle());
+                        ((MainActivity) context).changeActionBarTitle(file.getTitle());
 
                         // update firebase reference
-                        ((MainActivity) context).updateDatabaseRefForward(item.getId());
+                        ((MainActivity) context).updateDatabaseRefForward(file.getId());
                     }
 
                 } else {
@@ -196,7 +214,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 switch (item.getItemId()) {
                     case R.id.action_remove:
                         int position = holder.getAdapterPosition();
-                        itemList.remove(position);
+                        fileList.remove(position);
                         notifyItemRemoved(position);
                         notifyDataSetChanged();
                         return true;
@@ -225,7 +243,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
 
     @Override
     public int getItemCount() {
-        return itemList.size();
+        return fileList.size();
     }
 
     class MyViewHolder extends RecyclerView.ViewHolder {

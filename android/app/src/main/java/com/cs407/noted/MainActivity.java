@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -12,24 +13,23 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
-import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -55,7 +55,8 @@ public class MainActivity extends AppCompatActivity {
 
         // recycler view setup
         recyclerView = findViewById(R.id.recycler_view);
-        root = new File("noted",null, FileType.FOLDER.toString());
+        root = new File("root", "noted", null, null, FileType.FOLDER.toString(), null);
+        root.setId("root");
         listAdapter = new ListAdapter(null, root);
         recyclerView.setAdapter(listAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -76,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                listAdapter.goToParentDirectory();
+                // listAdapter.goToParentDirectory();
                 updateDatabaseRefBackwards();
             case R.id.action_settings:
                 return true;
@@ -109,9 +110,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
-                        int icon = R.drawable.folder;
-                        File item = new File(input_text, null, FileType.FOLDER.toString(),null);
-                        listAdapter.addItemToListAndFirebase(item, myRef);
+//                        int icon = R.drawable.folder;
+//                        FileOld item = new FileOld(input_text, null, FileType.FOLDER.toString(),null);
+                        File file = new File(null, input_text, null, null, FileType.FOLDER.toString(), null);
+
+                        listAdapter.addNewFile(file, myRef);
                     }
                 });
                 builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -140,9 +143,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
-                        int icon = R.drawable.file;
-                        File item = new File(input_text, null, FileType.DOCUMENT.toString(), null);
-                        listAdapter.addItemToListAndFirebase(item, myRef);
+//                        int icon = R.drawable.file;
+//                        FileOld item = new FileOld(input_text, null, FileType.DOCUMENT.toString(), null);
+                        File file = new File(null, input_text, null, null, FileType.DOCUMENT.toString(), null);
+                        listAdapter.addNewFile(file, myRef);
                     }
                 });
                 builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -181,22 +185,64 @@ public class MainActivity extends AppCompatActivity {
             final Context context = this;
 
             DatabaseReference filesRef = database.getReference(path);
-            filesRef.addValueEventListener(new ValueEventListener() {
+            filesRef.addChildEventListener(new ChildEventListener() {
                 @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    DataFormatter df = new DataFormatter();
-                    List<File> files = df.getFileData(dataSnapshot, root);
-                    listAdapter.setItemList(files);
-                    Toast.makeText(context, "Your files have been automatically updated!", Toast.LENGTH_SHORT).show();
+                public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                    // convert snapshot to file object
+                    File file = dataSnapshot.getValue(File.class);
+                    List<File> children_list = null;
+                    if (file.getChildren() != null) {
+                        children_list = new ArrayList<>();
+                        children_list.addAll(file.getChildren().values());
+                    }
+                    listAdapter.addFileToView(file);
+
+
+                }
+
+                @Override
+                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                }
+
+                @Override
+                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+                }
+
+                @Override
+                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
 
                 }
 
                 @Override
                 public void onCancelled(@NonNull DatabaseError databaseError) {
-                    Log.w("MainActivity", "loadPost:onCancelled", databaseError.toException());
 
                 }
             });
+//            filesRef.addValueEventListener(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                    DataFormatter df = new DataFormatter();
+//                    List<FileOld> files = df.getFileData(dataSnapshot, root);
+//
+//                    // make sure we are updating the right spot in the file hierarchy
+//                    List<FileOld> listedRoot = new ArrayList<>();
+//                    listedRoot.add(root);
+//                    List<FileOld> filesUnderParentDir = listAdapter.getCorrectFileList(listedRoot);
+//                    if (filesUnderParentDir != null) {
+//                        listAdapter.setItemList(filesUnderParentDir);
+//                        Toast.makeText(context, "Your files have been automatically updated!", Toast.LENGTH_SHORT).show();
+//                    }
+//                    // listAdapter.setItemList(files);
+//                }
+//
+//                @Override
+//                public void onCancelled(@NonNull DatabaseError databaseError) {
+//                    Log.w("MainActivity", "loadPost:onCancelled", databaseError.toException());
+//
+//                }
+//            });
         }
     }
 

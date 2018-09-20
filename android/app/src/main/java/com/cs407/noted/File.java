@@ -1,6 +1,7 @@
 package com.cs407.noted;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class File {
     private String id;
@@ -8,40 +9,32 @@ public class File {
     private File parent;
     private String lastEditedBy;
     private String type;  // using type instead of inheritance to make Firebase easier to manage
-    private List<File> children;
-
-    public File(String id, String title, String lastEditedBy, String type, List<File> children) {
-        this.id = id;
-        this.title = title;
-        this.lastEditedBy = lastEditedBy;
-        this.type = type;
-        this.children = children;
-    }
-
-
-    public File(String title, File parent, String type, List<File> children) {
-        this.title = title;
-        this.parent = parent;
-        this.type = type;
-        this.children = children;
-    }
-
-    public File(String title, File parent, String type) {
-        this.title = title;
-        this.parent = parent;
-        this.type = type;
-    }
-
-    public File(String title, String type) {
-        this.title = title;
-        this.type = type;
-    }
+    private Map<String, File> children;
 
     public File() {
     }
 
+    public File(String id, String title, File parent, String lastEditedBy, String type, Map<String, File> children) {
+        this.id = id;
+        this.title = title;
+        this.parent = parent;
+        this.lastEditedBy = lastEditedBy;
+        this.type = type;
+        if (children == null) {
+            this.children = new HashMap<>();
+        } else {
+            this.children = children;
+        }
+    }
 
-    // getters and setters
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getTitle() {
         return title;
     }
@@ -74,20 +67,15 @@ public class File {
         this.type = type;
     }
 
-    public List<File> getChildren() {
+    public Map<String, File> getChildren() {
         return children;
     }
 
-    public void setChildren(List<File> children) {
+    public void setChildren(Map<String, File> children) {
         this.children = children;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public void addChild(File file) {
+        children.put(file.getId(), file);
     }
 }
-
