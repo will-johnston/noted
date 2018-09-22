@@ -15,6 +15,7 @@ import { AngularFireDatabaseModule } from 'angularfire2/database';
 import { AngularFireAuthModule } from 'angularfire2/auth';
 
 import {NgxElectronModule} from 'ngx-electron'
+import {QuillModule} from 'ngx-quill'
 
 import { AuthService } from './services/auth.service';
 
@@ -34,7 +35,8 @@ import { AuthService } from './services/auth.service';
     AngularFireModule.initializeApp(environment.firebase, 'angular-auth-firebase'),
     AngularFireDatabaseModule,
     AngularFireAuthModule,
-    NgxElectronModule
+    NgxElectronModule,
+    QuillModule
   ],
   providers: [AuthService],
   bootstrap: [AppComponent]
