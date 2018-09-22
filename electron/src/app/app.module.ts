@@ -9,6 +9,15 @@ import { LoginComponent } from './login/login.component';
 import { HomescreenComponent } from './homescreen/homescreen.component';
 import { NoteComponent } from './note/note.component';
 
+import { environment } from '../environments/environment';
+import { AngularFireModule } from 'angularfire2';
+import { AngularFireDatabaseModule } from 'angularfire2/database';
+import { AngularFireAuthModule } from 'angularfire2/auth';
+
+import {NgxElectronModule} from 'ngx-electron'
+
+import { AuthService } from './services/auth.service';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -21,9 +30,13 @@ import { NoteComponent } from './note/note.component';
     BrowserAnimationsModule,
     MatButtonModule, 
     MatCheckboxModule,
-    AppRoutingModule
+    AppRoutingModule,
+    AngularFireModule.initializeApp(environment.firebase, 'angular-auth-firebase'),
+    AngularFireDatabaseModule,
+    AngularFireAuthModule,
+    NgxElectronModule
   ],
-  providers: [],
+  providers: [AuthService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
