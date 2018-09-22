@@ -70,4 +70,9 @@ export class AuthService {
         this._firebaseAuth.auth.signOut()
             .then((res) => this.router.navigate(['/']));
     }
+    //This may be the wrong way to get this info
+    //Calling from filesystem.service
+    getUserDetails() {
+        return this.userDetails;
+    }
 }

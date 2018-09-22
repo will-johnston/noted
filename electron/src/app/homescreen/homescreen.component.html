@@ -2,3 +2,9 @@
   homescreen works!
 </p>
 <a routerLink="/note"><button>Go to a Note</button></a>
+<h2>My notes</h2>
+<ul class="notes">
+  <li *ngFor="let note of notes">
+    <span class="badge">{{note.id}}</span> {{note.name}}
+  </li>
+</ul>

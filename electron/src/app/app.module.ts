@@ -17,6 +17,7 @@ import { AngularFireAuthModule } from 'angularfire2/auth';
 import {NgxElectronModule} from 'ngx-electron'
 
 import { AuthService } from './services/auth.service';
+import { FilesystemService } from './services/filesystem.service';
 
 @NgModule({
   declarations: [
@@ -36,7 +37,7 @@ import { AuthService } from './services/auth.service';
     AngularFireAuthModule,
     NgxElectronModule
   ],
-  providers: [AuthService],
+  providers: [AuthService, FilesystemService ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
