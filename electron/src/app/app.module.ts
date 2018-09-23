@@ -15,6 +15,7 @@ import { AngularFireAuthModule } from 'angularfire2/auth';
 import { MyMaterialModule } from './material.module'; 
 
 import {NgxElectronModule} from 'ngx-electron'
+import {QuillModule} from 'ngx-quill'
 
 import { AuthService } from './services/auth.service';
 import { FilesystemService } from './services/filesystem.service';
@@ -34,7 +35,8 @@ import { FilesystemService } from './services/filesystem.service';
     AngularFireDatabaseModule,
     AngularFireAuthModule,
     NgxElectronModule,
-    MyMaterialModule
+    MyMaterialModule,
+    QuillModule
   ],
   providers: [AuthService, FilesystemService ],
   bootstrap: [AppComponent]
