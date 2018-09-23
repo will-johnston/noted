@@ -1,0 +1,30 @@
+{
+    "userID": {
+        "elementID": {                      //Note type
+            "title": "document1",           //non-unique title
+            "type": "DOCUMENT",             //type must be DOCUMENT to signify this field is a note
+            "lastEditedBy": "userID",       //only files can have this field as non-null
+            "children": null,               //notes can't have children
+            "parent" : {}                   //Not sure about parent fields
+        },
+        "elementID": {                      //Folder type
+            "title": "folder",
+            "type": "FOLDER",               //type must be FOLDER to signify this field is a folder
+            "lastEditedBy": null,           //Always null for a folder
+            "children": {                   // only folders can have this field as non-null
+                "elementID": {              //Document within a folder
+                    "title": "document2",
+                    "type": "DOCUMENT",     //Can be a DOCUMENT or a NOTE
+                    "lastEditedBy": "userID",
+                    "children": null        //may be not-null if a folder
+                }
+            }
+        },
+        "elementID": {                      //Image type
+            "title": "image",
+            "type": "IMAGE",                //Must be IMAGE
+            "lastEditedBy": null,           //Always null
+            "children": null                //Always null
+        }
+    }
+}
