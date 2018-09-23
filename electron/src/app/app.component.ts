@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { RouterModule, Routes, Router } from '@angular/router';
 import * as firebase from 'firebase'
 
 @Component({
@@ -9,7 +10,7 @@ import * as firebase from 'firebase'
 export class AppComponent {
   title = 'noted';
 
-  constructor() {
+  constructor(private router : Router) {
     // init firebase
     var config = {
       apiKey: "AIzaSyBv0Xkso50BFpf6lc4_w1LJwEBHDN5IkOQ",
@@ -28,6 +29,7 @@ export class AppComponent {
         //TODO: send to home page
         console.log("User is logged in!");
         console.log(user.email);
+        this.router.navigate(['homescreen']);
       } else {
         // If there is no user logged in send them to the login page
         //TODO: send to login page

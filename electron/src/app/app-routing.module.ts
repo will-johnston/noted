@@ -6,9 +6,10 @@ import { NoteComponent } from './note/note.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
-  { path: 'homescreen', component: HomescreenComponent},
-  { path: 'login', component: LoginComponent},
-  { path: 'note', component: NoteComponent },
+  { path: 'homescreen', component: HomescreenComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'note:id', component: NoteComponent },
+  { path: 'note', component: NoteComponent }
 ];
 
 @NgModule({

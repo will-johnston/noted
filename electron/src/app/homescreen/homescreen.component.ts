@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgModule } from '@angular/core';
 import { FilesystemService } from '../services/filesystem.service';
+import { Router } from '@angular/router';
 import { Note } from '../note/Note'
 import { Folder } from './Folder'
 
@@ -12,7 +13,7 @@ export class HomescreenComponent implements OnInit {
 
   notes : Note[];
   folders: Folder[];
-  constructor(private filesystemService : FilesystemService) { }
+  constructor(private filesystemService : FilesystemService, private router : Router) { }
 
   getNotes() {
     this.notes = this.filesystemService.notes;
@@ -22,10 +23,15 @@ export class HomescreenComponent implements OnInit {
     this.folders = this.filesystemService.folders;
   }
   createFolder(name) {
-    this,this.filesystemService.createFolder(name);
+    this.filesystemService.createFolder(name);
   }
   createNote(name) {
     this.filesystemService.createNote(name);
+  }
+  gotoNote(id) {
+    console.log("navigate with id=%s", id);
+    //this.router.navigate(['note']);
+    this.router.navigate(['note', { id : id}]);
   }
 
   ngOnInit() {
