@@ -3,5 +3,10 @@ export class Note {
     name : string;
     id : string;
     folder : Folder;
-    constructor() { }
+    type = "DOCUMENT";
+    constructor(name : string, id : string, folder : Folder) { 
+      this.name = name;
+      this.id = id;
+      this.folder = folder;
+    }
   }

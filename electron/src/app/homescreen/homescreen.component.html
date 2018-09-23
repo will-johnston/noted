@@ -5,6 +5,17 @@
 <h2>My notes</h2>
 <ul class="notes">
   <li *ngFor="let note of notes">
-    <span class="badge">{{note.id}}</span> {{note.name}}
+    <span class="badge">{{note.name}}</span> {{note.id}}
   </li>
 </ul>
+<h2>My folders</h2>
+<ul class="folders">
+  <li *ngFor="let folder of folders">
+    <span class="badge">{{folder.name}}</span> {{folder.id}}, childCount: {{folder.childCount}}
+  </li>
+</ul>
+Folder name: <input #folderName type="text" id="folderName" />
+<button (click)="createFolder(folderName.value)">Create a folder</button>
+<br />
+Note name: <input #noteName type="text" id="noteName" />
+<button (click)="createNote(noteName.value)">Create a note</button>

@@ -5,7 +5,7 @@ import { LoginComponent } from './login/login.component';
 import { NoteComponent } from './note/note.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: '/homescreen', pathMatch: 'full' },
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'homescreen', component: HomescreenComponent},
   { path: 'login', component: LoginComponent},
   { path: 'note', component: NoteComponent },
