@@ -1,7 +1,8 @@
-<p>
-  homescreen works!
-</p>
-<a routerLink="/note"><button>Go to the Notescreen</button></a>
+<nav>
+  <a routerLink="/note"><button>Go to the Notescreen</button></a>
+  <button type="button" class="btn btn-danger" (click)="logout()">Logout</button>
+</nav>
+
 <!--<ul class="notes">
   <li *ngFor="let note of notes">
     <span class="badge">{{note.name}}</span> {{note.id}}
