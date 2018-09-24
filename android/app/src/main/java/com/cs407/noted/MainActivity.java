@@ -28,9 +28,15 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -55,8 +61,9 @@ public class MainActivity extends AppCompatActivity {
 
         // recycler view setup
         recyclerView = findViewById(R.id.recycler_view);
-        root = new File("root", "noted", null, null, FileType.FOLDER.toString(), null);
+        root = new File("root", "", "noted", null, null, FileType.FOLDER.toString(), null);
         root.setId("root");
+        // root.setHasListener(true);  // we have a child event listener for the first level of file system
         listAdapter = new ListAdapter(null, root);
         recyclerView.setAdapter(listAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -77,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                // listAdapter.goToParentDirectory();
+                listAdapter.goToParentDirectory();
                 updateDatabaseRefBackwards();
             case R.id.action_settings:
                 return true;
@@ -110,9 +117,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
-//                        int icon = R.drawable.folder;
-//                        FileOld item = new FileOld(input_text, null, FileType.FOLDER.toString(),null);
-                        File file = new File(null, input_text, null, null, FileType.FOLDER.toString(), null);
+                        File file = new File(null, null, input_text, null, null, FileType.FOLDER.toString(), null);
 
                         listAdapter.addNewFile(file, myRef);
                     }
@@ -143,9 +148,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
-//                        int icon = R.drawable.file;
-//                        FileOld item = new FileOld(input_text, null, FileType.DOCUMENT.toString(), null);
-                        File file = new File(null, input_text, null, null, FileType.DOCUMENT.toString(), null);
+                        File file = new File(null, null, input_text, null, null, FileType.DOCUMENT.toString(), null);
                         listAdapter.addNewFile(file, myRef);
                     }
                 });
@@ -185,34 +188,25 @@ public class MainActivity extends AppCompatActivity {
             final Context context = this;
 
             DatabaseReference filesRef = database.getReference(path);
-            filesRef.addChildEventListener(new ChildEventListener() {
+            filesRef.addValueEventListener(new ValueEventListener() {
                 @Override
-                public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                    // convert snapshot to file object
-                    File file = dataSnapshot.getValue(File.class);
-                    List<File> children_list = null;
-                    if (file.getChildren() != null) {
-                        children_list = new ArrayList<>();
-                        children_list.addAll(file.getChildren().values());
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if (dataSnapshot == null) {
+                        return;
                     }
-                    listAdapter.addFileToView(file);
+                    List<File> files = new ArrayList<>();
+                    for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                        File file = ds.getValue(File.class);
+                        // locally set the parents
+                        file = setFileParents(file, root);
+                        files.add(file);
+                    }
+                    // add files as root's children
+                    for (File file: files) {
+                        root.addChild(file);
+                    }
 
-
-                }
-
-                @Override
-                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                }
-
-                @Override
-                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-                }
-
-                @Override
-                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
+                    listAdapter.setItemListMaintainCurrentDirectory(files);
                 }
 
                 @Override
@@ -220,34 +214,27 @@ public class MainActivity extends AppCompatActivity {
 
                 }
             });
-//            filesRef.addValueEventListener(new ValueEventListener() {
-//                @Override
-//                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                    DataFormatter df = new DataFormatter();
-//                    List<FileOld> files = df.getFileData(dataSnapshot, root);
-//
-//                    // make sure we are updating the right spot in the file hierarchy
-//                    List<FileOld> listedRoot = new ArrayList<>();
-//                    listedRoot.add(root);
-//                    List<FileOld> filesUnderParentDir = listAdapter.getCorrectFileList(listedRoot);
-//                    if (filesUnderParentDir != null) {
-//                        listAdapter.setItemList(filesUnderParentDir);
-//                        Toast.makeText(context, "Your files have been automatically updated!", Toast.LENGTH_SHORT).show();
-//                    }
-//                    // listAdapter.setItemList(files);
-//                }
-//
-//                @Override
-//                public void onCancelled(@NonNull DatabaseError databaseError) {
-//                    Log.w("MainActivity", "loadPost:onCancelled", databaseError.toException());
-//
-//                }
-//            });
         }
     }
 
-
-
+    private File setFileParents(File file, File parent) {
+        if (file == null) { return null; }
+        // set parent
+        file.setParent(parent);
+        Map<String, File> children = file.getChildren();
+        // update children's parents
+        if (children != null) {
+            Map<String, File> newKids = new HashMap<>();
+            Set keys = children.keySet();
+            for (Object key : keys) {
+                File child = children.get(key);
+                child = setFileParents(child, file);
+                newKids.put((String) key, child);
+            }
+            file.setChildren(newKids);
+        }
+        return file;
+    }
 
     public void toggleHomeButton(boolean enable) {
         getSupportActionBar().setDisplayHomeAsUpEnabled(enable);
@@ -270,6 +257,9 @@ public class MainActivity extends AppCompatActivity {
         // and then folder to actual parent dir
         myRef = myRef.getParent().getParent();
     }
+
+
+
 
     private void onSignOut() {
         // Firebase sign out
