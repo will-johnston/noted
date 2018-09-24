@@ -1,11 +1,9 @@
-const electron = require('electron')
+const electron = require('electron');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 const path = require('path');
 const url = require('url');
 const { ipcMain } = require('electron');
-const { Menu } = require('electron');
-const https = require('https');
 const request = require('request');
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -13,11 +11,23 @@ const request = require('request');
 let win
 let useDevelopmentServer;       //bool, whether angular is serving the file or whether we are accessing it statically
 
+// OAuth Stuff
+const electronGoogleOauth = require('electron-google-oauth');
+const windowParams = {
+    alwaysOnTop: true,
+    autoHideMenuBar: true,
+    webPreferences: {
+        nodeIntegration: false
+    }
+};
+const clientId = '83083800156-53os033iocniv2i5qvtjv3l5403q6eca.apps.googleusercontent.com';
+const clientSecret = 'FAwIYhXiBn0mQVbUt38tolJK';
+
 function createWindow() {
     // Create the browser window.
     //`file://${__dirname}/dist/assets/logo.png`
     if (useDevelopmentServer) {
-        win = new BrowserWindow({ width: 800, height: 600 , icon: 'http://127.0.0.1:4200/assets/logo.png'});
+        win = new BrowserWindow({ width: 800, height: 600, icon: 'http://127.0.0.1:4200/assets/logo.png' });
         win.loadURL(url.format({
             //pathname: path.join(__dirname, '/app/index.html'),
             //'${__dirname}/dist/index.html' //for angular
@@ -28,7 +38,7 @@ function createWindow() {
     }
 
     else {
-        win = new BrowserWindow({ width: 800, height: 600 , icon: 'file://' + path.join(__dirname, '/dist/electron/assets/logo.png')});
+        win = new BrowserWindow({ width: 800, height: 600, icon: 'file://' + path.join(__dirname, '/dist/electron/assets/logo.png') });
 
         // and load the index.html of the app.
         win.loadURL(url.format({
@@ -51,6 +61,7 @@ function createWindow() {
         win = null
     })
 }
+
 function parseArgs() {
     useDevelopmentServer = null;
     process.argv.forEach(function (val, index) {
@@ -61,13 +72,14 @@ function parseArgs() {
             else
                 useDevelopmentServer = false;
         }
-      });
+    });
     if (useDevelopmentServer == null) {
         useDevelopmentServer = false;
         console.error("Didn't specify useDevelopmentServer argument before running, treating as false");
     }
     console.log("useDevelopment server is " + useDevelopmentServer);
 }
+
 function shittySleep(cycles) {
     for (var i = 0; i < cycles; i++) {
         for (var j = 0; j < cycles; j++) {
@@ -77,16 +89,17 @@ function shittySleep(cycles) {
         }
     }
 }
+
 function waitForServer() {
     for (var i = 0; i < 10; i++) {
         //try {
         var status = request.get('http://127.0.0.1:4200')
-            .on('response', function(response) {
+            .on('response', function (response) {
                 if (response.statusCode == 200)
                     return true;
                 return false;
             })
-            .on('error', function(err) {
+            .on('error', function (err) {
                 console.log("Not ready on attempt " + i);
                 return false;
             });
@@ -123,5 +136,16 @@ app.on('activate', () => {
     }
 })
 
-  // In this file you can include the rest of your app's specific main process
-  // code. You can also put them in separate files and require them here.
+ipcMain.on('google-auth', (event, arg) => {
+    const googleOauth = electronGoogleOauth(windowParams);
+    googleOauth.getAccessToken(
+        ['https://www.googleapis.com/auth/plus.me',
+            'profile',
+            'email'],
+        clientId,
+        clientSecret
+    ).then((result) => {
+        console.log('result', result);
+        win.webContents.send('token', result);
+    })
+});

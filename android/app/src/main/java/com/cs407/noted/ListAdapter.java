@@ -1,6 +1,7 @@
 package com.cs407.noted;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -197,7 +198,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                     parent = file;
 
 
-
                     if (context instanceof MainActivity) {
                         // update toolbar
                         ((MainActivity) context).toggleHomeButton(true);
@@ -206,14 +206,15 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                         // update firebase reference
                         ((MainActivity) context).updateDatabaseRefForward(file.getId());
                     }
-
-                } else {
-                    Toast.makeText(context, "Not folder!", Toast.LENGTH_SHORT).show();
                 }
-
-                // if type is document, load rich text editor
-
-                // if type is image, load image
+                else if(file.getType().equals(FileType.DOCUMENT.toString())) {
+                    Intent intent = new Intent(context, DocumentActivity.class);
+                    context.startActivity(intent);
+                }
+                else if(file.getType().equals(FileType.IMAGE.toString())) {
+                    Intent intent = new Intent(context, ImageActivity.class);
+                    context.startActivity(intent);
+                }
             }
         });
 

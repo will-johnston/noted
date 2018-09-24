@@ -26,6 +26,20 @@
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
+
+        <activity android:name=".DocumentActivity" />
+        <activity android:name=".ImageActivity"></activity>
+        <activity android:name="com.onegravity.rteditor.media.choose.MediaChooserActivity"/>
+        <activity android:name="com.onegravity.rteditor.media.crop.CropImageActivity"/>
     </application>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="true" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
 
 </manifest>

@@ -1,12 +1,29 @@
 package com.cs407.noted;
 
+
+import android.Manifest;
+import android.app.Activity;
+import android.app.Application;
+import android.content.Intent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.os.Environment;
+import android.os.StrictMode;
+import android.provider.MediaStore;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -17,26 +34,29 @@ import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
+
+import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -46,7 +66,15 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseUser currentUser;
     private FirebaseDatabase database;
     private DatabaseReference myRef;  // this will store the database reference at the current path
-    private File root;
+    private com.cs407.noted.File root;
+    private static final int PICK_IMAGE = 1;
+    private static final int TAKE_PICTURE = 2;
+    private static final int CAMERA_REQUEST = 3;
+    private static final int WRITE_EXTERNAL_STORAGE_REQUEST = 4;
+    private static final int BOTH_REQUEST = 5;
+    private Uri imageUri;
+    private File output=null;
+    private Bitmap imageBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,9 +87,12 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         getSupportActionBar().setDisplayShowHomeEnabled(false);
 
+        // get instance of firebase authenticator
+        firebaseAuth = FirebaseAuth.getInstance();
+
         // recycler view setup
         recyclerView = findViewById(R.id.recycler_view);
-        root = new File("root", "", "noted", null, null, FileType.FOLDER.toString(), null);
+        root = new com.cs407.noted.File("root", "", "noted", null, null, FileType.FOLDER.toString(), null);
         root.setId("root");
         // root.setHasListener(true);  // we have a child event listener for the first level of file system
         listAdapter = new ListAdapter(null, root);
@@ -100,6 +131,8 @@ public class MainActivity extends AppCompatActivity {
         final FloatingActionsMenu floatingActionsMenu = (FloatingActionsMenu) findViewById(R.id.fam);
         final FloatingActionButton action_folder = (FloatingActionButton) findViewById(R.id.action_folder);
         final FloatingActionButton action_doc = (FloatingActionButton) findViewById(R.id.action_doc);
+        final FloatingActionButton action_select_image = (FloatingActionButton) findViewById(R.id.action_select_image);
+        final FloatingActionButton action_take_picture = (FloatingActionButton) findViewById(R.id.action_take_picture);
         action_folder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -117,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
-                        File file = new File(null, null, input_text, null, null, FileType.FOLDER.toString(), null);
+                        com.cs407.noted.File file = new com.cs407.noted.File(null, null, input_text, null, null, FileType.FOLDER.toString(), null);
 
                         listAdapter.addNewFile(file, myRef);
                     }
@@ -148,8 +181,9 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String input_text = input.getText().toString();
-                        File file = new File(null, null, input_text, null, null, FileType.DOCUMENT.toString(), null);
+                        com.cs407.noted.File file = new com.cs407.noted.File(null, null, input_text, null, null, FileType.DOCUMENT.toString(), null);
                         listAdapter.addNewFile(file, myRef);
+
                     }
                 });
                 builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -161,8 +195,40 @@ public class MainActivity extends AppCompatActivity {
                 builder.show();
             }
         });
+        action_select_image.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatingActionsMenu.collapse();
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+            }
+        });
+        action_take_picture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatingActionsMenu.collapse();
 
-        firebaseAuth = FirebaseAuth.getInstance();
+                StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+                StrictMode.setVmPolicy(builder.build());
+
+                try {
+                    File tempFile = File.createTempFile("my_app", ".jpg");
+                    imageUri = Uri.fromFile(tempFile);
+
+                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    File dir =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+                    output = new File(dir, "picture.jpeg");
+                    imageUri = Uri.fromFile(output);
+                    intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+                    startActivityForResult(intent, TAKE_PICTURE);
+                }
+                catch(IOException e) {
+
+                }
+            }
+        });
     }
 
     @Override
@@ -178,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
         }
         else {
             String displayName = currentUser.getDisplayName();
-
+            //Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
             Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
 
             // database setup
@@ -194,15 +260,15 @@ public class MainActivity extends AppCompatActivity {
                     if (dataSnapshot == null) {
                         return;
                     }
-                    List<File> files = new ArrayList<>();
+                    List<com.cs407.noted.File> files = new ArrayList<>();
                     for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                        File file = ds.getValue(File.class);
+                        com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
                         // locally set the parents
                         file = setFileParents(file, root);
                         files.add(file);
                     }
                     // add files as root's children
-                    for (File file: files) {
+                    for (com.cs407.noted.File file: files) {
                         root.addChild(file);
                     }
 
@@ -215,19 +281,34 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+
+        int cameraPermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
+        int storagePermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if(cameraPermission == PackageManager.PERMISSION_DENIED && storagePermission == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, BOTH_REQUEST);
+        }
+        else if(cameraPermission == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA}, CAMERA_REQUEST);
+        }
+        else if(storagePermission == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_REQUEST);
+        }
     }
 
-    private File setFileParents(File file, File parent) {
+
+
+
+    private com.cs407.noted.File setFileParents(com.cs407.noted.File file, com.cs407.noted.File parent) {
         if (file == null) { return null; }
         // set parent
         file.setParent(parent);
-        Map<String, File> children = file.getChildren();
+        Map<String, com.cs407.noted.File> children = file.getChildren();
         // update children's parents
         if (children != null) {
-            Map<String, File> newKids = new HashMap<>();
+            Map<String, com.cs407.noted.File> newKids = new HashMap<>();
             Set keys = children.keySet();
             for (Object key : keys) {
-                File child = children.get(key);
+                com.cs407.noted.File child = children.get(key);
                 child = setFileParents(child, file);
                 newKids.put((String) key, child);
             }
@@ -266,10 +347,94 @@ public class MainActivity extends AppCompatActivity {
         firebaseAuth.signOut();
 
         // Google sign out
+        //app crashes here because the client variable doesn't persist
         GoogleAuthSingleton.getInstance().client.signOut();
 
         //show login activity
         Intent intent = new Intent(this, LoginActivity.class);
         startActivity(intent);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == PICK_IMAGE) {
+            Uri uri = data.getData();
+
+            /*String[] filePathColumn = {MediaStore.Images.Media.DATA};
+
+            Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
+            cursor.moveToFirst();
+
+            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+            String filePath = cursor.getString(columnIndex);
+            cursor.close();
+
+            Bitmap image = BitmapFactory.decodeFile(filePath);*/
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle("Enter Image Name");
+
+            // Set up the input
+            final EditText input = new EditText(MainActivity.this);
+            input.setInputType(InputType.TYPE_CLASS_TEXT);
+            builder.setView(input);
+
+            // Set up the buttons
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String input_text = input.getText().toString();
+                    int icon = R.drawable.image;
+                    com.cs407.noted.File file = new com.cs407.noted.File(
+                            null, null, input_text, null, null, FileType.IMAGE.toString(), null);
+                    listAdapter.addNewFile(file, myRef);
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+
+            builder.show();
+        }
+        else if(requestCode == TAKE_PICTURE) {
+            try {
+                imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+                //ImageView iv = (ImageView) findViewById(R.id.image);
+                //iv.setImageBitmap(imageBitmap);
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Enter Image Name");
+
+                // Set up the input
+                final EditText input = new EditText(MainActivity.this);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+
+                // Set up the buttons
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String input_text = input.getText().toString();
+                        com.cs407.noted.File file = new com.cs407.noted.File(
+                                null, null, input_text, null, null, FileType.IMAGE.toString(), null);
+                        listAdapter.addNewFile(file, myRef);
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                builder.show();
+            }
+            catch (IOException e) {
+
+            }
+        }
     }
 }

@@ -25,6 +25,10 @@ android {
     }
 }
 
+repositories {
+    jcenter()
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:27.1.1'
@@ -39,11 +43,12 @@ dependencies {
     implementation 'com.android.support:recyclerview-v7:27.1.1'
     implementation 'com.getbase:floatingactionbutton:1.10.1'
     implementation 'com.firebase:firebase-client-android:2.5.2+'
+
     implementation 'com.google.firebase:firebase-auth:16.0.2'
     implementation 'com.google.firebase:firebase-database:16.0.1'
     implementation 'com.google.firebase:firebase-core:16.0.1'
     implementation 'com.firebaseui:firebase-ui-auth:4.1.0'
-
+    implementation 'jp.wasabeef:richeditor-android:1.2.2'
 }
 
 apply plugin: 'com.google.gms.google-services'
