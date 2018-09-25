@@ -149,6 +149,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
+
     @Override
     public void onStart() {
         super.onStart();
@@ -310,11 +312,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-
-
-
-
 
     private com.cs407.noted.File setFileParents(com.cs407.noted.File file, com.cs407.noted.File parent) {
         if (file == null) { return null; }
