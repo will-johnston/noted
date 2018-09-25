@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { Router, ActivatedRoute, Params } from '@angular/router';
-import { AngularFireDatabase } from '@angular/fire/database';
+import { AngularFireDatabase, AngularFireObject } from '@angular/fire/database';
 import { AngularFireStorageModule } from '@angular/fire/storage';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import * as firebase from 'firebase';
@@ -9,6 +9,7 @@ import { Note } from './Note';
 
 import { QuillEditorComponent } from 'ngx-quill';
 import Quill from 'quill';
+import { Observable } from 'rxjs';
 
 // override p with div tag
 const Parchment = Quill.import('parchment');
@@ -36,18 +37,20 @@ export class NoteComponent implements OnInit {
   noteid : string = null;       //database id of the note
   notepath : string = null;     //database path for the note
   noteInfo : Note = null;
-  noteRef : any;
+  noteRef : AngularFireObject<any>;
   subscribed : boolean = false;
   text : string;
   html : string;
   constructor(private route: ActivatedRoute, private router: Router, private fireDatabase: AngularFireDatabase) { 
     this.text = "";
     this.html = "";
+    console.log(Quill);
   }
 
   @ViewChild('editor') editor: QuillEditorComponent
 
   ngOnInit() {
+    console.log(this.editor);
     this.editor
       .onContentChanged
       .pipe(
@@ -60,6 +63,7 @@ export class NoteComponent implements OnInit {
         this.html = data.html;
         console.log("text %s, html %s", data.text, data.html);
     });
+    this.editor.placeholder = "Start writing your masterpiece!";
     //this.editor.content = "Loading Note...";
     this.route.params.forEach((params: Params) => {
       if (params['userid'] !== undefined || params['userid'] !== null) {
@@ -77,12 +81,23 @@ export class NoteComponent implements OnInit {
       }
     });
   }
+
+  //This is definitely cheating, but it seems to work... [Ryan]
+  updateEditorText(text : string) {
+    if (text != null) {
+      this.editor.quillEditor.root.innerHTML = text;
+    }
+  }
   startSubscription(notepath : string) {
     if (!this.subscribed) {
-      this.noteRef = this.fireDatabase.object(notepath).valueChanges();
-      this.noteRef.subscribe(value => {
+      //this.noteRef = this.fireDatabase.object(notepath).valueChanges();
+      this.noteRef = this.fireDatabase.object(notepath);
+      this.noteRef.valueChanges()
+      .subscribe(value => {
         //console.log(value);
         this.noteInfo = new Note(value.title, value.id, null, notepath);
+        this.noteInfo.text = value.htmltext;
+        this.updateEditorText(this.noteInfo.text);
       });
     }
   }
@@ -92,6 +107,7 @@ export class NoteComponent implements OnInit {
   }
   //Save the file in firebase
   saveNote() {
-    
+    //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
+    this.noteRef.update({ htmltext : this.html});
   }
 }
