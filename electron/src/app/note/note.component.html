@@ -1,1 +1,3 @@
+<button class="btn btn-primary" id = "record" (click)="start(this);" [ngClass]='{disabled: isOn}'>Record</button>
+<button class="btn btn-primary" id = "stop" (click)="stop(this);" [ngClass]='{disabled: isOff}'>Stop</button>
 <quill-editor [style]="{height: '200px'}" (onEditorCreated)="setFocus($event)"></quill-editor>
