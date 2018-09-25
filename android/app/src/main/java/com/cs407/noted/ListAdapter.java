@@ -85,6 +85,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         if (files.isEmpty()) {
             // we must be at the root directory, but force it anyways
             // TODO: set ref back to root
+            setItemList(new ArrayList<File>());
 
         } else {
             File file = files.get(0);
@@ -103,7 +104,9 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 if (current.getId().equals(parent_id)) {
                     // found it, update
                     children.clear();
-                    children.addAll(current.getChildren().values());
+                    if (current.getChildren() != null) {
+                        children.addAll(current.getChildren().values());
+                    }
                     setItemList(children);
                     return;
 
@@ -150,10 +153,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
 
 
 
-//    public void removeItemFromList(FileOld item) {
-//        fileList.remove(item);
-//        this.notifyDataSetChanged();
-//    }
+
 
 
     @NonNull
@@ -246,9 +246,11 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 switch (item.getItemId()) {
                     case R.id.action_remove:
                         int position = holder.getAdapterPosition();
-                        fileList.remove(position);
-                        notifyItemRemoved(position);
-                        notifyDataSetChanged();
+                        File file = fileList.get(position);
+                        if (context instanceof MainActivity) {
+                            // tell main activity to remove file with myRef
+                            ((MainActivity) context).removeFile(file, parent);
+                        }
                         return true;
                     default:
                         return false;

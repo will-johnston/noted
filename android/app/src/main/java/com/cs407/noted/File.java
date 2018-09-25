@@ -97,7 +97,11 @@ public class File implements Comparable<File> {
     }
 
     public void setChildren(Map<String, File> children) {
-        this.children = children;
+        if (children == null) {
+            this.children.clear();
+        } else {
+            this.children = children;
+        }
     }
 
     public void addChild(File file) {
