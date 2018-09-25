@@ -44,6 +44,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
@@ -131,15 +132,19 @@ public class MainActivity extends AppCompatActivity {
                 for (DataSnapshot ds : dataSnapshot.getChildren()) {
                     com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
                     // locally set the parents
-                    file = setFileParents(file, root);
                     files.add(file);
                 }
                 // add files as root's children
+                root.setChildren(null);
+
+                // update parent
+                List<com.cs407.noted.File> updatedFiles = new ArrayList<>();
                 for (com.cs407.noted.File file: files) {
                     root.addChild(file);
+                    updatedFiles.add(setFileParents(file, root));
                 }
 
-                listAdapter.setItemListMaintainCurrentDirectory(files);
+                listAdapter.setItemListMaintainCurrentDirectory(updatedFiles);
             }
 
             @Override
@@ -356,6 +361,38 @@ public class MainActivity extends AppCompatActivity {
 
     public String getDatabaseRefPath() {
         return myRef.toString();
+    }
+
+    public void removeFile(com.cs407.noted.File file, com.cs407.noted.File parent) {
+        try {
+            if (parent.getId().equals("root")) {
+                // no child field in database
+                myRef.child(file.getId()).removeValue(getDatabaseCompletionListener(file));
+            } else {
+                myRef.child(file.getId()).removeValue(getDatabaseCompletionListener(file));
+            }
+        } catch (DatabaseException e) {
+            e.printStackTrace();
+            String err = String.format("Failed to remove %s", file.getTitle());
+            Toast.makeText(this, err, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+//    private com.cs407.noted.File getffffRootFromFile(com.cs407.noted.File file) {
+//        while (!file.getId().equals("root")) {
+//            file = file
+//        }
+//    }
+
+    private DatabaseReference.CompletionListener getDatabaseCompletionListener(final com.cs407.noted.File file) {
+        final Context context = this;
+        return new DatabaseReference.CompletionListener() {
+            @Override
+            public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+                String succ = String.format("Removed %s", file.getTitle());
+                Toast.makeText(context, succ, Toast.LENGTH_SHORT).show();
+            }
+        };
     }
 
 
