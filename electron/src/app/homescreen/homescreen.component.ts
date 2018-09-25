@@ -3,6 +3,7 @@ import { FilesystemService } from '../services/filesystem.service';
 import { Router } from '@angular/router';
 import { Note } from '../note/Note'
 import { Folder } from './Folder'
+import * as firebase from 'firebase';
 
 @Component({
   selector: 'app-homescreen',
@@ -40,6 +41,15 @@ export class HomescreenComponent implements OnInit {
     else {
       this.router.navigate(['note', { userid: this.userid, noteid : note.id, notepath: note.path}]);
     }
+  }
+  logout() {
+    firebase.auth().signOut().then(function() {
+      // Sign-out successful.
+      console.log("LOGOUT!")
+    }, function(error) {
+      // An error happened.
+      console.log(error.log)
+    });
   }
 
   ngOnInit() {

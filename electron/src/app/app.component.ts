@@ -33,7 +33,8 @@ export class AppComponent {
       } else {
         // If there is no user logged in send them to the login page
         //TODO: send to login page
-
+        console.log("User is logged out");
+        this.router.navigate(['login']);
       }
     });
   }
