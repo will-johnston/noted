@@ -12,9 +12,6 @@ The three types of fields in the user 'table' are DOCUMENT/FOLDER/IMAGE case-sen
 2. lastEditedBy may be filled in, its value is a userID
 3. children must be null
 
-Added values:
-htmltext - The text displayed in the note itself (in HTML format).
-
 #### FOLDER
 1. Type must be 'FOLDER'
 2. lastEditedBy must be null

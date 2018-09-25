@@ -5,7 +5,6 @@
             "type": "DOCUMENT",             //type must be DOCUMENT to signify this field is a note
             "lastEditedBy": "userID",       //only files can have this field as non-null
             "children": null,               //notes can't have children
-            "htmltext": null,               //only notes can have htmltext, may be null if note is empty, will have data if note has data
             "parent" : {}                   //Not sure about parent fields
         },
         "elementID": {                      //Folder type

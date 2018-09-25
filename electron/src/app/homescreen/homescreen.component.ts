@@ -14,7 +14,6 @@ export class HomescreenComponent implements OnInit {
 
   notes : Note[];
   folders: Folder[];
-  userid : string = null;
   constructor(private filesystemService : FilesystemService, private router : Router) { }
 
   getNotes() {
@@ -33,14 +32,7 @@ export class HomescreenComponent implements OnInit {
   gotoNote(id) {
     console.log("navigate with id=%s", id);
     //this.router.navigate(['note']);
-    var note = this.filesystemService.getNote(id);
-    if (note == null) {
-      //we have an error
-      alert("Failed to retrieve note from filesystemService");
-    }
-    else {
-      this.router.navigate(['note', { userid: this.userid, noteid : note.id, notepath: note.path}]);
-    }
+    this.router.navigate(['note', { id : id}]);
   }
   logout() {
     firebase.auth().signOut().then(function() {
@@ -53,7 +45,6 @@ export class HomescreenComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.userid = this.filesystemService.userid;
     this.getNotes();
     this.getFolders();
   }

@@ -102,6 +102,88 @@ public class MainActivity extends AppCompatActivity {
 
         // fab setup
         setUpFloatingActionMenu();
+
+        //check if user is logged in
+        currentUser = firebaseAuth.getCurrentUser();
+        if(currentUser == null) {
+            //show login activity
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        }
+        else {
+            String displayName = currentUser.getDisplayName();
+            //Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
+        }
+
+        // database setup
+        database = FirebaseDatabase.getInstance();
+        String path = String.format("users/%s", currentUser.getUid());
+        this.myRef = database.getReference(path);
+        DatabaseReference filesRef = database.getReference(path);
+        // add listener
+        filesRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot == null) {
+                    return;
+                }
+                List<com.cs407.noted.File> files = new ArrayList<>();
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
+                    // locally set the parents
+                    file = setFileParents(file, root);
+                    files.add(file);
+                }
+                // add files as root's children
+                for (com.cs407.noted.File file: files) {
+                    root.addChild(file);
+                }
+
+                listAdapter.setItemListMaintainCurrentDirectory(files);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        //check if user is logged in
+        currentUser = firebaseAuth.getCurrentUser();
+        if(currentUser == null) {
+            //show login activity
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        }
+
+        int cameraPermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
+        int storagePermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if(cameraPermission == PackageManager.PERMISSION_DENIED && storagePermission == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, BOTH_REQUEST);
+        }
+        else if(cameraPermission == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA}, CAMERA_REQUEST);
+        }
+        else if(storagePermission == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_REQUEST);
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     @Override
@@ -231,73 +313,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        //check if user is logged in
-        currentUser = firebaseAuth.getCurrentUser();
-        if(currentUser == null) {
-            //show login activity
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
-        }
-        else {
-            String displayName = currentUser.getDisplayName();
-            //Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
-            Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
-
-            // database setup
-            database = FirebaseDatabase.getInstance();
-            String path = String.format("users/%s", currentUser.getUid());
-            this.myRef = database.getReference(path);
-            final Context context = this;
-
-            DatabaseReference filesRef = database.getReference(path);
-            filesRef.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    if (dataSnapshot == null) {
-                        return;
-                    }
-                    List<com.cs407.noted.File> files = new ArrayList<>();
-                    for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                        com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
-                        // locally set the parents
-                        file = setFileParents(file, root);
-                        files.add(file);
-                    }
-                    // add files as root's children
-                    for (com.cs407.noted.File file: files) {
-                        root.addChild(file);
-                    }
-
-                    listAdapter.setItemListMaintainCurrentDirectory(files);
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                }
-            });
-        }
-
-        int cameraPermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
-        int storagePermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        if(cameraPermission == PackageManager.PERMISSION_DENIED && storagePermission == PackageManager.PERMISSION_DENIED) {
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, BOTH_REQUEST);
-        }
-        else if(cameraPermission == PackageManager.PERMISSION_DENIED) {
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA}, CAMERA_REQUEST);
-        }
-        else if(storagePermission == PackageManager.PERMISSION_DENIED) {
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_REQUEST);
-        }
-    }
-
-
-
-
     private com.cs407.noted.File setFileParents(com.cs407.noted.File file, com.cs407.noted.File parent) {
         if (file == null) { return null; }
         // set parent
@@ -337,6 +352,10 @@ public class MainActivity extends AppCompatActivity {
         // we want to do this twice, since we go from children attribute to folder
         // and then folder to actual parent dir
         myRef = myRef.getParent().getParent();
+    }
+
+    public String getDatabaseRefPath() {
+        return myRef.toString();
     }
 
 
