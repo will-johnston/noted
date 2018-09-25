@@ -15,14 +15,22 @@ public class DocumentActivity extends AppCompatActivity {
 
     private RichEditor mEditor;
     private TextView mPreview;
+    // private String filePath;
+    private String title;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // get path of where document was clicked, so that we can go back to the correct dir
+        Intent intent = getIntent();
+        // filePath = intent.getStringExtra("databaseReference");
+        title = intent.getStringExtra("title");
+
         setContentView(R.layout.activity_document);
 
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
+        actionBar.setTitle(title);
 
         mEditor = findViewById(R.id.editor);
         mEditor.setEditorHeight(200);
@@ -113,7 +121,9 @@ public class DocumentActivity extends AppCompatActivity {
         Toast.makeText(this, "Saved", Toast.LENGTH_LONG).show();
 
         //go back to main activity
-        Intent myIntent = new Intent(getApplicationContext(), MainActivity.class);
+        Intent myIntent = new Intent(getApplicationContext(), MainActivity.class)
+                .setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        // myIntent.putExtra("databaseReference", filePath);
         startActivityForResult(myIntent, 0);
 
         return true;

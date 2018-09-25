@@ -209,6 +209,13 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 }
                 else if(file.getType().equals(FileType.DOCUMENT.toString())) {
                     Intent intent = new Intent(context, DocumentActivity.class);
+//                    if (context instanceof MainActivity) {
+//
+//                        intent.putExtra("databaseReference", ((MainActivity) context).getDatabaseRefPath());
+//                    } else {
+//                        intent.putExtra("databaseReference", "");
+//                    }
+                    intent.putExtra("title", file.getTitle());
                     context.startActivity(intent);
                 }
                 else if(file.getType().equals(FileType.IMAGE.toString())) {
