@@ -1,5 +1,5 @@
 package com.cs407.noted;
 
-public enum ItemTypes {
+public enum FileType {
     DOCUMENT, FOLDER, IMAGE
 }
