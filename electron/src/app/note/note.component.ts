@@ -1,18 +1,13 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 
 import { QuillEditorComponent } from 'ngx-quill';
 import Quill from 'quill';
 
-import { AppComponent } from '../app.component';
-import { ElementRef } from '@angular/core';
-import { Router } from "@angular/router";
-import { Http, Response, Headers, RequestOptions, URLSearchParams } from "@angular/http";
-import { Observable } from "rxjs";
-declare var $: any;
-declare var recorderObject: any;
-declare function startRecording(button): void;
-declare function stopRecording(button): void;
+declare var MediaRecorder: any;
+declare var Blob: any;
+
+import { ElectronService } from 'ngx-electron';
 
 // override p with div tag
 const Parchment = Quill.import('parchment');
@@ -36,44 +31,54 @@ Quill.register(Font, true);
 })
 export class NoteComponent implements OnInit {
 
-  // Recording Stuff
-  isOn: boolean;
-  isOff: boolean;
-
   constructor(
-    fb: FormBuilder,
-    private elRef: ElementRef,
-    private appComponent: AppComponent,
-    private router: Router,
-    private http: Http) { }
+    private _electronService: ElectronService
+  ) { }
 
   @ViewChild('editor') editor: QuillEditorComponent
 
   ngOnInit() {
     this.editor.onContentChanged
-
-    // recorder object stuff
-    this.isOn = false;
-    this.isOff = true;
-    recorderObject.recorder();
-    //this.appComponent.isLogin = true;
-    //this.appComponent.wrapper = 'page-container';
   }
 
   setFocus($event) {
     $event.focus();
   }
 
-  public start(button) {
-    startRecording(button);
-    this.isOn = true;
-    this.isOff = false;
+  public start() {
+    var start = <HTMLInputElement>document.getElementById("start");
+    start.disabled = true;
+    navigator.getUserMedia({ audio: true }, (stream) => {
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+
+      const audioChunks = [];
+      mediaRecorder.addEventListener("dataavailable", event => {
+        audioChunks.push(event.data);
+      });
+
+      mediaRecorder.addEventListener("stop", () => {
+        const audioBlob = new Blob(audioChunks);
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = document.querySelector('audio');
+        audio.src = audioUrl;
+      });
+
+      var stop = <HTMLInputElement>document.getElementById("stop");
+      stop.disabled = false;
+      stop.onclick = function () {
+        var stop = <HTMLInputElement>document.getElementById("stop");
+        stop.disabled = true;
+        var start = <HTMLInputElement>document.getElementById("start");
+        start.disabled = false;
+        console.log("HERE");
+        mediaRecorder.stop();
+      }
+    }, this.handleError);
   };
 
-  public stop(button) {
-    stopRecording(button);
-    this.isOn = false;
-    this.isOff = true;
-  };
+  handleError(e) {
+    console.log(e)
+  }
 
 }
