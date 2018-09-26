@@ -76,4 +76,16 @@ export class Folder {
         }
         return null;
     }
+    //remove note from children (depth=1, don't go recursive)
+    removeNote(id : string) {
+        for (var i = 0; i < this.children.length; i++) {
+            var element = this.children[i];
+            if (element.id === id) {
+                //remove
+                this.children.splice(i);
+                return true;
+            }
+        }
+        return false;
+    }
 }

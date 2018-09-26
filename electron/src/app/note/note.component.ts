@@ -5,6 +5,7 @@ import { AngularFireDatabase, AngularFireObject } from '@angular/fire/database';
 import { AngularFireStorageModule } from '@angular/fire/storage';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import * as firebase from 'firebase';
+import { FilesystemService } from '../services/filesystem.service';
 import { Note } from './Note';
 
 import { QuillEditorComponent } from 'ngx-quill';
@@ -41,7 +42,7 @@ export class NoteComponent implements OnInit {
   subscribed : boolean = false;
   text : string;
   html : string;
-  constructor(private route: ActivatedRoute, private router: Router, private fireDatabase: AngularFireDatabase) { 
+  constructor(private route: ActivatedRoute, private router: Router, private fireDatabase: AngularFireDatabase, private filesystemService : FilesystemService) { 
     this.text = "";
     this.html = "";
     console.log(Quill);
@@ -94,10 +95,15 @@ export class NoteComponent implements OnInit {
       this.noteRef = this.fireDatabase.object(notepath);
       this.noteRef.valueChanges()
       .subscribe(value => {
-        //console.log(value);
-        this.noteInfo = new Note(value.title, value.id, null, notepath);
-        this.noteInfo.text = value.htmltext;
-        this.updateEditorText(this.noteInfo.text);
+        if (value == null) {
+          //note has been destroyed
+          //do nothing out of respect
+        }
+        else {
+          this.noteInfo = new Note(value.title, value.id, null, notepath);
+          this.noteInfo.text = value.htmltext;
+          this.updateEditorText(this.noteInfo.text);
+        }
       });
     }
   }
@@ -109,5 +115,25 @@ export class NoteComponent implements OnInit {
   saveNote() {
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
     this.noteRef.update({ htmltext : this.html});
+  }
+  deleteNote() {
+    /*
+      TODO:
+        1. Create a button to delete a note 
+          I've created a temporary button for testing, make an actual button
+        2. Create a ‘confirm deletion’ modal to confirm the user’s intention to delete the note
+        3. If confirm, call do what's below, else do nothing
+    */
+    this.__delete();
+  }
+  //Permanently deletes a note
+  __delete() {
+    if (this.filesystemService.deleteNote(this.noteInfo)) {
+      this.router.navigate(['homescreen']);
+    }
+    else {
+      console.error("Couldn't delete note from local filesystem");
+      this.router.navigate(['homescreen']);
+    }
   }
 }

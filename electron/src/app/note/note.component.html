@@ -5,5 +5,6 @@
     <h3>Loading</h3>
 </ng-template>
 <button (click)='saveNote()'>Save</button>
+<button (click)='deleteNote()'>Delete</button>
 <a routerLink="/homescreen"><button>Back</button></a>
 <quill-editor #editor [style]="{height: '200px'}" (onEditorCreated)="setFocus($event)"></quill-editor>
