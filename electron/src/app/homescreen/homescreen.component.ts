@@ -15,7 +15,9 @@ export class HomescreenComponent implements OnInit {
   notes : Note[];
   folders: Folder[];
   userid : string = null;
-  constructor(private filesystemService : FilesystemService, private router : Router) { }
+  constructor(private filesystemService : FilesystemService, private router : Router) {
+
+   }
 
   getNotes() {
     this.notes = this.filesystemService.notes;
@@ -50,6 +52,21 @@ export class HomescreenComponent implements OnInit {
       // An error happened.
       console.log(error.log)
     });
+  }
+  deleteNote(id : string) {
+    /*
+      TODO:
+        1. Create a button to delete a note 
+          I've created a temporary button for testing, make an actual button
+        2. Create a ‘confirm deletion’ modal to confirm the user’s intention to delete the note
+        3. If confirm, call do what's below, else do nothing
+    */
+    if (this.filesystemService.deleteNoteFromId(id)) {
+      //works
+    }
+    else {
+      //didn't work
+    }
   }
 
   ngOnInit() {

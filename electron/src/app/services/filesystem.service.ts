@@ -147,4 +147,43 @@ export class FilesystemService {
     this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "FOLDER", children : null});
     //this.folders.push(new Folder(name, null, null));
   }
+  deleteNote(note : Note) {
+    var noteRef = this.fireDatabase.object(note.path);
+    noteRef.remove();
+    return this.deleteLocalNote(note);
+  }
+  deleteNoteFromId(id : string) {
+    var note = this.getNote(id);
+    if (note == null) {
+      console.error("Unable to retrieve note in the local file system");
+      return false;
+    }
+    this.deleteNote(note);
+  }
+  //deletes the local copy of the note
+  deleteLocalNote(note : Note) {
+    var actualNote = this.getNote(note.id);
+    var folder = actualNote.folder;
+    if (folder == null) {
+      //remove from the root folder
+      for (var i = 0; i < this.notes.length; i++) {
+        var noteRef = this.notes[i];
+        if (noteRef.id === note.id) {
+          this.notes.splice(i);
+          return true;
+        }
+      }
+      console.error("Failed to find note in root level, couldn't deleteNote");
+      return false;
+    }
+    else {
+      if (actualNote.folder.removeNote(note.id)) {
+        return true;
+      }
+      else {
+        console.error("Failed to remove note!");
+        return false;
+      }
+    }
+  }
 }
