@@ -39,6 +39,7 @@ export class NoteComponent implements OnInit {
   notepath : string = null;     //database path for the note
   noteInfo : Note = null;
   noteRef : AngularFireObject<any>;
+  noteTextRef : AngularFireObject<any>;
   subscribed : boolean = false;
   text : string;
   html : string;
@@ -71,14 +72,14 @@ export class NoteComponent implements OnInit {
         console.log("User ID: %s", params['userid']);
         this.userid = params['userid'];
       }
+      if (params['noteid'] !== undefined) {
+        console.log("Note ID: %s", params['noteid']);
+        this.noteid = params['noteid'];
+      }
       if (params['notepath'] !== undefined) {
         console.log("Note path: %s", params['notepath']);
         this.notepath = params['notepath'];
         this.startSubscription(params['notepath']);
-      }
-      if (params['noteid'] !== undefined) {
-        console.log("Note ID: %s", params['noteid']);
-        this.noteid = params['noteid'];
       }
     });
   }
@@ -89,6 +90,19 @@ export class NoteComponent implements OnInit {
       this.editor.quillEditor.root.innerHTML = text;
     }
   }
+  createFileContents(value) {
+    //console.log("value == null %s, value.key == null %s", value == null, value.key == null);
+    //console.log("payload: %o", value.payload.val());
+    this.fireDatabase.object("/fileContents/" + this.noteid).set({data : ""})
+    .then(_ => {
+      console.log("created File contents successfully");
+      console.log("creating at %s", "fileContents/" + this.noteid);
+      //this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
+    })
+    .catch(err => {
+      console.log("createFileContents err: %s", err);
+    });
+  }
   startSubscription(notepath : string) {
     if (!this.subscribed) {
       //this.noteRef = this.fireDatabase.object(notepath).valueChanges();
@@ -96,12 +110,29 @@ export class NoteComponent implements OnInit {
       this.noteRef.valueChanges()
       .subscribe(value => {
         if (value == null) {
+          this.noteInfo = null;
           //note has been destroyed
           //do nothing out of respect
         }
         else {
           this.noteInfo = new Note(value.title, value.id, null, notepath);
-          this.noteInfo.text = value.htmltext;
+        }
+      });
+      this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
+      console.log("noteTextRef %s", "fileContents/" + this.noteid);
+      this.noteTextRef.valueChanges()
+      .subscribe(value => {
+        console.log("noteTextRef value: %o", value);
+        if (value === null) {
+          if (this.noteInfo !== null) {
+            this.createFileContents(value);
+          }
+          else {
+            //has probably been destroyed
+          }
+        }
+        else {
+          this.noteInfo.text = value.data;
           this.updateEditorText(this.noteInfo.text);
         }
       });
@@ -114,7 +145,8 @@ export class NoteComponent implements OnInit {
   //Save the file in firebase
   saveNote() {
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
-    this.noteRef.update({ htmltext : this.html});
+    //this.noteRef.update({ htmltext : this.html});
+    this.noteTextRef.update({data : this.html});
   }
   deleteNote() {
     /*

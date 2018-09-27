@@ -149,7 +149,9 @@ export class FilesystemService {
   }
   deleteNote(note : Note) {
     var noteRef = this.fireDatabase.object(note.path);
+    var noteFileRef = this.fireDatabase.object("fileContents/" + note.id);
     noteRef.remove();
+    noteFileRef.remove();
     return this.deleteLocalNote(note);
   }
   deleteNoteFromId(id : string) {
