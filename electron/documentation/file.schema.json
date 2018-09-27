@@ -1,0 +1,5 @@
+{
+    "fileId" : {                        //fileId is the same as the elementId which references this file
+        "data" : "some data"            //may be null, inherits the bound type
+    }
+}
