@@ -27,7 +27,7 @@ export class HomescreenComponent implements OnInit {
 
   getNotes() {
     this.notes = this.filesystemService.currentNotes;
-    console.log("got notes " + this.notes);
+    //console.log("got notes " + this.notes);
   }
   getFolders() {
     this.folders = this.filesystemService.currentFolders;

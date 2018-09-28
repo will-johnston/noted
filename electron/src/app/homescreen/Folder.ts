@@ -102,12 +102,22 @@ export class Folder {
             if (child.type == "FOLDER") {
                 this.folders.push(child);
             }
-            else if (child.type == "NOTE") {
+            else if (child.type == "DOCUMENT") {
                 this.notes.push(child);
             }
             else {
                 console.error("Unknown child");
             }
         }
+    }
+    getFolder(id : string) {
+        for (var i = 0; i < this.folders.length; i++) {
+            if (this.folders[i].id === id)
+                return this.folders[i];
+            var folder : Folder = this.folders[i].getFolder(id);
+            if (folder != null)
+                return folder;
+        }
+        return null;
     }
 }

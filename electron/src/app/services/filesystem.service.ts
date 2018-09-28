@@ -5,7 +5,8 @@ import * as firebase from 'firebase';
 import { Observable } from 'rxjs';
 import { Note } from '../note/Note';
 import { Folder } from '../homescreen/Folder'
-import { Path } from '../homescreen/Path';
+import { Path, PathType } from '../homescreen/Path';
+import { UserHelperService } from './userhelper.service';
 
 @Injectable({
   providedIn: 'root'
@@ -22,24 +23,29 @@ export class FilesystemService {
   private values : Observable<any>;
   private subscribed : boolean;
 
-  constructor(private fireDatabase: AngularFireDatabase) {
+  constructor(private fireDatabase: AngularFireDatabase, private userHelper : UserHelperService) {
     this.notes = Array();
     this.folders = Array();
     this.currentNotes = Array();
     this.currentFolders = Array();
-    this.currentPath = '/';
-    this.updateCurrentState(['/']);
-    //this.userid = 'PSkJKXOw66gP0Y862X5GJMNViXJ3';
-    //this.startSubscription();
-    firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        console.log("userid : %s", user.uid);
-        this.userid = user.uid;
-        this.startSubscription();
-      }
-    });
-    //fireDatabase.list('')
-    //this.getNotes();
+    this.currentPath = new Path(PathType.users);
+    if (userHelper.currentUser != null) {
+      this.userid = userHelper.currentUser.uid;
+      this.currentPath.addUserId(this.userid);
+      this.updateCurrentState(['/']);
+      this.startSubscription();
+    }
+    else {
+      firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+          console.log("userid : %s", user.uid);
+          this.userid = user.uid;
+          this.updateCurrentState(['/']);
+          this.currentPath.addUserId(this.userid);
+          this.startSubscription();
+        }
+      });
+    }
    }
   getNotes() {
       //this.notes.push({ id: 0, name : "note1", folder : null});
@@ -94,6 +100,19 @@ export class FilesystemService {
     }
     return false;
   }
+  getFolder(id : string) {
+    for (var i = 0; i < this.folders.length; i++) {
+        if (this.folders[i].id === id)
+            return this.folders[i];
+        var folder : Folder = this.folders[i].getFolder(id);
+        if (folder != null)
+            return folder;
+    }
+    return null;
+  }
+  inRootDirectory() {
+    return (this.notes == this.currentNotes && this.folders == this.currentFolders);
+  }
   //resolvePath()
   startSubscription() {
     if (!this.subscribed) {
@@ -106,14 +125,62 @@ export class FilesystemService {
       });*/
       this.values = this.fireDatabase.list('users/' + this.userid).snapshotChanges();
       this.values.subscribe(actions => {
-        console.log("Action %o", actions);
+        //console.log("Action %o", actions);
         actions.forEach(action => {
-          /*console.log("Action Key %s", action.key);
           console.log("Action Type %s", action.type);
-          console.log("Payload Value %o", action.payload.val());*/
-          if (action.payload.val().id == null) {
-            console.log("null id on insert, must set id");
-            this.fireDatabase.list('users/' + this.userid).update(action.key, {id: action.key});
+          if (action.type === "child_changed") {
+            /*if (action.payload.val().id == null) {
+              console.log("null id on child_changed, must set id");
+              this.fireDatabase.list('users/' + this.userid).update(action.key, {id: action.key});
+            }*/
+            //console.log("Action type: %s, key: %s, payload: %o", action.type, action.key, action.payload.val());
+            //console.log("Action.children: %o, keys: %o", action.payload.val().children, Object.keys(action.payload.val().children));
+            
+            if (action.payload.val() != null) {
+              var keys = Object.keys(action.payload.val().children);
+              var child = action.payload.val().children[keys[0]];
+              console.log("Child Object: %o", child);
+              if (child.id == null) {
+                console.log("must set id");
+                this.fireDatabase.list(this.currentPath.toInsertString()).update(keys[0], { id : keys[0]});
+              }
+            }
+          }
+          if (action.type === "value") {
+            //inital add
+            var element = action.payload.val();
+            console.log("element: %o", element);
+            if (element.type === "DOCUMENT") {
+              if (!this.containsNote(element.id)) {
+                //TODO set proper path
+                //TODO add to relevant folder
+                var note = new Note(element.title, element.id, null, 'users/' + this.userid + '/' + element.id + '/');
+                this.notes.push(note);
+              }
+            }
+            else if (element.type === "FOLDER") {
+              //TODO change containsFolder to do recursive search
+              if (!this.containsFolder(element.id)) {
+                //TODO set proper path
+                //TODO add to relevant folder
+                var folder = new Folder(element.title, element.id, element.children, 'users/' + this.userid + '/' + element.id + '/');
+                this.folders.push(folder);
+              }
+            }
+            else {
+              console.error("Don't know how to handle type: %s", element.type);
+            }
+          }
+          else if (action.type === "child_added") {
+              //must set id
+              if (action.payload.val().id == null) {
+                console.log("null id on insert, must set id");
+                this.fireDatabase.list('users/' + this.userid).update(action.key, {id: action.key});
+              }
+          }
+          else if (action.type === "child_removed") {
+            //this doesn't get called by firebase for some reason
+            //console.log("remove that shit");
           }
           else {
             /*
@@ -124,23 +191,7 @@ export class FilesystemService {
               Child paths are different in that there is also the additional value (users/abcd/elementid232/children/childelement4324)
               If using the firebase cli (specifically database:get) use a forward slash at the start of the path (/users/{userid}/)
             */
-            var element = action.payload.val();
-            console.log("element: %o", element);
-            if (element.type === "DOCUMENT") {
-              if (!this.containsNote(element.id)) {
-                var note = new Note(element.title, element.id, null, 'users/' + this.userid + '/' + element.id + '/');
-                this.notes.push(note);
-              }
-            }
-            else if (element.type === "FOLDER") {
-              if (!this.containsFolder(element.id)) {
-                var folder = new Folder(element.title, element.id, element.children, 'users/' + this.userid + '/' + element.id + '/');
-                this.folders.push(folder);
-              }
-            }
-            else {
-              console.error("Don't know how to handle type: %s", element.type);
-            }
+            
           }
         });
       });
@@ -148,12 +199,12 @@ export class FilesystemService {
     }
   }
   createNote(name : string) {
-    this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
-    //this.userRef.push({ title : name, type : "DOCUMENT"});
+    //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
+    this.fireDatabase.list(this.currentPath.toInsertString()).push({ title : name, type : "DOCUMENT", id : null});
   }
   createFolder(name : string) {
-    this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "FOLDER", children : null});
-    //this.folders.push(new Folder(name, null, null));
+    //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "FOLDER", children : null});
+    this.fireDatabase.list(this.currentPath.toInsertString()).push({ title : name, type : "FOLDER", children : null});
   }
   deleteNote(note : Note) {
     var noteRef = this.fireDatabase.object(note.path);
@@ -207,7 +258,9 @@ export class FilesystemService {
     }
     console.log("Given folderPath: %o", folderPath);
     var lastFolder : Folder;
-    var path : Path;
+    //keep track for easy reference with regards to insert/delete
+    var path : Path = new Path(PathType.users);
+    path.addUserId(this.userid);
     for (var i = 0; i < folderPath.length; i++) {
       var folderName : string = folderPath[i];
       if (i == 0) {
@@ -219,6 +272,7 @@ export class FilesystemService {
           //update to the root folder
           this.currentNotes = this.notes;
           this.currentFolders = this.folders;
+          this.currentPath = path;
           //this.currentPath = '/';
           return;
         }
@@ -234,6 +288,7 @@ export class FilesystemService {
         for (var j = 0; j < this.folders.length; j++) {
           if (this.folders[j].name === folderName) {
             lastFolder = this.folders[j];
+            path.addId(lastFolder.id);
             break;
           }
         }
@@ -243,11 +298,12 @@ export class FilesystemService {
         for (var j = 0; j < lastFolder.children.length; j++) {
           if (lastFolder.children[j].type === "FOLDER" && lastFolder.children[j].name == folderName) {
             lastFolder = lastFolder.children[j];
+            path.addChild(lastFolder.id);
             break;
           }
         }
       }
-      //check if found
+      //check if not found
       if (lastFolder.name !== folderName) {
         console.error("Unable to find folder %s", folderName);
         return;
@@ -257,7 +313,7 @@ export class FilesystemService {
       if (i == folderPath.length - 1) {
         this.currentFolders = lastFolder.folders;
         this.currentNotes = lastFolder.notes;
-        //this.currentPath = 
+        this.currentPath = path;
       }
     }
   }
