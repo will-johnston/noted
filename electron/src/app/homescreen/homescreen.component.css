@@ -4,3 +4,9 @@
 .note {
     background-color: lightgray;
 }
+#navbar {
+
+}
+.mat-list-item {
+    float: left;
+}

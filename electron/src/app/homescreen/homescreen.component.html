@@ -2,12 +2,29 @@
   <a routerLink="/note"><button>Go to the Notescreen</button></a>
   <button type="button" class="btn btn-danger" (click)="logout()">Logout</button>
 </nav>
+<div id="navbar">
+  <mat-list>
+    <mat-list-item
+      *ngFor="let value of navLoc"
+    >
+      <button mat-raised-button (click)="goBackTo(value)">{{value}}</button>
+    </mat-list-item>
+    <!--<mat-divider [inset]="true"></mat-divider>
+    <mat-list-item>Item 2</mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>Item 3</mat-list-item>-->
+  </mat-list>
+  
+</div>
+<div style="height:50px">
+  <p></p>
+</div>
 <!--<ul class="notes">
   <li *ngFor="let note of notes">
     <span class="badge">{{note.name}}</span> {{note.id}}
   </li>
 </ul>-->
-<h3>My folders</h3>
+<!--<h3>My folders</h3>-->
 <!--<ul class="folders">
   <li *ngFor="let folder of folders">
     <span class="badge">{{folder.name}}</span> {{folder.id}}, childCount: {{folder.childCount}}
@@ -17,12 +34,13 @@
   <mat-grid-tile class="folder"
       *ngFor="let folder of folders"
       colspan="1"
-      rowspan="1">
+      rowspan="1"
+      (click)="gotoFolder(folder.name)">
     {{folder.name}}
   </mat-grid-tile>
 </mat-grid-list>
 
-<h2>My notes</h2>
+<!--<h2>My notes</h2>-->
 <mat-grid-list cols="4" rowHeight="100px">
   <mat-grid-tile class="note"
       *ngFor="let note of notes"

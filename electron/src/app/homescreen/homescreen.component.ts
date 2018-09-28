@@ -3,6 +3,7 @@ import { FilesystemService } from '../services/filesystem.service';
 import { Router } from '@angular/router';
 import { Note } from '../note/Note'
 import { Folder } from './Folder'
+import { NavList } from './NavList';
 import * as firebase from 'firebase';
 
 @Component({
@@ -15,8 +16,13 @@ export class HomescreenComponent implements OnInit {
   notes : Note[];
   folders: Folder[];
   userid : string = null;
+  //navLoc : string[];
+  navList : NavList<string>;
+  navLoc : string[];
   constructor(private filesystemService : FilesystemService, private router : Router) {
-
+    this.navList = new NavList<string>();
+    this.navLoc = this.navList.list;
+    this.navList.push("/");
    }
 
   getNotes() {
@@ -31,6 +37,12 @@ export class HomescreenComponent implements OnInit {
   }
   createNote(name) {
     this.filesystemService.createNote(name);
+  }
+  gotoFolder(name) {
+    this.navList.push(name);
+  }
+  goBackTo(name) {
+    this.navList.goto(name);
   }
   gotoNote(id) {
     console.log("navigate with id=%s", id);
