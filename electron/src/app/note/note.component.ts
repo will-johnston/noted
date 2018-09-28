@@ -1,13 +1,15 @@
-import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+
+import { ElectronService } from 'ngx-electron';
+import { AngularFireStorage } from 'angularfire2/storage';
 
 import { QuillEditorComponent } from 'ngx-quill';
 import Quill from 'quill';
 
 declare var MediaRecorder: any;
 declare var Blob: any;
-
-import { ElectronService } from 'ngx-electron';
 
 // override p with div tag
 const Parchment = Quill.import('parchment');
@@ -29,16 +31,31 @@ Quill.register(Font, true);
   styleUrls: ['./note.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class NoteComponent implements OnInit {
+export class NoteComponent implements OnInit, OnDestroy {
 
-  constructor(
-    private _electronService: ElectronService
-  ) { }
+  private id: string;
+  private sub: any;
 
   @ViewChild('editor') editor: QuillEditorComponent
 
+  constructor(
+    private _electronService: ElectronService,
+    private storage: AngularFireStorage,
+    private route: ActivatedRoute
+  ) {
+    this.sub = this.route.params.subscribe(params => {
+      if (params['id']) {
+        this.id = params['id'];
+      }
+    });
+
+  }
+
   ngOnInit() {
-    this.editor.onContentChanged
+  }
+
+  ngOnDestroy() {
+    this.sub.unsubscribe();
   }
 
   setFocus($event) {
@@ -46,33 +63,56 @@ export class NoteComponent implements OnInit {
   }
 
   public start() {
+    // toggle start button
     var start = <HTMLInputElement>document.getElementById("start");
     start.disabled = true;
+
     navigator.getUserMedia({ audio: true }, (stream) => {
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorder.start();
 
+      // gather chunks
       const audioChunks = [];
       mediaRecorder.addEventListener("dataavailable", event => {
         audioChunks.push(event.data);
       });
 
+      // when recording is stopped
       mediaRecorder.addEventListener("stop", () => {
         const audioBlob = new Blob(audioChunks);
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = document.querySelector('audio');
         audio.src = audioUrl;
+
+        // store the recording in firebase storage
+        // metadata
+        //console.log("USER: " + this.user)
+        console.log("NOTE: " + this.id);
+        /*
+        var metadata = {
+          customMetadata: {
+            'note': this.id
+          }
+        }
+        */
+
+        var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob /*,metadata*/);
+
       });
 
+      // toggle stop button
       var stop = <HTMLInputElement>document.getElementById("stop");
       stop.disabled = false;
+
       stop.onclick = function () {
+        // stop recording
+        mediaRecorder.stop();
+
+        // toggle buttons
         var stop = <HTMLInputElement>document.getElementById("stop");
         stop.disabled = true;
         var start = <HTMLInputElement>document.getElementById("start");
         start.disabled = false;
-        console.log("HERE");
-        mediaRecorder.stop();
       }
     }, this.handleError);
   };
