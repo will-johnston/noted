@@ -2,7 +2,6 @@
   <a routerLink="/note"><button>Go to the Notescreen</button></a>
   <button type="button" class="btn btn-danger" (click)="logout()">Logout</button>
 </nav>
-
 <!--<ul class="notes">
   <li *ngFor="let note of notes">
     <span class="badge">{{note.name}}</span> {{note.id}}
@@ -34,6 +33,9 @@
         <input #idField id="idField" type="hidden" value={{note.id}} /> 
         <br />
         <button mat-raised-button color="primary" (click)="gotoNote(idField.value)">Go to Note</button>
+        <button mat-icon-button color="accent" (click)="deleteNote(idField.value)">
+          <mat-icon aria-label="Delete">delete</mat-icon>
+        </button>
       </div>
     
   </mat-grid-tile>

@@ -2,7 +2,7 @@
 The following are the schemas for the database 'tables'
 
 ## User
-(JSON Schema)[user.schema.json]
+[JSON Schema](user.schema.json)
 
 ### Types
 The three types of fields in the user 'table' are DOCUMENT/FOLDER/IMAGE case-sensitive.
@@ -21,4 +21,11 @@ The three types of fields in the user 'table' are DOCUMENT/FOLDER/IMAGE case-sen
 1. lastEditedBy and children must be null
 
 ## File
-- Not sure if we need to store files in the database
+[JSON Schema](file.schema.json)
+
+Note's have their data contents stored seperately in the fileContents/ folder under the same id. So (users/{userid}/{fileid}) has its text stored in (fileContents/{fileid}). Per this decision, deletion/creation takes 2x operations.
+
+File's don't have types, so their type must be implied from the one-way binding of users/ -> fileContents.
+
+### DOCUMENT
+1. Text contents of the document are stored in the "data" field as an html encoded string.

@@ -357,6 +357,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void removeFile(com.cs407.noted.File file, com.cs407.noted.File parent) {
         // TODO: remove user from fileContents list
+
         try {
             if (parent.getId().equals("root")) {
                 // no child field in database

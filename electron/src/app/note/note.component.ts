@@ -1,9 +1,16 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { Router, ActivatedRoute, Params } from '@angular/router';
+import { AngularFireDatabase, AngularFireObject } from '@angular/fire/database';
+import { AngularFireStorageModule } from '@angular/fire/storage';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import * as firebase from 'firebase';
+import { FilesystemService } from '../services/filesystem.service';
+import { Note } from './Note';
 
 import { QuillEditorComponent } from 'ngx-quill';
-
 import Quill from 'quill';
+import { Observable } from 'rxjs';
 
 // override p with div tag
 const Parchment = Quill.import('parchment');
@@ -27,16 +34,138 @@ Quill.register(Font, true);
 })
 export class NoteComponent implements OnInit {
 
-  constructor() { }
+  userid : string = null;       //database userid of the note
+  noteid : string = null;       //database id of the note
+  notepath : string = null;     //database path for the note
+  noteInfo : Note = null;
+  noteRef : AngularFireObject<any>;
+  noteTextRef : AngularFireObject<any>;
+  subscribed : boolean = false;
+  text : string;
+  html : string;
+  constructor(private route: ActivatedRoute, private router: Router, private fireDatabase: AngularFireDatabase, private filesystemService : FilesystemService) { 
+    this.text = "";
+    this.html = "";
+    console.log(Quill);
+  }
 
   @ViewChild('editor') editor: QuillEditorComponent
 
   ngOnInit() {
-    this.editor.onContentChanged
+    console.log(this.editor);
+    this.editor
+      .onContentChanged
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged()
+      )
+      .subscribe(data => {
+        //console.log('view child + directly subscription', data)
+        this.text = data.text;
+        this.html = data.html;
+        console.log("text %s, html %s", data.text, data.html);
+    });
+    this.editor.placeholder = "Start writing your masterpiece!";
+    //this.editor.content = "Loading Note...";
+    this.route.params.forEach((params: Params) => {
+      if (params['userid'] !== undefined || params['userid'] !== null) {
+        console.log("User ID: %s", params['userid']);
+        this.userid = params['userid'];
+      }
+      if (params['noteid'] !== undefined) {
+        console.log("Note ID: %s", params['noteid']);
+        this.noteid = params['noteid'];
+      }
+      if (params['notepath'] !== undefined) {
+        console.log("Note path: %s", params['notepath']);
+        this.notepath = params['notepath'];
+        this.startSubscription(params['notepath']);
+      }
+    });
+  }
+
+  //This is definitely cheating, but it seems to work... [Ryan]
+  updateEditorText(text : string) {
+    if (text != null) {
+      this.editor.quillEditor.root.innerHTML = text;
+    }
+  }
+  createFileContents(value) {
+    //console.log("value == null %s, value.key == null %s", value == null, value.key == null);
+    //console.log("payload: %o", value.payload.val());
+    this.fireDatabase.object("/fileContents/" + this.noteid).set({data : ""})
+    .then(_ => {
+      console.log("created File contents successfully");
+      console.log("creating at %s", "fileContents/" + this.noteid);
+      //this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
+    })
+    .catch(err => {
+      console.log("createFileContents err: %s", err);
+    });
+  }
+  startSubscription(notepath : string) {
+    if (!this.subscribed) {
+      //this.noteRef = this.fireDatabase.object(notepath).valueChanges();
+      this.noteRef = this.fireDatabase.object(notepath);
+      this.noteRef.valueChanges()
+      .subscribe(value => {
+        if (value == null) {
+          this.noteInfo = null;
+          //note has been destroyed
+          //do nothing out of respect
+        }
+        else {
+          this.noteInfo = new Note(value.title, value.id, null, notepath);
+        }
+      });
+      this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
+      console.log("noteTextRef %s", "fileContents/" + this.noteid);
+      this.noteTextRef.valueChanges()
+      .subscribe(value => {
+        console.log("noteTextRef value: %o", value);
+        if (value === null) {
+          if (this.noteInfo !== null) {
+            this.createFileContents(value);
+          }
+          else {
+            //has probably been destroyed
+          }
+        }
+        else {
+          this.noteInfo.text = value.data;
+          this.updateEditorText(this.noteInfo.text);
+        }
+      });
+    }
   }
 
   setFocus($event) {
     $event.focus();
   }
-
+  //Save the file in firebase
+  saveNote() {
+    //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
+    //this.noteRef.update({ htmltext : this.html});
+    this.noteTextRef.update({data : this.html});
+  }
+  deleteNote() {
+    /*
+      TODO:
+        1. Create a button to delete a note 
+          I've created a temporary button for testing, make an actual button
+        2. Create a ‘confirm deletion’ modal to confirm the user’s intention to delete the note
+        3. If confirm, call do what's below, else do nothing
+    */
+    this.__delete();
+  }
+  //Permanently deletes a note
+  __delete() {
+    if (this.filesystemService.deleteNote(this.noteInfo)) {
+      this.router.navigate(['homescreen']);
+    }
+    else {
+      console.error("Couldn't delete note from local filesystem");
+      this.router.navigate(['homescreen']);
+    }
+  }
 }

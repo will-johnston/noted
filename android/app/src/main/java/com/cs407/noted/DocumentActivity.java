@@ -67,9 +67,8 @@ public class DocumentActivity extends AppCompatActivity {
 
         this.ref.addValueEventListener(getListener());
 
-        knife = (KnifeText) findViewById(R.id.knife);
+        knife = findViewById(R.id.knife);
         knife.addTextChangedListener(getTextWatcher());
-        // knife.setSelection(knife.getEditableText().length());
         setupBold();
         setupItalic();
         setupUnderline();
@@ -357,12 +356,6 @@ public class DocumentActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-//                if (knife.getSelectionStart() != -1 && knife.getSelectionEnd() != -1) {
-//                    knife.setSelection(knife.getSelectionStart(), knife.getSelectionEnd());
-//                }
-
-
-
                 currentHtml = knife.toHtml();
                 if (!currentHtml.equals(changedHtml)) {
                     setStartEnd(knife.getSelectionStart(), knife.getSelectionEnd());

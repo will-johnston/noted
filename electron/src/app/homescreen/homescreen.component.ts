@@ -14,7 +14,10 @@ export class HomescreenComponent implements OnInit {
 
   notes : Note[];
   folders: Folder[];
-  constructor(private filesystemService : FilesystemService, private router : Router) { }
+  userid : string = null;
+  constructor(private filesystemService : FilesystemService, private router : Router) {
+
+   }
 
   getNotes() {
     this.notes = this.filesystemService.notes;
@@ -32,7 +35,14 @@ export class HomescreenComponent implements OnInit {
   gotoNote(id) {
     console.log("navigate with id=%s", id);
     //this.router.navigate(['note']);
-    this.router.navigate(['note', { id : id}]);
+    var note = this.filesystemService.getNote(id);
+    if (note == null) {
+      //we have an error
+      alert("Failed to retrieve note from filesystemService");
+    }
+    else {
+      this.router.navigate(['note', { userid: this.userid, noteid : note.id, notepath: note.path}]);
+    }
   }
   logout() {
     firebase.auth().signOut().then(function() {
@@ -43,8 +53,24 @@ export class HomescreenComponent implements OnInit {
       console.log(error.log)
     });
   }
+  deleteNote(id : string) {
+    /*
+      TODO:
+        1. Create a button to delete a note 
+          I've created a temporary button for testing, make an actual button
+        2. Create a ‘confirm deletion’ modal to confirm the user’s intention to delete the note
+        3. If confirm, call do what's below, else do nothing
+    */
+    if (this.filesystemService.deleteNoteFromId(id)) {
+      //works
+    }
+    else {
+      //didn't work
+    }
+  }
 
   ngOnInit() {
+    this.userid = this.filesystemService.userid;
     this.getNotes();
     this.getFolders();
   }
