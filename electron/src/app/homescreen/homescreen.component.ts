@@ -26,11 +26,11 @@ export class HomescreenComponent implements OnInit {
    }
 
   getNotes() {
-    this.notes = this.filesystemService.notes;
+    this.notes = this.filesystemService.currentNotes;
     console.log("got notes " + this.notes);
   }
   getFolders() {
-    this.folders = this.filesystemService.folders;
+    this.folders = this.filesystemService.currentFolders;
   }
   createFolder(name) {
     this.filesystemService.createFolder(name);
@@ -40,9 +40,15 @@ export class HomescreenComponent implements OnInit {
   }
   gotoFolder(name) {
     this.navList.push(name);
+    this.filesystemService.updateCurrentState(this.navList.list);
+    this.getNotes();
+    this.getFolders();
   }
   goBackTo(name) {
     this.navList.goto(name);
+    this.filesystemService.updateCurrentState(this.navList.list);
+    this.getNotes();
+    this.getFolders();
   }
   gotoNote(id) {
     console.log("navigate with id=%s", id);

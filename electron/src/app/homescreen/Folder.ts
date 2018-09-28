@@ -7,7 +7,11 @@ export class Folder {
     childCount : number;
     type : string = "FOLDER";
     path : string = null;
+    public notes : Note[];
+    public folders : Folder[];
     constructor(name : string, id : string, children : any[], path : string) {
+        this.notes = Array();
+        this.folders = Array();
         this.name = name;
         this.id = id;
         this.childCount = 0;
@@ -24,7 +28,7 @@ export class Folder {
             //console.log("Folder has valid path %s", this.path);
         }
     }
-    resolveChildren(children : any[]) {
+    resolveChildren(children: any[]) {
         if (children == null) {
             this.children = null;
             return;
@@ -45,8 +49,9 @@ export class Folder {
                 else {
                     console.error("Don't know how to resolve this type! Type %s", value.type);
                 }
-              }
+            }
         }
+        this.createChildBindings();
     }
     getNote(id : string) {
         for (var i = 0; i < this.children.length; i++) {
@@ -87,5 +92,22 @@ export class Folder {
             }
         }
         return false;
+    }
+    createChildBindings() {
+        if (this.children == null) {
+            return;
+        }
+        for (var i = 0; i < this.children.length; i++) {
+            var child = this.children[i];
+            if (child.type == "FOLDER") {
+                this.folders.push(child);
+            }
+            else if (child.type == "NOTE") {
+                this.notes.push(child);
+            }
+            else {
+                console.error("Unknown child");
+            }
+        }
     }
 }

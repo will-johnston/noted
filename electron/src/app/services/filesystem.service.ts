@@ -5,22 +5,30 @@ import * as firebase from 'firebase';
 import { Observable } from 'rxjs';
 import { Note } from '../note/Note';
 import { Folder } from '../homescreen/Folder'
+import { Path } from '../homescreen/Path';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FilesystemService {
   private userDetails: firebase.User = null;
-  public notes: Note[];         //notes that are in the root level
-  public folders: Folder[];     //folders and the rest of the notes
-  userid : string;
-  userRef : any;
-  values : Observable<any>;
+  private notes: Note[];         //notes that are in the root level
+  private folders: Folder[];     //folders and the rest of the notes
+  public currentNotes : Note[];
+  public currentFolders : Folder[];
+  private currentPath : Path;
+  public userid : string;
+  private userRef : any;
+  private values : Observable<any>;
   private subscribed : boolean;
 
   constructor(private fireDatabase: AngularFireDatabase) {
     this.notes = Array();
     this.folders = Array();
+    this.currentNotes = Array();
+    this.currentFolders = Array();
+    this.currentPath = '/';
+    this.updateCurrentState(['/']);
     //this.userid = 'PSkJKXOw66gP0Y862X5GJMNViXJ3';
     //this.startSubscription();
     firebase.auth().onAuthStateChanged((user) => {
@@ -185,6 +193,71 @@ export class FilesystemService {
       else {
         console.error("Failed to remove note!");
         return false;
+      }
+    }
+  }
+
+  //sets currentNotes and currentFolders to the contents of whatever folder is requested
+  //folderPath is an array corresponding to the path the folder is at
+  //folderPath : /folder1/folder2 refers to the contents of folder2 which is in folder1 which is in the root folder
+  //folderPath : / refers to the root folder
+  updateCurrentState(folderPath : string[]) {
+    if (folderPath == null) {
+      console.error("filesystem can't updateCurrentState with a null folderPath");
+    }
+    console.log("Given folderPath: %o", folderPath);
+    var lastFolder : Folder;
+    var path : Path;
+    for (var i = 0; i < folderPath.length; i++) {
+      var folderName : string = folderPath[i];
+      if (i == 0) {
+        if (folderPath[i] != '/') {
+          console.error("folderPath must start with the root folder '/'");
+          return;
+        }
+        if (i == folderPath.length - 1) {
+          //update to the root folder
+          this.currentNotes = this.notes;
+          this.currentFolders = this.folders;
+          //this.currentPath = '/';
+          return;
+        }
+        else {
+          lastFolder = null;
+          continue;
+        }        
+      }
+
+      //Check if folder exists and grab its reference
+      //find in this.folders
+      if (lastFolder == null) {
+        for (var j = 0; j < this.folders.length; j++) {
+          if (this.folders[j].name === folderName) {
+            lastFolder = this.folders[j];
+            break;
+          }
+        }
+      }
+      //find in lastFolder
+      else {
+        for (var j = 0; j < lastFolder.children.length; j++) {
+          if (lastFolder.children[j].type === "FOLDER" && lastFolder.children[j].name == folderName) {
+            lastFolder = lastFolder.children[j];
+            break;
+          }
+        }
+      }
+      //check if found
+      if (lastFolder.name !== folderName) {
+        console.error("Unable to find folder %s", folderName);
+        return;
+      }
+
+      //apply changes if last element of folderPath
+      if (i == folderPath.length - 1) {
+        this.currentFolders = lastFolder.folders;
+        this.currentNotes = lastFolder.notes;
+        //this.currentPath = 
       }
     }
   }
