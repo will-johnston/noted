@@ -27,6 +27,8 @@ android {
 
 repositories {
     jcenter()
+
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -48,7 +50,9 @@ dependencies {
     implementation 'com.google.firebase:firebase-database:16.0.1'
     implementation 'com.google.firebase:firebase-core:16.0.1'
     implementation 'com.firebaseui:firebase-ui-auth:4.1.0'
+
     implementation 'jp.wasabeef:richeditor-android:1.2.2'
+    implementation 'com.github.mthli:Knife:v1.1'
 }
 
 apply plugin: 'com.google.gms.google-services'
