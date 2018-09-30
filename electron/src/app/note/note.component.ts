@@ -79,15 +79,17 @@ export class NoteComponent implements OnInit, OnDestroy {
 
       // when recording is stopped
       mediaRecorder.addEventListener("stop", () => {
+        console.log("Uploading audio file: " + this.id);
+        
+        // make blob & URL from chunks
         const audioBlob = new Blob(audioChunks);
         const audioUrl = URL.createObjectURL(audioBlob);
+
+        // populate audio element
         const audio = document.querySelector('audio');
         audio.src = audioUrl;
 
-        // store the recording in firebase storage
         // metadata
-        //console.log("USER: " + this.user)
-        console.log("NOTE: " + this.id);
         /*
         var metadata = {
           customMetadata: {
@@ -96,8 +98,10 @@ export class NoteComponent implements OnInit, OnDestroy {
         }
         */
 
-        var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob /*,metadata*/);
-
+        // Upload to firebase
+        if (this.id) {
+          var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob /*,metadata*/);
+        }
       });
 
       // toggle stop button
