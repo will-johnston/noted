@@ -52,39 +52,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       }
     });
 
-    // load audio from database
-    var audioRef = storage.ref('audio/' + this.id);
-    var url = audioRef.getDownloadURL();
-    url.toPromise().then((url) => {
-      // load from url
-      var xhr = new XMLHttpRequest();
-      xhr.responseType = 'blob';
-      xhr.onload = (event) => {
-        var blob = xhr.response;
-        this.audioBlob = blob;
-
-        // use blob to populate audio element
-        const audio = document.querySelector('audio');
-        const audioUrl = URL.createObjectURL(this.audioBlob);
-        audio.src = audioUrl;
-      };
-      xhr.open('GET', url);
-      xhr.send();
-    }).catch(function (error) {
-      switch (error.code) {
-        case 'storage/object_not_found':
-          console.log("ERROR: Audio File Does Not Exist.");
-          break;
-
-        case 'storage/unauthorized':
-          console.log("ERROR: User Does Not Have Permission To Access This Audio File.")
-          break;
-
-        case 'storage/unknown':
-          console.log("ERROR: An Unknown Error Occured While Loading The Audio File.")
-          break;
-      }
-    });
+    this.loadAudio();
   }
 
   ngOnInit() {
@@ -159,6 +127,42 @@ export class NoteComponent implements OnInit, OnDestroy {
 
   handleError(e) {
     console.log(e)
+  }
+
+  loadAudio() {
+    // load audio from database
+    var audioRef = this.storage.ref('audio/' + this.id);
+    var url = audioRef.getDownloadURL();
+    url.toPromise().then((url) => {
+      // load from url
+      var xhr = new XMLHttpRequest();
+      xhr.responseType = 'blob';
+      xhr.onload = (event) => {
+        var blob = xhr.response;
+        this.audioBlob = blob;
+
+        // use blob to populate audio element
+        const audio = document.querySelector('audio');
+        const audioUrl = URL.createObjectURL(this.audioBlob);
+        audio.src = audioUrl;
+      };
+      xhr.open('GET', url);
+      xhr.send();
+    }).catch(function (error) {
+      switch (error.code) {
+        case 'storage/object_not_found':
+          console.log("ERROR: Audio File Does Not Exist.");
+          break;
+
+        case 'storage/unauthorized':
+          console.log("ERROR: User Does Not Have Permission To Access This Audio File.")
+          break;
+
+        case 'storage/unknown':
+          console.log("ERROR: An Unknown Error Occured While Loading The Audio File.")
+          break;
+      }
+    });
   }
 
 }
