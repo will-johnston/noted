@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { Observable } from 'rxjs';
 
 import { ElectronService } from 'ngx-electron';
 import { AngularFireStorage } from 'angularfire2/storage';
@@ -35,6 +36,7 @@ export class NoteComponent implements OnInit, OnDestroy {
 
   private id: string;
   private sub: any;
+  private audioBlob: Blob;
 
   @ViewChild('editor') editor: QuillEditorComponent
 
@@ -43,12 +45,46 @@ export class NoteComponent implements OnInit, OnDestroy {
     private storage: AngularFireStorage,
     private route: ActivatedRoute
   ) {
+    // get params
     this.sub = this.route.params.subscribe(params => {
       if (params['id']) {
         this.id = params['id'];
       }
     });
 
+    // load audio from database
+    var audioRef = storage.ref('audio/' + this.id);
+    var url = audioRef.getDownloadURL();
+    url.toPromise().then((url) => {
+      // load from url
+      var xhr = new XMLHttpRequest();
+      xhr.responseType = 'blob';
+      xhr.onload = (event) => {
+        var blob = xhr.response;
+        this.audioBlob = blob;
+
+        // use blob to populate audio element
+        const audio = document.querySelector('audio');
+        const audioUrl = URL.createObjectURL(this.audioBlob);
+        audio.src = audioUrl;
+      };
+      xhr.open('GET', url);
+      xhr.send();
+    }).catch(function (error) {
+      switch (error.code) {
+        case 'storage/object_not_found':
+          console.log("ERROR: Audio File Does Not Exist.");
+          break;
+
+        case 'storage/unauthorized':
+          console.log("ERROR: User Does Not Have Permission To Access This Audio File.")
+          break;
+
+        case 'storage/unknown':
+          console.log("ERROR: An Unknown Error Occured While Loading The Audio File.")
+          break;
+      }
+    });
   }
 
   ngOnInit() {
@@ -80,7 +116,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       // when recording is stopped
       mediaRecorder.addEventListener("stop", () => {
         console.log("Uploading audio file: " + this.id);
-        
+
         // make blob & URL from chunks
         const audioBlob = new Blob(audioChunks);
         const audioUrl = URL.createObjectURL(audioBlob);
