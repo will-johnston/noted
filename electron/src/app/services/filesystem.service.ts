@@ -217,12 +217,6 @@ export class FilesystemService {
             //console.log("Action.children: %o, keys: %o", action.payload.val().children, Object.keys(action.payload.val().children));
             
             if (action.payload.val() != null) {
-              if (action.payload.val().children == null) {
-                console.log("Children arg is null");
-                console.log("Payload: %o", action.payload.val());
-                //TODO implement sync with delete from firebase
-                //child is removed with child_changed
-              }
               var folder : Folder = this.getFolder(action.payload.val().id);
               if (folder != null && folder.children != null) {
                 //check
@@ -240,6 +234,9 @@ export class FilesystemService {
                   folder.killKid(keys);
                   return;
                 }
+                if (keys.length == folder.children.length) {
+
+                }
               }
 
 
@@ -250,7 +247,7 @@ export class FilesystemService {
                 console.log("Parent Object: %o", action.payload.val());
                 if (child.id == null || child.parent_id == null) {
                   console.log("must set id");
-                  this.fireDatabase.list(this.currentPath.toInsertString()).update(keys[i], { id : keys[i], parent_id :action.payload.val().id});
+                  this.fireDatabase.list(this.currentPath.toInsertString()).update(keys[i], { id : keys[i], parent_id : action.payload.val().id});
                 }
                 else {
                   console.log("ids set, must update folder")

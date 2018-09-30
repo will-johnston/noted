@@ -40,8 +40,8 @@ export class Path {
         //console.log("path list: %o", this.list);
     }
 
-    //use toInsertString() instead
     //Flattens the path-arguments list to a string
+    //use when setting an object's path (a Note object's path field will be this value)
     toString() {
         var path_str : string = "";
         //flatten list
@@ -51,6 +51,7 @@ export class Path {
         return path_str;
     }
     //returns a string that respects the children flag
+    //use when inserting a new value
     toInsertString() {
         var path_str = this.toString();
         if (this.inRootDirectory) {

@@ -1,0 +1,5 @@
+Issues:
+Paths include double slash: 'users/vs1RclX9B9cM4rkQcvWb5CZuMur1/-LN5ypUbT9eM3mHvaPb4//'
+Adding a folder within a folder
+Adding a note to a folder within a folder
+Have to click '/' to show root directory, should automatically show root directory
