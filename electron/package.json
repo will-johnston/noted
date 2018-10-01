@@ -45,6 +45,7 @@
     "angular-font-awesome": "^3.1.2",
     "angularfire2": "^5.0.1",
     "bootstrap": "^4.1.3",
+    "concatenateblobs": "^1.0.2",
     "core-js": "^2.5.4",
     "electron-google-oauth": "^2.0.0",
     "firebase": "^5.5.0",

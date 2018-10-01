@@ -11,6 +11,7 @@ import Quill from 'quill';
 
 declare var MediaRecorder: any;
 declare var Blob: any;
+declare var ConcatenateBlobs: any;
 
 // override p with div tag
 const Parchment = Quill.import('parchment');
@@ -83,28 +84,47 @@ export class NoteComponent implements OnInit, OnDestroy {
 
       // when recording is stopped
       mediaRecorder.addEventListener("stop", () => {
-        console.log("Uploading audio file: " + this.id);
+        if (!this.audioBlob) { // audio doesn't exist already
+          console.log("Uploading audio file: " + this.id);
 
-        // make blob & URL from chunks
-        const audioBlob = new Blob(audioChunks);
-        const audioUrl = URL.createObjectURL(audioBlob);
+          // make blob & URL from chunks
+          const audioBlob = new Blob(audioChunks);
+          const audioUrl = URL.createObjectURL(audioBlob);
 
-        // populate audio element
-        const audio = document.querySelector('audio');
-        audio.src = audioUrl;
+          // populate audio element
+          const audio = document.querySelector('audio');
+          audio.src = audioUrl;
 
-        // metadata
-        /*
-        var metadata = {
-          customMetadata: {
-            'note': this.id
+          // metadata
+          /*
+          var metadata = {
+            customMetadata: {
+              'note': this.id
+            }
           }
-        }
-        */
+          */
 
-        // Upload to firebase
-        if (this.id) {
-          var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob /*,metadata*/);
+          // Upload to firebase
+          if (this.id) {
+            var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob /*,metadata*/);
+          }
+        } else { // audio exists already
+          // concatenate audio blobs
+          const newAudioBlob = new Blob(audioChunks);
+          const audioBlobs = [];
+          audioBlobs.push(this.audioBlob);
+          audioBlobs.push(newAudioBlob);
+          ConcatenateBlobs(audioBlobs, 'audio/wav', (resultingBlob) => {
+            this.audioBlob = resultingBlob;
+          });
+          const audioUrl = URL.createObjectURL(this.audioBlob);
+          const audio = document.querySelector('audio');
+          audio.src = audioUrl;
+
+          // Upload to firebase
+          if (this.id) {
+            var uploadTask = this.storage.ref('audio/' + this.id).put(this.audioBlob /*,metadata*/);
+          }
         }
       });
 
