@@ -39,6 +39,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   private sub: any;
   private audioBlob: Blob;
   private audioContext: AudioContext;
+  private edits: any;
 
   @ViewChild('editor') editor: QuillEditorComponent
 
@@ -71,6 +72,8 @@ export class NoteComponent implements OnInit, OnDestroy {
   public start() {
     this.toggleButton("start");
 
+    this.edits = [];
+
     navigator.getUserMedia({ audio: true }, (stream) => {
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorder.start();
@@ -79,6 +82,11 @@ export class NoteComponent implements OnInit, OnDestroy {
       const audioChunks = [];
       mediaRecorder.addEventListener("dataavailable", event => {
         audioChunks.push(event.data);
+      });
+
+      // when recording starts
+      mediaRecorder.addEventListener("start", () => {
+        // start tracking user changes
       });
 
       // when recording is stopped
@@ -100,7 +108,7 @@ export class NoteComponent implements OnInit, OnDestroy {
             var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob);
           }
         } else { // audio exists already
-          // delete note's tracked edits
+          // delete note's previously tracked edits
         }
       });
 
@@ -112,10 +120,8 @@ export class NoteComponent implements OnInit, OnDestroy {
         mediaRecorder.stop();
 
         // toggle buttons
-        var stop = <HTMLInputElement>document.getElementById("stop");
-        stop.disabled = true;
-        var start = <HTMLInputElement>document.getElementById("start");
-        start.disabled = false;
+        toggleButton("stop");
+        toggleButton("start");
       }
     }, this.handleError);
   };
@@ -125,10 +131,6 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   toggleButton(btnString) {
-    // toggle start button
-    var start = <HTMLInputElement>document.getElementById("start");
-    start.disabled = true;
-
     var button = <HTMLInputElement>document.getElementById(btnString);
     if (button.disabled) {
       button.disabled = false;
