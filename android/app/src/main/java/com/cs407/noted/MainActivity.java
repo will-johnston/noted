@@ -106,44 +106,45 @@ public class MainActivity extends AppCompatActivity {
         else {
             String displayName = currentUser.getDisplayName();
             //Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
+
+
+            // database setup
+            database = FirebaseDatabase.getInstance();
+            String path = String.format("users/%s", currentUser.getUid());
+            this.myRef = database.getReference(path);
+            DatabaseReference filesRef = database.getReference(path);
+            // add listener
+            filesRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if (dataSnapshot == null) {
+                        return;
+                    }
+                    List<com.cs407.noted.File> files = new ArrayList<>();
+                    for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                        com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
+                        // locally set the parents
+                        files.add(file);
+                    }
+                    // add files as root's children
+                    root.setChildren(null);
+
+                    // update parent
+                    List<com.cs407.noted.File> updatedFiles = new ArrayList<>();
+                    for (com.cs407.noted.File file : files) {
+                        root.addChild(file);
+                        updatedFiles.add(setFileParents(file, root));
+                    }
+
+                    listAdapter.setItemListMaintainCurrentDirectory(updatedFiles);
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
         }
-
-        // database setup
-        database = FirebaseDatabase.getInstance();
-        String path = String.format("users/%s", currentUser.getUid());
-        this.myRef = database.getReference(path);
-        DatabaseReference filesRef = database.getReference(path);
-        // add listener
-        filesRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot == null) {
-                    return;
-                }
-                List<com.cs407.noted.File> files = new ArrayList<>();
-                for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                    com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
-                    // locally set the parents
-                    files.add(file);
-                }
-                // add files as root's children
-                root.setChildren(null);
-
-                // update parent
-                List<com.cs407.noted.File> updatedFiles = new ArrayList<>();
-                for (com.cs407.noted.File file: files) {
-                    root.addChild(file);
-                    updatedFiles.add(setFileParents(file, root));
-                }
-
-                listAdapter.setItemListMaintainCurrentDirectory(updatedFiles);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
     }
 
 
