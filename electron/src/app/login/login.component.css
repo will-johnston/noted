@@ -1,0 +1,37 @@
+div.frameT {
+	width: 100%;
+	padding: 0;
+	display: table;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+    margin: 0;
+    background-color: #bbc3cb;
+}
+
+div.frameTC {
+	padding: 0;
+	vertical-align: middle;
+	display: table-cell;
+	margin: 0;
+}
+
+div.content {
+	width: 600px;
+	background-color: #fff;
+	margin: 0 auto;
+	text-align: left;
+	padding: 10px;
+}
+.logo {
+    height: 200px;
+    width: 200px;
+}
+/* To change the size, you must also change logo's size as well as figure out how to center it again */
+.logo-image {
+    position: relative;
+    font-size: 200px;
+    text-align: justify !important;
+    left: 100%;
+}

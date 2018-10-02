@@ -5,8 +5,30 @@
     background-color: lightgray;
 }
 #navbar {
-
+    width: 80%;
+    background-color: lightcyan;
 }
+#actionbar {
+    width: 20%;
+    background-color: lightcoral;
+}
+#menubar {
+    max-height: 75px;
+    width: 100%;
+}
+/*Make things flow horizontally*/
+#navbar, #actionbar {display: inline-block; *display: inline; vertical-align: top;}
 .mat-list-item {
     float: left;
+}
+.mat-list-item-content {
+    overflow-x: hidden !important;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 0px;
+    padding-bottom: 5px;
+}
+.navListItem {
+    min-width: 25px;
+    max-width: 100px;
 }

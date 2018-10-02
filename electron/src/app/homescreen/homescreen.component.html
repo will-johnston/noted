@@ -1,36 +1,31 @@
 <nav>
   <a routerLink="/note"><button>Go to the Notescreen</button></a>
-  <button type="button" class="btn btn-danger" (click)="logout()">Logout</button>
 </nav>
-<div id="navbar">
-  <mat-list>
-    <mat-list-item
-      *ngFor="let value of navLoc"
-    >
-      <button mat-raised-button (click)="goBackTo(value)">{{value}}</button>
+<div id="menubar">
+  <mat-list id="navbar">
+    <mat-list-item *ngFor="let value of navLoc">
+      <button mat-raised-button class="navListItem" (click)="goBackTo(value)">{{value}}</button>
     </mat-list-item>
-    <!--<mat-divider [inset]="true"></mat-divider>
-    <mat-list-item>Item 2</mat-list-item>
-    <mat-divider></mat-divider>
-    <mat-list-item>Item 3</mat-list-item>-->
   </mat-list>
-  
+  <div id="actionbar">
+      <button mat-icon-button [matMenuTriggerFor]="menu" style="position: absolute; right: 0px;">
+          <mat-icon>add</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item>
+            <mat-icon>note_add</mat-icon>
+            <span>Create Note</span>
+          </button>
+          <button mat-menu-item>
+            <mat-icon>create_new_folder</mat-icon>
+            <span>Create Folder</span>
+          </button>
+        </mat-menu>        
+  </div>
 </div>
-<div style="height:50px">
-  <p></p>
-</div>
-<!--<ul class="notes">
-  <li *ngFor="let note of notes">
-    <span class="badge">{{note.name}}</span> {{note.id}}
-  </li>
-</ul>-->
-<!--<h3>My folders</h3>-->
-<!--<ul class="folders">
-  <li *ngFor="let folder of folders">
-    <span class="badge">{{folder.name}}</span> {{folder.id}}, childCount: {{folder.childCount}}
-  </li>
-</ul>-->
-<mat-grid-list cols="4" rowHeight="100px">
+
+<h6>Folders</h6>
+<mat-grid-list cols="4" rowHeight="50px">
   <mat-grid-tile class="folder"
       *ngFor="let folder of folders"
       colspan="1"
@@ -40,7 +35,7 @@
   </mat-grid-tile>
 </mat-grid-list>
 
-<!--<h2>My notes</h2>-->
+<h6>Notes</h6>
 <mat-grid-list cols="4" rowHeight="100px">
   <mat-grid-tile class="note"
       *ngFor="let note of notes"
@@ -59,8 +54,8 @@
   </mat-grid-tile>
 </mat-grid-list>
 
-Folder name: <input #folderName type="text" id="folderName" />
+<!--Folder name: <input #folderName type="text" id="folderName" />
 <button (click)="createFolder(folderName.value)">Create a folder</button>
 <br />
 Note name: <input #noteName type="text" id="noteName" />
-<button (click)="createNote(noteName.value)">Create a note</button>
+<button (click)="createNote(noteName.value)">Create a note</button>-->
