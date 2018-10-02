@@ -115,7 +115,7 @@ export class NoteComponent implements OnInit {
           //do nothing out of respect
         }
         else {
-          this.noteInfo = new Note(value.title, value.id, null, notepath);
+          this.noteInfo = new Note(value.title, value.id, notepath, null);
         }
       });
       this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);

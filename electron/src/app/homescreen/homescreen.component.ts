@@ -23,6 +23,7 @@ export class HomescreenComponent implements OnInit {
     this.navList = new NavList<string>();
     this.navLoc = this.navList.list;
     this.navList.push("/");
+    this.goBackTo('/');
    }
 
   getNotes() {
