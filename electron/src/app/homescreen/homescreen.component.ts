@@ -23,7 +23,6 @@ export class HomescreenComponent implements OnInit {
     this.navList = new NavList<string>();
     this.navLoc = this.navList.list;
     this.navList.push("/");
-    this.goBackTo('/');
    }
 
   getNotes() {
@@ -47,6 +46,7 @@ export class HomescreenComponent implements OnInit {
   }
   goBackTo(name) {
     this.navList.goto(name);
+    console.log('navlist is %o', this.navList.list);
     this.filesystemService.updateCurrentState(this.navList.list);
     this.getNotes();
     this.getFolders();
@@ -90,8 +90,7 @@ export class HomescreenComponent implements OnInit {
 
   ngOnInit() {
     this.userid = this.filesystemService.userid;
-    this.getNotes();
-    this.getFolders();
+    this.goBackTo('/');
   }
 
 }

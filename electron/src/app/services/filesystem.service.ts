@@ -18,7 +18,7 @@ export class FilesystemService {
   public currentNotes : Note[];
   public currentFolders : Folder[];
   private currentPath : Path;
-  private currentFolder : Folder;
+  private currentFolder : Folder; 
   public userid : string;
   private userRef : any;
   private values : Observable<any>;
@@ -30,23 +30,23 @@ export class FilesystemService {
     this.currentNotes = Array();
     this.currentFolders = Array();
     this.currentPath = new Path(PathType.users);
-    if (userHelper.currentUser != null) {
+    /*if (userHelper.currentUser != null) {
       this.userid = userHelper.currentUser.uid;
-      this.currentPath.addUserId(this.userid);
-      this.updateCurrentState(['/']);
+      this.currentPath = Path.RootPath(this.userid);
+      //this.updateCurrentState(['/']);
       this.startSubscription();
-    }
-    else {
+    }*/
       firebase.auth().onAuthStateChanged((user) => {
         if (user) {
           console.log("userid : %s", user.uid);
           this.userid = user.uid;
-          this.updateCurrentState(['/']);
-          this.currentPath.addUserId(this.userid);
+          //this.updateCurrentState(['/']);
+          this.currentPath = Path.RootPath(user.uid);
           this.startSubscription();
+          this.currentNotes = this.notes;
+          this.currentFolders = this.folders;
         }
       });
-    }
    }
   /*getNotes() {
       //this.notes.push({ id: 0, name : "note1", folder : null});
@@ -238,6 +238,19 @@ export class FilesystemService {
 
                 }
               }
+              if (action.payload.val().children == null) {
+                //no children, so 'child_changed' shouldn't have been called
+                console.log("Action: %o", action);
+                console.log("payload: %o", action.payload.val());
+                var element = this.makeElement(action.payload.val());
+                if (element.type === "DOCUMENT") {
+                  this.notes.push(element as Note);
+                }
+                else {
+                  this.folders.push(element as Folder);
+                }
+                return;
+              }
 
 
               var keys = Object.keys(action.payload.val().children);
@@ -340,6 +353,13 @@ export class FilesystemService {
                 console.log("null id on insert, must set id");
                 this.fireDatabase.list('users/' + this.userid).update(action.key, {id: action.key});
               }*/
+              console.log("Action: %o", action);
+              var child = action.payload.val();
+                console.log("Child Object: %o", child);
+                if (child.id == null) {
+                  console.log("must set id, currentpath: %o", this.currentPath);
+                  this.fireDatabase.list(this.currentPath.toString()).update(action.key, { id : action.key});
+                }
           }
           else if (action.type === "child_removed") {
             console.log("Called child_removed which doesn't really matter");
@@ -364,17 +384,20 @@ export class FilesystemService {
   }
   createNote(name : string) {
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
+    console.log("Current path: %o", this.currentPath.list);
     if (this.currentPath.addedChild) {
-
+      this.fireDatabase.list(this.currentPath.toInsertString()).push({ title : name, type : "DOCUMENT", id : null});
     }
-    this.fireDatabase.list(this.currentPath.toInsertString()).push({ title : name, type : "DOCUMENT", id : null});
+    else {
+      this.fireDatabase.list(Path.RootPath(this.userid).toString()).push({ title : name, type : "DOCUMENT", id : null});
+    }
   }
   createFolder(name : string) {
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "FOLDER", children : null});
-    if (this.currentPath.addedChild) {
-        
-    }
-    this.fireDatabase.list(this.currentPath.toInsertString()).push({ title : name, type : "FOLDER", children : null});
+    if (this.currentPath.addedChild)
+      this.fireDatabase.list(this.currentPath.toInsertString()).push({ title : name, type : "FOLDER", children : null});
+    else
+      this.fireDatabase.list(Path.RootPath(this.userid).toString()).push({ title : name, type : "FOLDER", children : null});
   }
   deleteNote(note : Note) : boolean {
     var noteRef = this.fireDatabase.object(note.path);
@@ -442,7 +465,7 @@ export class FilesystemService {
           //update to the root folder
           this.currentNotes = this.notes;
           this.currentFolders = this.folders;
-          this.currentPath = path;
+          this.currentPath = Path.RootPath(this.userid);
           this.currentFolder = null;
           //this.currentPath = '/';
           return;

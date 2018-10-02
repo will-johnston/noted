@@ -2,6 +2,7 @@ export class Path {
     private type : PathType;
     private inRootDirectory : boolean;          //if we're at '/';
     public addedChild : boolean;
+    private addedUserId : boolean;
     list : string[];
     constructor(type : PathType) {
         this.type = type;
@@ -15,20 +16,37 @@ export class Path {
         //console.log("path list: %o", this.list);
     }
     addUserId(id : string) {
+        if (id == null || id === "undefined") {
+            console.error("Attempted to add null id");
+            console.trace();
+        }
+        if (this.addedUserId)
+            return false;
         //console.log("adding user id %s", id);
-        if (this.type == PathType.users)
+        if (this.type == PathType.users) {
             this.list.push(id + '/');
+            this.addedUserId = true;
+            return true;
+        }
         else
             return false;           //fileContents can only addId();
         //console.log("path list: %o", this.list);
     }
     addId(id : string) {
+        if (id == null || id === "undefined") {
+            console.error("Attempted to add null id");
+            console.trace();
+        }
         //console.log("added id %s", id);
         this.list.push(id + '/');
         this.inRootDirectory = false;
         //console.log("path list: %o", this.list);
     }
     addChild(id : string) {
+        if (id == null || id === "undefined") {
+            console.error("Attempted to add null id");
+            console.trace();
+        }
         //console.log("added child %s", id);
         if (this.type == PathType.users) {
             this.list.push('children/' + id + '/');
