@@ -38,6 +38,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   private id: string;
   private sub: any;
   private audioBlob: Blob;
+  private audioContext: AudioContext;
 
   @ViewChild('editor') editor: QuillEditorComponent
 
@@ -68,9 +69,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   public start() {
-    // toggle start button
-    var start = <HTMLInputElement>document.getElementById("start");
-    start.disabled = true;
+    this.toggleButton("start");
 
     navigator.getUserMedia({ audio: true }, (stream) => {
       const mediaRecorder = new MediaRecorder(stream);
@@ -90,48 +89,24 @@ export class NoteComponent implements OnInit, OnDestroy {
           // make blob & URL from chunks
           const audioBlob = new Blob(audioChunks);
           const audioUrl = URL.createObjectURL(audioBlob);
+          this.audioBlob = audioBlob;
 
           // populate audio element
           const audio = document.querySelector('audio');
           audio.src = audioUrl;
 
-          // metadata
-          /*
-          var metadata = {
-            customMetadata: {
-              'note': this.id
-            }
-          }
-          */
-
           // Upload to firebase
           if (this.id) {
-            var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob /*,metadata*/);
+            var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob);
           }
         } else { // audio exists already
-          // concatenate audio blobs
-          const newAudioBlob = new Blob(audioChunks);
-          const audioBlobs = [];
-          audioBlobs.push(this.audioBlob);
-          audioBlobs.push(newAudioBlob);
-          ConcatenateBlobs(audioBlobs, 'audio/wav', (resultingBlob) => {
-            this.audioBlob = resultingBlob;
-          });
-          const audioUrl = URL.createObjectURL(this.audioBlob);
-          const audio = document.querySelector('audio');
-          audio.src = audioUrl;
-
-          // Upload to firebase
-          if (this.id) {
-            var uploadTask = this.storage.ref('audio/' + this.id).put(this.audioBlob /*,metadata*/);
-          }
+          // delete note's tracked edits
         }
       });
 
       // toggle stop button
+      this.toggleButton("stop");
       var stop = <HTMLInputElement>document.getElementById("stop");
-      stop.disabled = false;
-
       stop.onclick = function () {
         // stop recording
         mediaRecorder.stop();
@@ -149,7 +124,23 @@ export class NoteComponent implements OnInit, OnDestroy {
     console.log(e)
   }
 
+  toggleButton(btnString) {
+    // toggle start button
+    var start = <HTMLInputElement>document.getElementById("start");
+    start.disabled = true;
+
+    var button = <HTMLInputElement>document.getElementById(btnString);
+    if (button.disabled) {
+      button.disabled = false;
+    } else {
+      button.disabled = true;
+    }
+  }
+
   loadAudio() {
+    // load audio context
+    this.audioContext = new AudioContext;
+
     // load audio from database
     var audioRef = this.storage.ref('audio/' + this.id);
     var url = audioRef.getDownloadURL();
