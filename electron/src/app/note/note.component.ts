@@ -7,25 +7,10 @@ import { ElectronService } from 'ngx-electron';
 import { AngularFireStorage } from 'angularfire2/storage';
 
 import { QuillEditorComponent } from 'ngx-quill';
-import Quill from 'quill';
 
 declare var MediaRecorder: any;
 declare var Blob: any;
 declare var ConcatenateBlobs: any;
-
-// override p with div tag
-const Parchment = Quill.import('parchment');
-let Block = Parchment.query('block');
-
-Block.tagName = 'DIV';
-// or class NewBlock extends Block {}; NewBlock.tagName = 'DIV';
-Quill.register(Block /* or NewBlock */, true);
-
-// Add fonts to whitelist
-var Font = Quill.import('formats/font');
-// We do not add Aref Ruqaa since it is the default
-Font.whitelist = ['mirza', 'aref', 'sans-serif', 'monospace', 'serif'];
-Quill.register(Font, true);
 
 @Component({
   selector: 'app-note',
@@ -41,7 +26,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   private audioContext: AudioContext;
   private edits: any;
 
-  @ViewChild('editor') editor: QuillEditorComponent
+  public editor;
 
   constructor(
     private _electronService: ElectronService,
@@ -65,8 +50,16 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.sub.unsubscribe();
   }
 
-  setFocus($event) {
-    $event.focus();
+  setFocus(quill) {
+    quill.focus();
+    this.editor = quill;
+  }
+
+  editorContentChanged({ editor, html, text, content, delta, oldDelta, source }) {
+    for (let i = 0; i < delta.ops.length; i++) {
+      const element = delta.ops[i];
+      console.log(element)
+    }
   }
 
   public start() {
@@ -108,20 +101,35 @@ export class NoteComponent implements OnInit, OnDestroy {
             var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob);
           }
         } else { // audio exists already
+
           // delete note's previously tracked edits
+
+          // make blob & URL from chunks
+          const audioBlob = new Blob(audioChunks);
+          const audioUrl = URL.createObjectURL(audioBlob);
+          this.audioBlob = audioBlob;
+
+          // populate audio element
+          const audio = document.querySelector('audio');
+          audio.src = audioUrl;
+
+          // Upload to firebase
+          if (this.id) {
+            var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob);
+          }
         }
       });
 
       // toggle stop button
       this.toggleButton("stop");
       var stop = <HTMLInputElement>document.getElementById("stop");
-      stop.onclick = function () {
+      stop.onclick = () => {
         // stop recording
         mediaRecorder.stop();
 
         // toggle buttons
-        toggleButton("stop");
-        toggleButton("start");
+        this.toggleButton("stop");
+        this.toggleButton("start");
       }
     }, this.handleError);
   };

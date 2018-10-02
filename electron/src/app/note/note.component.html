@@ -1,4 +1,8 @@
 <button class="btn btn-primary" id="start" (click)="start();">Record</button>
 <button class="btn btn-primary" id="stop" disabled=true>Stop</button>
-<quill-editor [style]="{height: '200px'}" (onEditorCreated)="setFocus($event)"></quill-editor>
+<quill-editor 
+    [style]="{height: '200px'}" 
+    (onEditorCreated)="setFocus($event)"
+    (onContentChanged)="editorContentChanged($event)"
+></quill-editor>
 <audio controls></audio>
