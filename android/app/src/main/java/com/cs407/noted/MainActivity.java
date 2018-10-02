@@ -181,6 +181,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        currentUser = firebaseAuth.getCurrentUser();
+        if(currentUser == null) {
+            //show login activity
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        }
     }
 
     @Override
