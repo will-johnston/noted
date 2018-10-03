@@ -22,6 +22,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
 import android.text.InputType;
 import android.view.Menu;
 import android.view.View;
@@ -221,32 +222,7 @@ public class MainActivity extends AppCompatActivity {
         action_folder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                floatingActionsMenu.collapse();
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Enter Folder Name");
-
-                // Set up the input
-                final EditText input = new EditText(MainActivity.this);
-                input.setInputType(InputType.TYPE_CLASS_TEXT);
-                builder.setView(input);
-
-                // Set up the buttons
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String input_text = input.getText().toString();
-                        com.cs407.noted.File file = new com.cs407.noted.File(null, null, input_text, null, null, FileType.FOLDER.toString(), null);
-
-                        listAdapter.addNewFile(file, myRef);
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
+                respondToFolderClick(floatingActionsMenu);
             }
         });
         action_doc.setOnClickListener(new View.OnClickListener() {
@@ -492,5 +468,87 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }
+    }
+
+    public void respondToFolderClick(FloatingActionsMenu floatingActionsMenu) {
+        floatingActionsMenu.collapse();
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("Enter Folder Name");
+
+        // Set up the input
+        final EditText input = new EditText(MainActivity.this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                addFolder(input.getText().toString());
+
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.show();
+    }
+    public boolean addFolder(String text) {
+        TextLength verify = checkTextLength(text);
+        if (verify.equals(TextLength.NIL) || verify.equals(TextLength.EMPTY)) {
+            text = "Untitled folder";
+        }
+
+        // now that we added valid title to NIL and EMPTY, we can add new file for those and VALID
+        if (!verify.equals(TextLength.TOO_LARGE)) {
+            // if length is between 0 and 255, we will add the file
+            String input_text = text;
+            com.cs407.noted.File file = new com.cs407.noted.File(
+                    null, null, input_text, null, null,
+                    FileType.FOLDER.toString(), null);
+            listAdapter.addNewFile(file, myRef);
+            return true;
+        } else {
+            // the text is too large, so don't accept it
+            Toast.makeText(this, "File name is too long", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+    }
+
+
+    public TextLength checkTextLength(String text) {
+        if (text == null) {
+            return TextLength.NIL;
+        }
+        int len = text.length();
+        if (len < 1) {
+            return TextLength.EMPTY;
+        }
+        else if (len > 255) {
+            return TextLength.TOO_LARGE;
+        } else {
+            return TextLength.VALID;
+        }
+
+
+    }
+
+    public String getName() {
+        return this.getName();
+    }
+
+    public ListAdapter getListAdapter() {
+        return listAdapter;
+    }
+
+    public DatabaseReference getMyRef() {
+        return myRef;
+    }
+
+    public com.cs407.noted.File getRoot() {
+        return root;
     }
 }
