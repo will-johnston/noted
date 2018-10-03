@@ -465,41 +465,38 @@ public class MainActivity extends AppCompatActivity {
             builder.show();
         }
         else if(requestCode == TAKE_PICTURE) {
-            try {
-                imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-                //ImageView iv = (ImageView) findViewById(R.id.image);
-                //iv.setImageBitmap(imageBitmap);
+            //imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Enter Image Name");
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle("Enter Image Name");
 
-                // Set up the input
-                final EditText input = new EditText(MainActivity.this);
-                input.setInputType(InputType.TYPE_CLASS_TEXT);
-                builder.setView(input);
+            // Set up the input
+            final EditText input = new EditText(MainActivity.this);
+            input.setInputType(InputType.TYPE_CLASS_TEXT);
+            builder.setView(input);
 
-                // Set up the buttons
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String input_text = input.getText().toString();
-                        com.cs407.noted.File file = new com.cs407.noted.File(
-                                null, null, input_text, null, null, FileType.IMAGE.toString(), null);
-                        listAdapter.addNewFile(file, myRef);
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
+            // Set up the buttons
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String input_text = input.getText().toString();
+                    com.cs407.noted.File file = new com.cs407.noted.File(
+                            null, null, input_text, null, null, FileType.IMAGE.toString(), null);
+                    listAdapter.addNewFile(file, myRef);
 
-                builder.show();
-            }
-            catch (IOException e) {
+                    //upload the picture to Firebase storage
+                    StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
+                    ref.putFile(imageUri);
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
 
-            }
+            builder.show();
         }
     }
 }
