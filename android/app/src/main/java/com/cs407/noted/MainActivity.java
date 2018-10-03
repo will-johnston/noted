@@ -427,6 +427,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(resultCode == RESULT_CANCELED) {
+            return;
+        }
+
         if(requestCode == PICK_IMAGE) {
             final Uri imageUri = data.getData();
 
