@@ -31,33 +31,33 @@ declare var ConcatenateBlobs: any;
 })
 export class NoteComponent implements OnInit, OnDestroy {
 
-  private id: string;
-  private sub: any;
-  private audioBlob: Blob;
   private audioContext: AudioContext;
-  private edits: any;
-  
+  private audioBlob: Blob;
+  private recording: Boolean = false;
+  private startTime: number;
+  private trackingRef: AngularFireObject<any>;
+
   public editor;
 
-  userid : string = null;       //database userid of the note
-  noteid : string = null;       //database id of the note
-  notepath : string = null;     //database path for the note
-  noteInfo : Note = null;
-  noteRef : AngularFireObject<any>;
-  noteTextRef : AngularFireObject<any>;
-  subscribed : boolean = false;
-  text : string;
-  html : string;
+  userid: string = null;       //database userid of the note
+  noteid: string = null;       //database id of the note
+  notepath: string = null;     //database path for the note
+  noteInfo: Note = null;
+  noteRef: AngularFireObject<any>;
+  noteTextRef: AngularFireObject<any>;
+  subscribed: boolean = false;
+  text: string;
+  html: string;
   constructor(
-    private route: ActivatedRoute, 
-    private router: Router, 
-    private fireDatabase: AngularFireDatabase, 
+    private route: ActivatedRoute,
+    private router: Router,
+    private fireDatabase: AngularFireDatabase,
     private _electronService: ElectronService,
     private storage: AngularFireStorage,
-    private filesystemService : FilesystemService
-  ) { 
-      this.text = "";
-      this.html = "";
+    private filesystemService: FilesystemService
+  ) {
+    this.text = "";
+    this.html = "";
   }
 
   ngOnInit() {
@@ -96,7 +96,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   //This is definitely cheating, but it seems to work... [Ryan]
-  updateEditorText(text : string) {
+  updateEditorText(text: string) {
     if (text != null) {
       this.editor.root.innerHTML = text;
     }
@@ -105,50 +105,50 @@ export class NoteComponent implements OnInit, OnDestroy {
   createFileContents(value) {
     //console.log("value == null %s, value.key == null %s", value == null, value.key == null);
     //console.log("payload: %o", value.payload.val());
-    this.fireDatabase.object("/fileContents/" + this.noteid).set({data : ""})
-    .then(_ => {
-      console.log("created File contents successfully");
-      console.log("creating at %s", "fileContents/" + this.noteid);
-      //this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
-    })
-    .catch(err => {
-      console.log("createFileContents err: %s", err);
-    });
+    this.fireDatabase.object("/fileContents/" + this.noteid).set({ data: "" })
+      .then(_ => {
+        console.log("created File contents successfully");
+        console.log("creating at %s", "fileContents/" + this.noteid);
+        //this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
+      })
+      .catch(err => {
+        console.log("createFileContents err: %s", err);
+      });
   }
 
-  startSubscription(notepath : string) {
+  startSubscription(notepath: string) {
     if (!this.subscribed) {
       //this.noteRef = this.fireDatabase.object(notepath).valueChanges();
       this.noteRef = this.fireDatabase.object(notepath);
       this.noteRef.valueChanges()
-      .subscribe(value => {
-        if (value == null) {
-          this.noteInfo = null;
-          //note has been destroyed
-          //do nothing out of respect
-        }
-        else {
-          this.noteInfo = new Note(value.title, value.id, null, notepath);
-        }
-      });
+        .subscribe(value => {
+          if (value == null) {
+            this.noteInfo = null;
+            //note has been destroyed
+            //do nothing out of respect
+          }
+          else {
+            this.noteInfo = new Note(value.title, value.id, null, notepath);
+          }
+        });
       this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
       console.log("noteTextRef %s", "fileContents/" + this.noteid);
       this.noteTextRef.valueChanges()
-      .subscribe(value => {
-        console.log("noteTextRef value: %o", value);
-        if (value === null) {
-          if (this.noteInfo !== null) {
-            this.createFileContents(value);
+        .subscribe(value => {
+          console.log("noteTextRef value: %o", value);
+          if (value === null) {
+            if (this.noteInfo !== null) {
+              this.createFileContents(value);
+            }
+            else {
+              //has probably been destroyed
+            }
           }
           else {
-            //has probably been destroyed
+            this.noteInfo.text = value.data;
+            this.updateEditorText(this.noteInfo.text);
           }
-        }
-        else {
-          this.noteInfo.text = value.data;
-          this.updateEditorText(this.noteInfo.text);
-        }
-      });
+        });
     }
   }
 
@@ -165,16 +165,23 @@ export class NoteComponent implements OnInit, OnDestroy {
   editorContentChanged({ editor, html, text, content, delta, oldDelta, source }) {
     this.text = text;
     this.html = html;
-    for (let i = 0; i < delta.ops.length; i++) {
-      const element = delta.ops[i];
-      console.log(element)
+    if (this.recording) { // currently recording audio
+      var timestamp = Math.floor((Date.now() - this.startTime) / 1000); // timestamp in seconds from start
+      this.fireDatabase.object("/audioTracking/" + this.noteid + "/" + timestamp).set({ delta: delta })
+      .then(_ => {
+        console.log("Tracked edit at: " + timestamp);
+        for (let i = 0; i < delta.ops.length; i++) {
+          const element = delta.ops[i];
+          console.log(element)
+        }
+      }).catch(err => {
+        console.log("Audio Tracking Error: %s", err);
+      });
     }
   }
 
   public start() {
     this.toggleButton("start");
-
-    this.edits = [];
 
     navigator.getUserMedia({ audio: true }, (stream) => {
       const mediaRecorder = new MediaRecorder(stream);
@@ -188,11 +195,21 @@ export class NoteComponent implements OnInit, OnDestroy {
 
       // when recording starts
       mediaRecorder.addEventListener("start", () => {
-        // start tracking user changes
+        // start tracking user changes @ now o'clock
+        this.recording = true;
+        this.startTime = Date.now();
+
+        // delete any previous tracking data
+        this.fireDatabase.object("/audioTracking/" + this.noteid).remove();
+
+        // add original content to the database
+        this.fireDatabase.object("/audioTracking/" + this.noteid + "/original").set({ content: this.editor.root.innerHTML })
       });
 
       // when recording is stopped
       mediaRecorder.addEventListener("stop", () => {
+        this.recording = false;
+
         if (!this.audioBlob) { // audio doesn't exist already
           console.log("Uploading audio file: " + this.noteid);
 
@@ -299,7 +316,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   saveNote() {
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
     //this.noteRef.update({ htmltext : this.html});
-    this.noteTextRef.update({data : this.html});
+    this.noteTextRef.update({ data: this.html });
   }
   deleteNote() {
     /*
