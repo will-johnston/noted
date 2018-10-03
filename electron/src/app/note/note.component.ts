@@ -10,12 +10,12 @@ import * as firebase from 'firebase';
 import { FilesystemService } from '../services/filesystem.service';
 import { Note } from './Note';
 
-import Quill from 'quill';
+//import Quill from 'quill';
 import { Observable } from 'rxjs';
 
 // override p with div tag
-const Parchment = Quill.import('parchment');
-let Block = Parchment.query('block');
+//const Parchment = Quill.import('parchment');
+//let Block = Parchment.query('block');
 
 import { QuillEditorComponent } from 'ngx-quill';
 
@@ -58,12 +58,10 @@ export class NoteComponent implements OnInit, OnDestroy {
   ) { 
       this.text = "";
       this.html = "";
-      console.log(Quill);
-      
-      this.loadAudio();
   }
 
   ngOnInit() {
+    /*
     console.log(this.editor);
     this.editor
       .onContentChanged
@@ -73,11 +71,10 @@ export class NoteComponent implements OnInit, OnDestroy {
       )
       .subscribe(data => {
         //console.log('view child + directly subscription', data)
-        this.text = data.text;
-        this.html = data.html;
+        
         console.log("text %s, html %s", data.text, data.html);
     });
-    this.editor.placeholder = "Start writing your masterpiece!";
+    */
     //this.editor.content = "Loading Note...";
     this.route.params.forEach((params: Params) => {
       if (params['userid'] !== undefined || params['userid'] !== null) {
@@ -94,14 +91,17 @@ export class NoteComponent implements OnInit, OnDestroy {
         this.startSubscription(params['notepath']);
       }
     });
+
+    this.loadAudio();
   }
 
   //This is definitely cheating, but it seems to work... [Ryan]
   updateEditorText(text : string) {
     if (text != null) {
-      this.editor.quillEditor.root.innerHTML = text;
+      this.editor.root.innerHTML = text;
     }
   }
+
   createFileContents(value) {
     //console.log("value == null %s, value.key == null %s", value == null, value.key == null);
     //console.log("payload: %o", value.payload.val());
@@ -115,6 +115,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       console.log("createFileContents err: %s", err);
     });
   }
+
   startSubscription(notepath : string) {
     if (!this.subscribed) {
       //this.noteRef = this.fireDatabase.object(notepath).valueChanges();
@@ -152,15 +153,18 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.sub.unsubscribe();
+    // unsubscribe somehow
   }
 
   setFocus(quill) {
     quill.focus();
     this.editor = quill;
+    this.editor.root.placeholder = "Start writing your masterpiece!";
   }
 
   editorContentChanged({ editor, html, text, content, delta, oldDelta, source }) {
+    this.text = text;
+    this.html = html;
     for (let i = 0; i < delta.ops.length; i++) {
       const element = delta.ops[i];
       console.log(element)
@@ -190,7 +194,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       // when recording is stopped
       mediaRecorder.addEventListener("stop", () => {
         if (!this.audioBlob) { // audio doesn't exist already
-          console.log("Uploading audio file: " + this.id);
+          console.log("Uploading audio file: " + this.noteid);
 
           // make blob & URL from chunks
           const audioBlob = new Blob(audioChunks);
@@ -202,8 +206,8 @@ export class NoteComponent implements OnInit, OnDestroy {
           audio.src = audioUrl;
 
           // Upload to firebase
-          if (this.id) {
-            var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob);
+          if (this.noteid) {
+            var uploadTask = this.storage.ref('audio/' + this.noteid).put(audioBlob);
           }
         } else { // audio exists already
 
@@ -219,8 +223,8 @@ export class NoteComponent implements OnInit, OnDestroy {
           audio.src = audioUrl;
 
           // Upload to firebase
-          if (this.id) {
-            var uploadTask = this.storage.ref('audio/' + this.id).put(audioBlob);
+          if (this.noteid) {
+            var uploadTask = this.storage.ref('audio/' + this.noteid).put(audioBlob);
           }
         }
       });
@@ -257,7 +261,7 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.audioContext = new AudioContext;
 
     // load audio from database
-    var audioRef = this.storage.ref('audio/' + this.id);
+    var audioRef = this.storage.ref('audio/' + this.noteid);
     var url = audioRef.getDownloadURL();
     url.toPromise().then((url) => {
       // load from url
@@ -266,6 +270,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       xhr.onload = (event) => {
         var blob = xhr.response;
         this.audioBlob = blob;
+        console.log("BLOB: " + blob)
 
         // use blob to populate audio element
         const audio = document.querySelector('audio');
