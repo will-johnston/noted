@@ -8,13 +8,13 @@ const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'homescreen', component: HomescreenComponent },
   { path: 'login', component: LoginComponent },
-  { path: 'note:id', component: NoteComponent },
+  { path: 'note;id', component: NoteComponent },
   { path: 'note', component: NoteComponent }
 ];
 
 @NgModule({
   imports: [
-    RouterModule.forRoot(routes),
+    RouterModule.forRoot(routes, /*{ enableTracing: true }*/),
   ],
   exports: [
     RouterModule
