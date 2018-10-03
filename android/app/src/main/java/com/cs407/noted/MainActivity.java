@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -23,6 +24,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
@@ -40,9 +42,14 @@ import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
     private Uri imageUri;
     private File output=null;
     private Bitmap imageBitmap;
+    private FirebaseStorage firebaseStorage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +90,9 @@ public class MainActivity extends AppCompatActivity {
 
         // get instance of firebase authenticator
         firebaseAuth = FirebaseAuth.getInstance();
+
+        //get instance of firebase storage
+        firebaseStorage = FirebaseStorage.getInstance();
 
         // recycler view setup
         recyclerView = findViewById(R.id.recycler_view);
@@ -414,18 +425,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == PICK_IMAGE) {
-            Uri uri = data.getData();
-
-            /*String[] filePathColumn = {MediaStore.Images.Media.DATA};
-
-            Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
-            cursor.moveToFirst();
-
-            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-            String filePath = cursor.getString(columnIndex);
-            cursor.close();
-
-            Bitmap image = BitmapFactory.decodeFile(filePath);*/
+            final Uri imageUri = data.getData();
 
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             builder.setTitle("Enter Image Name");
@@ -444,6 +444,15 @@ public class MainActivity extends AppCompatActivity {
                     com.cs407.noted.File file = new com.cs407.noted.File(
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
                     listAdapter.addNewFile(file, myRef);
+
+                    //upload the picture to Firebase storage
+                    StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
+                    try {
+                        InputStream inputStream = getApplicationContext().getContentResolver().openInputStream(imageUri);
+                        ref.putStream(inputStream);
+                    }
+                    catch(FileNotFoundException e1) {
+                    }
                 }
             });
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
