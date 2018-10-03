@@ -215,6 +215,8 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 }
                 else if(file.getType().equals(FileType.IMAGE.toString())) {
                     Intent intent = new Intent(context, ImageActivity.class);
+                    intent.putExtra("title", file.getTitle());
+                    intent.putExtra("id", file.getId());
                     context.startActivity(intent);
                 }
             }
