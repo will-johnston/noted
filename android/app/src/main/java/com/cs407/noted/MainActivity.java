@@ -2,12 +2,14 @@ package com.cs407.noted;
 
 
 import android.Manifest;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -45,9 +47,11 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -74,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int BOTH_REQUEST = 5;
     private Uri imageUri;
     private File output=null;
-    private Bitmap imageBitmap;
     private FirebaseStorage firebaseStorage;
 
     @Override
@@ -465,7 +468,7 @@ public class MainActivity extends AppCompatActivity {
             builder.show();
         }
         else if(requestCode == TAKE_PICTURE) {
-            //imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+            final ContentResolver cr = this.getContentResolver();
 
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             builder.setTitle("Enter Image Name");
@@ -484,9 +487,20 @@ public class MainActivity extends AppCompatActivity {
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
                     listAdapter.addNewFile(file, myRef);
 
-                    //upload the picture to Firebase storage
-                    StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
-                    ref.putFile(imageUri);
+                    try {
+                        //rotate the image
+                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(cr, imageUri);
+                        Matrix matrix = new Matrix();
+                        matrix.postRotate(90);
+                        Bitmap newBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+
+                        //upload the picture to Firebase storage
+                        StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
+                        ref.putBytes(baos.toByteArray());
+                    }
+                    catch(IOException e) {}
                 }
             });
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
