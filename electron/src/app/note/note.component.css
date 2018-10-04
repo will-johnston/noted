@@ -1,6 +1,13 @@
 quill-editor {
     display: block;
 }
+.editor2 {
+  position: absolute;
+  top: 150px;
+  width: 100%;
+  bottom: 0px;
+  overflow:hidden;
+}
 .ng-invalid {
     border: 1px dashed red;
 }
@@ -8,6 +15,7 @@ quill-editor {
 /* Set default font-family */
 [quill-editor-element] {
   font-family: "Roboto";
+  height: 100%;
 }
 /* Set dropdown font-families */
 [quill-editor-toolbar] .ql-font span[data-label="Aref Ruqaa"]::before {

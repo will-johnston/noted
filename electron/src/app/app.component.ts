@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { RouterModule, Routes, Router } from '@angular/router';
+import { RouterModule, Routes, Router, NavigationStart } from '@angular/router';
 import * as firebase from 'firebase'
+import { UserHelperService } from './services/userhelper.service';
 
 @Component({
   selector: 'app-root',
@@ -9,8 +10,9 @@ import * as firebase from 'firebase'
 })
 export class AppComponent {
   title = 'noted';
+  public noteTitle = "";
 
-  constructor(private router : Router) {
+  constructor(private router : Router, private userHelper : UserHelperService) {
     // init firebase
     var config = {
       apiKey: "AIzaSyBv0Xkso50BFpf6lc4_w1LJwEBHDN5IkOQ",
@@ -29,13 +31,30 @@ export class AppComponent {
         //TODO: send to home page
         console.log("User is logged in!");
         console.log(user.email);
+        userHelper.currentUser = user;
         this.router.navigate(['homescreen']);
       } else {
         // If there is no user logged in send them to the login page
         //TODO: send to login page
         console.log("User is logged out");
+        userHelper.currentUser = null;
         this.router.navigate(['login']);
       }
+    });
+    this.router.events.subscribe(event => {
+      //console.log("Router event: %o", event);
+      if (event instanceof NavigationStart) {
+        this.noteTitle = "";
+      }
+    });
+  }
+  logout() {
+    firebase.auth().signOut().then(function() {
+      // Sign-out successful.
+      console.log("LOGOUT!")
+    }, function(error) {
+      // An error happened.
+      console.log(error.log)
     });
   }
 }

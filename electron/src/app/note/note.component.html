@@ -9,8 +9,7 @@
 <a routerLink="/homescreen"><button>Back</button></a>
 <button class="btn btn-primary" id="start" (click)="start();">Record</button>
 <button class="btn btn-primary" id="stop" disabled=true>Stop</button>
-<quill-editor 
-    [style]="{height: '200px'}" 
+<quill-editor class="editor2" 
     (onEditorCreated)="setFocus($event)"
     (onContentChanged)="editorContentChanged($event)"
 ></quill-editor>

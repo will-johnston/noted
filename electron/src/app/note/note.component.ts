@@ -12,6 +12,7 @@ import { Note } from './Note';
 
 //import Quill from 'quill';
 import { Observable } from 'rxjs';
+import { AppComponent } from '../app.component';
 
 // override p with div tag
 //const Parchment = Quill.import('parchment');
@@ -54,7 +55,8 @@ export class NoteComponent implements OnInit, OnDestroy {
     private fireDatabase: AngularFireDatabase,
     private _electronService: ElectronService,
     private storage: AngularFireStorage,
-    private filesystemService: FilesystemService
+    private filesystemService: FilesystemService,
+    private appComponent : AppComponent
   ) {
     this.text = "";
     this.html = "";
@@ -121,16 +123,17 @@ export class NoteComponent implements OnInit, OnDestroy {
       //this.noteRef = this.fireDatabase.object(notepath).valueChanges();
       this.noteRef = this.fireDatabase.object(notepath);
       this.noteRef.valueChanges()
-        .subscribe(value => {
-          if (value == null) {
-            this.noteInfo = null;
-            //note has been destroyed
-            //do nothing out of respect
-          }
-          else {
-            this.noteInfo = new Note(value.title, value.id, null, notepath);
-          }
-        });
+      .subscribe(value => {
+        if (value == null) {
+          this.noteInfo = null;
+          this.appComponent.noteTitle = "";
+          //note has been destroyed
+          //do nothing out of respect
+        }
+        else {
+          this.noteInfo = new Note(value.title, value.id, notepath, null);
+        }
+      });
       this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
       console.log("noteTextRef %s", "fileContents/" + this.noteid);
       this.noteTextRef.valueChanges()
@@ -146,6 +149,7 @@ export class NoteComponent implements OnInit, OnDestroy {
           }
           else {
             this.noteInfo.text = value.data;
+            this.appComponent.noteTitle = this.noteInfo.name;
             this.updateEditorText(this.noteInfo.text);
           }
         });
