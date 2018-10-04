@@ -315,15 +315,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void removeFile(com.cs407.noted.File file, com.cs407.noted.File parent) {
-        // TODO: remove user from fileContents list
-
+        DatabaseReference fileContents = database.getReference("fileContents");
         try {
-            if (parent.getId().equals("root")) {
-                // no child field in database
-                myRef.child(file.getId()).removeValue(getDatabaseCompletionListener(file));
-            } else {
-                myRef.child(file.getId()).removeValue(getDatabaseCompletionListener(file));
-            }
+            String id = file.getId();
+            myRef.child(id).removeValue(getDatabaseCompletionListener(file));
+            // TODO: remove file only if owner of file
+            fileContents.child(id).removeValue();
         } catch (DatabaseException e) {
             e.printStackTrace();
             String err = String.format("Failed to remove %s", file.getTitle());
