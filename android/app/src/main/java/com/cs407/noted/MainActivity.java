@@ -25,6 +25,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
@@ -235,63 +236,13 @@ public class MainActivity extends AppCompatActivity {
         action_folder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                floatingActionsMenu.collapse();
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Enter Folder Name");
-
-                // Set up the input
-                final EditText input = new EditText(MainActivity.this);
-                input.setInputType(InputType.TYPE_CLASS_TEXT);
-                builder.setView(input);
-
-                // Set up the buttons
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String input_text = input.getText().toString();
-                        com.cs407.noted.File file = new com.cs407.noted.File(null, null, input_text, null, null, FileType.FOLDER.toString(), null);
-
-                        listAdapter.addNewFile(file, myRef);
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
+                respondToFolderOrDocumentClick(floatingActionsMenu, FileType.FOLDER);
             }
         });
         action_doc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                floatingActionsMenu.collapse();
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Enter Document Name");
-
-                // Set up the input
-                final EditText input = new EditText(MainActivity.this);
-                input.setInputType(InputType.TYPE_CLASS_TEXT);
-                builder.setView(input);
-
-                // Set up the buttons
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String input_text = input.getText().toString();
-                        com.cs407.noted.File file = new com.cs407.noted.File(null, null, input_text, null, null, FileType.DOCUMENT.toString(), null);
-                        listAdapter.addNewFile(file, myRef);
-
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
+                respondToFolderOrDocumentClick(floatingActionsMenu, FileType.DOCUMENT);
             }
         });
         action_select_image.setOnClickListener(new View.OnClickListener() {
@@ -329,6 +280,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+
 
     private com.cs407.noted.File setFileParents(com.cs407.noted.File file, com.cs407.noted.File parent) {
         if (file == null) { return null; }
@@ -376,15 +329,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void removeFile(com.cs407.noted.File file, com.cs407.noted.File parent) {
-        // TODO: remove user from fileContents list
-
+        DatabaseReference fileContents = database.getReference("fileContents");
         try {
-            if (parent.getId().equals("root")) {
-                // no child field in database
-                myRef.child(file.getId()).removeValue(getDatabaseCompletionListener(file));
-            } else {
-                myRef.child(file.getId()).removeValue(getDatabaseCompletionListener(file));
-            }
+            String id = file.getId();
+            myRef.child(id).removeValue(getDatabaseCompletionListener(file));
+            // TODO: remove file only if owner of file
+            fileContents.child(id).removeValue();
         } catch (DatabaseException e) {
             e.printStackTrace();
             String err = String.format("Failed to remove %s", file.getTitle());
@@ -516,5 +466,102 @@ public class MainActivity extends AppCompatActivity {
 
             builder.show();
         }
+    }
+
+
+    private void respondToFolderOrDocumentClick(FloatingActionsMenu floatingActionsMenu, final FileType type) {
+        floatingActionsMenu.collapse();
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        if (type.equals(FileType.DOCUMENT)) {
+            builder.setTitle("Enter Document Name");
+        } else {
+            builder.setTitle("Enter Folder Name");
+        }
+
+        // Set up the input
+        final EditText input = new EditText(MainActivity.this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                addFolderOrDocument(input.getText().toString(), type);
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.show();
+    }
+
+
+
+    public boolean addFolderOrDocument(String text, FileType type) {
+
+        if (! (type.equals(FileType.DOCUMENT) || type.equals(FileType.FOLDER)) ) {
+            return false;
+        }
+        TextLength verify = checkTextLength(text);
+        if (verify.equals(TextLength.NIL) || verify.equals(TextLength.EMPTY)) {
+            if (type.equals(FileType.DOCUMENT)) {
+                text = "Untitled document";
+            } else {
+                text = "Untitled folder";
+            }
+        }
+
+        // now that we added valid title to NIL and EMPTY, we can add new file for those and VALID
+        if (!verify.equals(TextLength.TOO_LARGE)) {
+            // if length is between 0 and 255, we will add the file
+            String input_text = text;
+            com.cs407.noted.File file = new com.cs407.noted.File(
+                    null, null, input_text, null, null,
+                    type.toString(), null);
+            listAdapter.addNewFile(file, myRef);
+            return true;
+        } else {
+            // the text is too large, so don't accept it
+            Toast.makeText(this, "File name is too long", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+    }
+
+
+    private TextLength checkTextLength(String text) {
+        if (text == null) {
+            return TextLength.NIL;
+        }
+        int len = text.length();
+        if (len < 1) {
+            return TextLength.EMPTY;
+        }
+        else if (len > 255) {
+            return TextLength.TOO_LARGE;
+        } else {
+            return TextLength.VALID;
+        }
+
+
+    }
+
+    public String getName() {
+        return this.getName();
+    }
+
+    public ListAdapter getListAdapter() {
+        return listAdapter;
+    }
+
+    public DatabaseReference getMyRef() {
+        return myRef;
+    }
+
+    public com.cs407.noted.File getRoot() {
+        return root;
     }
 }
