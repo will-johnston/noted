@@ -95,20 +95,47 @@ export class FilesystemService {
     }
     return null;
   }
-  //only works on root level
-  //FIXME
+  //recursive search
   containsNote(id) : boolean {
     for (var i = 0; i < this.notes.length; i++) {
       if (this.notes[i].id === id)
         return true;
     }
+    for (var i = 0; i < this.folders.length; i++) {
+      if (this.folders[i].getNote(id) != null)
+        return true;
+    }
     return false;
   }
-  //only works on root level
-  //FIXME
+  //recursive search
   containsFolder(id) : boolean {
     for (var i = 0; i < this.folders.length; i++) {
       if (this.folders[i].id === id)
+        return true;
+      else {
+        var folder : Folder = this.folders[i].getFolder(id);
+        if (folder != null)
+          return true;
+      }
+    }
+    return false;
+  }
+  //checks the current note array to see if the note name exists
+  currentContainsNote(name : string) : boolean {
+    if (this.currentNotes == null)
+      return false;
+    for (var i = 0; i < this.currentNotes.length; i++) {
+      if (this.currentNotes[i].name == name) 
+        return true;
+    }
+    return false;
+  }
+  //checks the current folder array to see if the folder name exists
+  currentContainsFolder(name : string) : boolean {
+    if (this.currentFolders == null)
+      return false;
+    for (var i = 0; i < this.currentFolders.length; i++) {
+      if (this.currentFolders[i].name == name)
         return true;
     }
     return false;
@@ -396,7 +423,11 @@ export class FilesystemService {
       this.subscribed = true;
     }
   }
-  createNote(name : string) {
+  createNote(name : string) : boolean {
+    if (this.currentContainsNote(name)) {
+      alert(name + " already exists in this folder!");
+      return false;
+    }
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
     console.log("Current path: %o", this.currentPath.list);
     if (this.currentPath.addedChild || !this.currentPath.inRootDirectory) {
@@ -405,13 +436,19 @@ export class FilesystemService {
     else {
       this.fireDatabase.list(Path.RootPath(this.userid).toString()).push({ title : name, type : "DOCUMENT", id : null});
     }
+    return true;
   }
-  createFolder(name : string) {
+  createFolder(name : string) : boolean {
+    if (this.currentContainsFolder(name)) {
+      alert(name + " already exists in this folder!");
+      return false;
+    }
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "FOLDER", children : null});
     if (this.currentPath.addedChild  || !this.currentPath.inRootDirectory)
       this.fireDatabase.list(this.currentPath.toInsertString()).push({ title : name, type : "FOLDER", children : null});
     else
       this.fireDatabase.list(Path.RootPath(this.userid).toString()).push({ title : name, type : "FOLDER", children : null});
+    return true;
   }
   deleteNote(note : Note) : boolean {
     var noteRef = this.fireDatabase.object(note.path);

@@ -44,9 +44,13 @@ export class HomescreenComponent implements OnInit {
   }
   createFolder(name) {
     this.filesystemService.createFolder(name);
+    (<HTMLInputElement>document.getElementById("folderName")).value = "";
+    //folderName.value = "";
   }
   createNote(name) {
     this.filesystemService.createNote(name);
+    (<HTMLInputElement>document.getElementById("noteName")).value = "";
+    //noteName.value = "";
   }
   gotoFolder(name) {
     this.navList.push(name);
