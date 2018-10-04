@@ -1,6 +1,7 @@
-<nav>
+<!--<nav>
   <a routerLink="/note"><button>Go to the Notescreen</button></a>
-</nav>
+</nav>-->
+
 <div id="menubar">
   <mat-list id="navbar">
     <mat-list-item *ngFor="let value of navLoc">
@@ -14,13 +15,13 @@
         <mat-menu #menu="matMenu">
           <button mat-menu-item>
             <mat-icon>note_add</mat-icon>
-            <span>Create Note</span>
+            <span (click)="openDialog()">Create Note</span>
           </button>
           <button mat-menu-item>
             <mat-icon>create_new_folder</mat-icon>
             <span>Create Folder</span>
           </button>
-        </mat-menu>        
+        </mat-menu>   
   </div>
 </div>
 
@@ -54,8 +55,8 @@
   </mat-grid-tile>
 </mat-grid-list>
 
-<!--Folder name: <input #folderName type="text" id="folderName" />
+Folder name: <input #folderName type="text" id="folderName" />
 <button (click)="createFolder(folderName.value)">Create a folder</button>
 <br />
 Note name: <input #noteName type="text" id="noteName" />
-<button (click)="createNote(noteName.value)">Create a note</button>-->
+<button (click)="createNote(noteName.value)">Create a note</button>

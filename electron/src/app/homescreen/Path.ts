@@ -1,7 +1,7 @@
 export class Path {
     private type : PathType;
-    private inRootDirectory : boolean;          //if we're at '/';
-    public addedChild : boolean;
+    public inRootDirectory : boolean;          //if we're at '/';
+    public addedChild : boolean;               //within a /children location
     private addedUserId : boolean;
     list : string[];
     constructor(type : PathType) {

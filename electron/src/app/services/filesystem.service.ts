@@ -7,6 +7,7 @@ import { Note } from '../note/Note';
 import { Folder } from '../homescreen/Folder'
 import { Path, PathType } from '../homescreen/Path';
 import { UserHelperService } from './userhelper.service';
+import { HomescreenComponent } from '../homescreen/homescreen.component';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +24,9 @@ export class FilesystemService {
   private userRef : any;
   private values : Observable<any>;
   private subscribed : boolean;
+
+  public homescreen : HomescreenComponent;
+  public onReady : any[] = Array();   //callbacks for when the filesystem is ready
 
   constructor(private fireDatabase: AngularFireDatabase, private userHelper : UserHelperService) {
     this.notes = Array();
@@ -45,6 +49,7 @@ export class FilesystemService {
           this.startSubscription();
           this.currentNotes = this.notes;
           this.currentFolders = this.folders;
+          this.ready();
         }
       });
    }
@@ -59,6 +64,12 @@ export class FilesystemService {
       /*}
       return this.notes;
   }*/
+
+  ready() {
+    for (var i = 0; i < this.onReady.length; i++) {
+      this.onReady[i](this);
+    }
+  }
 
   //returns the full Note object for a given id
   //null if the note doesn't exist
@@ -234,8 +245,11 @@ export class FilesystemService {
                   folder.killKid(keys);
                   return;
                 }
-                if (keys.length == folder.children.length) {
-
+                else if (keys.length > folder.children.length) {
+                  console.log("A child has been added!");
+                }
+                else if (keys.length == folder.children.length) {
+                  console.log("A child has changed!");
                 }
               }
               if (action.payload.val().children == null) {
@@ -385,7 +399,7 @@ export class FilesystemService {
   createNote(name : string) {
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
     console.log("Current path: %o", this.currentPath.list);
-    if (this.currentPath.addedChild) {
+    if (this.currentPath.addedChild || !this.currentPath.inRootDirectory) {
       this.fireDatabase.list(this.currentPath.toInsertString()).push({ title : name, type : "DOCUMENT", id : null});
     }
     else {
@@ -394,7 +408,7 @@ export class FilesystemService {
   }
   createFolder(name : string) {
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "FOLDER", children : null});
-    if (this.currentPath.addedChild)
+    if (this.currentPath.addedChild  || !this.currentPath.inRootDirectory)
       this.fireDatabase.list(this.currentPath.toInsertString()).push({ title : name, type : "FOLDER", children : null});
     else
       this.fireDatabase.list(Path.RootPath(this.userid).toString()).push({ title : name, type : "FOLDER", children : null});
@@ -509,6 +523,7 @@ export class FilesystemService {
         this.currentNotes = lastFolder.notes;
         this.currentFolder = lastFolder;
         this.currentPath = path;
+        console.log("Updated current path to %o", path);
       }
     }
   }

@@ -11,6 +11,7 @@ import { Note } from './Note';
 import { QuillEditorComponent } from 'ngx-quill';
 import Quill from 'quill';
 import { Observable } from 'rxjs';
+import { AppComponent } from '../app.component';
 
 // override p with div tag
 const Parchment = Quill.import('parchment');
@@ -43,7 +44,7 @@ export class NoteComponent implements OnInit {
   subscribed : boolean = false;
   text : string;
   html : string;
-  constructor(private route: ActivatedRoute, private router: Router, private fireDatabase: AngularFireDatabase, private filesystemService : FilesystemService) { 
+  constructor(private route: ActivatedRoute, private router: Router, private fireDatabase: AngularFireDatabase, private filesystemService : FilesystemService, private appComponent : AppComponent) { 
     this.text = "";
     this.html = "";
     console.log(Quill);
@@ -111,6 +112,7 @@ export class NoteComponent implements OnInit {
       .subscribe(value => {
         if (value == null) {
           this.noteInfo = null;
+          this.appComponent.noteTitle = "";
           //note has been destroyed
           //do nothing out of respect
         }
@@ -133,6 +135,7 @@ export class NoteComponent implements OnInit {
         }
         else {
           this.noteInfo.text = value.data;
+          this.appComponent.noteTitle = this.noteInfo.name;
           this.updateEditorText(this.noteInfo.text);
         }
       });

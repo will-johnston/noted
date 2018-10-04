@@ -6,7 +6,7 @@ import { NgModule } from '@angular/core';
         MatButtonModule, 
         MatCheckboxModule,
         MatGridListModule,
-        MatIconModule
+        MatIconModule,
     ],
     exports : [
         MatButtonModule, 

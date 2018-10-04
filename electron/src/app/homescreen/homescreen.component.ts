@@ -1,6 +1,6 @@
-import { Component, OnInit, NgModule } from '@angular/core';
+import { Component, OnInit, NgModule, Inject } from '@angular/core';
 import { FilesystemService } from '../services/filesystem.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute, NavigationStart } from '@angular/router';
 import { Note } from '../note/Note'
 import { Folder } from './Folder'
 import { NavList } from './NavList';
@@ -19,10 +19,20 @@ export class HomescreenComponent implements OnInit {
   //navLoc : string[];
   navList : NavList<string>;
   navLoc : string[];
-  constructor(private filesystemService : FilesystemService, private router : Router) {
+  constructor(private filesystemService : FilesystemService, private router : Router, private activeRoute : ActivatedRoute) {
     this.navList = new NavList<string>();
     this.navLoc = this.navList.list;
     this.navList.push("/");
+    this.router.events.subscribe(event => {
+      //console.log("Router event: %o", event);
+      if (event instanceof NavigationStart) {
+        if (event.url.indexOf('homescreen')) {
+          console.log("navigated to the homescreen");
+          //TODO handle renavigate
+          //this.ngOnInit();
+        }
+      }
+    });
    }
 
   getNotes() {
@@ -89,8 +99,13 @@ export class HomescreenComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.userid = this.filesystemService.userid;
-    this.goBackTo('/');
+    this.filesystemService.homescreen = this;
+    this.filesystemService.onReady.push(function(filesystemService) {
+      var t : HomescreenComponent = filesystemService.homescreen;
+      t.userid = t.filesystemService.userid;
+      t.goBackTo('/');
+    });
   }
+  
 
 }

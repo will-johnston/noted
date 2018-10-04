@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterModule, Routes, Router } from '@angular/router';
+import { RouterModule, Routes, Router, NavigationStart } from '@angular/router';
 import * as firebase from 'firebase'
 import { UserHelperService } from './services/userhelper.service';
 
@@ -10,6 +10,7 @@ import { UserHelperService } from './services/userhelper.service';
 })
 export class AppComponent {
   title = 'noted';
+  public noteTitle = "";
 
   constructor(private router : Router, private userHelper : UserHelperService) {
     // init firebase
@@ -39,6 +40,21 @@ export class AppComponent {
         userHelper.currentUser = null;
         this.router.navigate(['login']);
       }
+    });
+    this.router.events.subscribe(event => {
+      //console.log("Router event: %o", event);
+      if (event instanceof NavigationStart) {
+        this.noteTitle = "";
+      }
+    });
+  }
+  logout() {
+    firebase.auth().signOut().then(function() {
+      // Sign-out successful.
+      console.log("LOGOUT!")
+    }, function(error) {
+      // An error happened.
+      console.log(error.log)
     });
   }
 }
