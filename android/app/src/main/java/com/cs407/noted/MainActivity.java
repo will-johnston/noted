@@ -222,38 +222,13 @@ public class MainActivity extends AppCompatActivity {
         action_folder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                respondToFolderClick(floatingActionsMenu);
+                respondToFolderOrDocumentClick(floatingActionsMenu, FileType.FOLDER);
             }
         });
         action_doc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                floatingActionsMenu.collapse();
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Enter Document Name");
-
-                // Set up the input
-                final EditText input = new EditText(MainActivity.this);
-                input.setInputType(InputType.TYPE_CLASS_TEXT);
-                builder.setView(input);
-
-                // Set up the buttons
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String input_text = input.getText().toString();
-                        com.cs407.noted.File file = new com.cs407.noted.File(null, null, input_text, null, null, FileType.DOCUMENT.toString(), null);
-                        listAdapter.addNewFile(file, myRef);
-
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
+                respondToFolderOrDocumentClick(floatingActionsMenu, FileType.DOCUMENT);
             }
         });
         action_select_image.setOnClickListener(new View.OnClickListener() {
@@ -291,6 +266,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+
 
     private com.cs407.noted.File setFileParents(com.cs407.noted.File file, com.cs407.noted.File parent) {
         if (file == null) { return null; }
@@ -470,10 +447,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void respondToFolderClick(FloatingActionsMenu floatingActionsMenu) {
+
+    private void respondToFolderOrDocumentClick(FloatingActionsMenu floatingActionsMenu, final FileType type) {
         floatingActionsMenu.collapse();
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setTitle("Enter Folder Name");
+        if (type.equals(FileType.DOCUMENT)) {
+            builder.setTitle("Enter Document Name");
+        } else {
+            builder.setTitle("Enter Folder Name");
+        }
 
         // Set up the input
         final EditText input = new EditText(MainActivity.this);
@@ -484,8 +466,7 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                addFolder(input.getText().toString());
-
+                addFolderOrDocument(input.getText().toString(), type);
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -496,10 +477,21 @@ public class MainActivity extends AppCompatActivity {
         });
         builder.show();
     }
-    public boolean addFolder(String text) {
+
+
+
+    public boolean addFolderOrDocument(String text, FileType type) {
+
+        if (! (type.equals(FileType.DOCUMENT) || type.equals(FileType.FOLDER)) ) {
+            return false;
+        }
         TextLength verify = checkTextLength(text);
         if (verify.equals(TextLength.NIL) || verify.equals(TextLength.EMPTY)) {
-            text = "Untitled folder";
+            if (type.equals(FileType.DOCUMENT)) {
+                text = "Untitled document";
+            } else {
+                text = "Untitled folder";
+            }
         }
 
         // now that we added valid title to NIL and EMPTY, we can add new file for those and VALID
@@ -508,7 +500,7 @@ public class MainActivity extends AppCompatActivity {
             String input_text = text;
             com.cs407.noted.File file = new com.cs407.noted.File(
                     null, null, input_text, null, null,
-                    FileType.FOLDER.toString(), null);
+                    type.toString(), null);
             listAdapter.addNewFile(file, myRef);
             return true;
         } else {
@@ -519,7 +511,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public TextLength checkTextLength(String text) {
+    private TextLength checkTextLength(String text) {
         if (text == null) {
             return TextLength.NIL;
         }

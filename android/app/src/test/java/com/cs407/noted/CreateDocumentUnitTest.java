@@ -1,27 +1,30 @@
 package com.cs407.noted;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.*;
-import static org.mockito.Mockito.*;
-
-import org.junit.Before;
-import org.mockito.ArgumentCaptor;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.Mockito;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 
 @RunWith(MockitoJUnitRunner.class)
-public class CreateFolderUnitTest {
+public class CreateDocumentUnitTest {
+
     @Mock
     MainActivity mainActivity;
 
@@ -29,10 +32,10 @@ public class CreateFolderUnitTest {
     ListAdapter listAdapter;
 
 
-    private String folder_name_1 = "test folder1";
-    private String folder_name_2 = "test folder2";
-    private String folder_name_3 = "test folder3";
-    private String equal260 = "012345678901234567890123456789012345678901234567890123456789" +
+    private String doc_name_1 = "test document1";
+    private String doc_name_2 = "test document2";
+    private String doc_name_3 = "test document3";
+    private String equal260 ="012345678901234567890123456789012345678901234567890123456789" +
             "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
             "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
             "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
@@ -44,14 +47,12 @@ public class CreateFolderUnitTest {
             "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
             "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
             "0123456789012345678901234567890123456789";
-
-
-    private File file1 = new File("test1", "root", folder_name_1,
-            null, null, "FOLDER", null);
-    private File file2 = new File("test2", "root", folder_name_2,
-            null, null, "FOLDER", null);
-    private File file3 = new File("test3", "root", folder_name_3,
-            null, null, "FOLDER", null);
+    private File file1 = new File("test1", "root", doc_name_1,
+            null, null, "DOCUMENT", null);
+    private File file2 = new File("test2", "root", doc_name_2,
+            null, null, "DOCUMENT", null);
+    private File file3 = new File("test3", "root", doc_name_3,
+            null, null, "DOCUMENT", null);
     private List<File> list = new ArrayList(Arrays.asList(new File[]{file1, file2, file3}));
 
     @Test
@@ -61,57 +62,57 @@ public class CreateFolderUnitTest {
     }
 
     @Test
-    public void test_add_folder_called_1() {
-        mainActivity.addFolderOrDocument(folder_name_1, FileType.FOLDER);
-        verify(mainActivity,atLeastOnce()).addFolderOrDocument(folder_name_1, FileType.FOLDER);
+    public void test_add_doc_called_1() {
+        mainActivity.addFolderOrDocument(doc_name_1, FileType.DOCUMENT);
+        verify(mainActivity,atLeastOnce()).addFolderOrDocument(doc_name_1, FileType.DOCUMENT);
     }
 
     @Test
-    public void test_add_folder_called_2() {
-        mainActivity.addFolderOrDocument(folder_name_2, FileType.FOLDER);
-        verify(mainActivity,atLeastOnce()).addFolderOrDocument(folder_name_2, FileType.FOLDER);
+    public void test_add_doc_called_2() {
+        mainActivity.addFolderOrDocument(doc_name_2, FileType.DOCUMENT);
+        verify(mainActivity,atLeastOnce()).addFolderOrDocument(doc_name_2, FileType.DOCUMENT);
     }
 
     @Test
-    public void test_add_folder_called_empty_string() {
+    public void test_add_doc_called_empty_string() {
         String empty = "";
-        when(mainActivity.addFolderOrDocument(anyString(), eq(FileType.FOLDER)) && anyString().length() < 1)
+        when(mainActivity.addFolderOrDocument(anyString(), eq(FileType.DOCUMENT)) && anyString().length() < 1)
                 .thenReturn(true);
-        // we know this is true, because we rename empty strings to "Untitled folder"
-        boolean add = mainActivity.addFolderOrDocument(empty, FileType.FOLDER);
+        // we know this is true, because we rename empty strings to "Untitled doc"
+        boolean add = mainActivity.addFolderOrDocument(empty, FileType.DOCUMENT);
         assertThat(add, is(true));
     }
 
     @Test
-    public void test_add_folder_called_null() {
-        // we know this is true, because we rename null strings to "Untitled folder"
-        when(mainActivity.addFolderOrDocument(null, FileType.FOLDER)).thenReturn(true);
-        assertThat(mainActivity.addFolderOrDocument(null, FileType.FOLDER), is(true));
+    public void test_add_doc_called_null() {
+        // we know this is true, because we rename null strings to "Untitled doc"
+        when(mainActivity.addFolderOrDocument(null, FileType.DOCUMENT)).thenReturn(true);
+        assertThat(mainActivity.addFolderOrDocument(null, FileType.DOCUMENT), is(true));
     }
 
 
     @Test
-    public void test_add_folder_called_greater_than_255chars() {
+    public void test_add_doc_called_greater_than_255chars() {
         // false because characters cannot be greater than 255
-        when(mainActivity.addFolderOrDocument(anyString(), eq(FileType.FOLDER)) && anyString().length() > 255)
+        when(mainActivity.addFolderOrDocument(anyString(), eq(FileType.DOCUMENT)) && anyString().length() > 255)
                 .thenReturn(false);
-        assertThat(mainActivity.addFolderOrDocument(equal260, FileType.FOLDER), is(false));
+        assertThat(mainActivity.addFolderOrDocument(equal260, FileType.DOCUMENT), is(false));
     }
 
     @Test
-    public void test_add_folder_called_equal_255chars() {
-        when(mainActivity.addFolderOrDocument(anyString(), eq(FileType.FOLDER))
+    public void test_add_doc_called_equal_255chars() {
+        when(mainActivity.addFolderOrDocument(anyString(), eq(FileType.DOCUMENT))
                 && anyString().length() <= 255 && anyString().length() > 0)
                 .thenReturn(true);
-        assertThat(mainActivity.addFolderOrDocument(equal260.substring(0, 255), FileType.FOLDER), is(true));
+        assertThat(mainActivity.addFolderOrDocument(equal260.substring(0, 255), FileType.DOCUMENT), is(true));
     }
 
     @Test
-    public void test_add_folder_called_equal_1char() {
-        when(mainActivity.addFolderOrDocument(anyString(), eq(FileType.FOLDER))
+    public void test_add_doc_called_equal_1char() {
+        when(mainActivity.addFolderOrDocument(anyString(), eq(FileType.DOCUMENT))
                 && anyString().length() <= 255 && anyString().length() > 0)
                 .thenReturn(true);
-        assertThat(mainActivity.addFolderOrDocument("1", FileType.FOLDER), is(true));
+        assertThat(mainActivity.addFolderOrDocument("1", FileType.DOCUMENT), is(true));
     }
 
     @Test
@@ -145,5 +146,4 @@ public class CreateFolderUnitTest {
         listAdapter.setItemListMaintainCurrentDirectory(list);
         assert listAdapter.getItemList().size() == 0;
     }
-
 }
