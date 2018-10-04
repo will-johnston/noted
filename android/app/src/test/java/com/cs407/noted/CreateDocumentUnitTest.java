@@ -76,6 +76,7 @@ public class CreateDocumentUnitTest {
     @Test
     public void test_add_doc_called_empty_string() {
         String empty = "";
+
         when(mainActivity.addFolderOrDocument(anyString(), eq(FileType.DOCUMENT)) && anyString().length() < 1)
                 .thenReturn(true);
         // we know this is true, because we rename empty strings to "Untitled doc"

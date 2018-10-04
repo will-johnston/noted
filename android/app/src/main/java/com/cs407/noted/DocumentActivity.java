@@ -75,8 +75,8 @@ public class DocumentActivity extends AppCompatActivity {
         setupStrikethrough();
         setupBullet();
         setupQuote();
-        setupLink();
-        setupClear();
+        // setupLink();
+        // setupClear();
 
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
@@ -289,6 +289,7 @@ public class DocumentActivity extends AppCompatActivity {
                 if (fc == null) {
                     return;
                 }
+                setStartEnd(knife.getSelectionStart(), knife.getSelectionEnd());
 
                 changedHtml = fc.getData();
                 if (!currentHtml.equals(changedHtml)) {
@@ -313,32 +314,53 @@ public class DocumentActivity extends AppCompatActivity {
     }
 
     private void updateCursor(int start, int end, String current, String changed) {
+        Log.e("START/END BEFORE BEFORE", String.format("%d, %d", start, end));
         // strip strings of html tags and get length
         int currentLen = current.replaceAll("(?s)<[^>]*>(\\s*<[^>]*>)*", " ").length();
         int changedLen = changed.replaceAll("(?s)<[^>]*>(\\s*<[^>]*>)*", " ").length();
         int diff = Math.abs(currentLen - changedLen);
+        int[] updatedStartEnd = updateStartEnd(start, end, currentLen, changedLen, diff, current, changed);
+        start = updatedStartEnd[0];
+        end = updatedStartEnd[1];
+        if (start == -1 || end == -1) {
+            // means we got an invalid cursor position...eagerly stopping early
+            return;
+        }
+
+        try {
+            this.knife.setSelection(start, end);
+        } catch (IndexOutOfBoundsException e) {
+            // can occur if the user is typing absurdly quickly
+            // happens when the cursor position is negative or greater than the changed string length
+            e.printStackTrace();
+        }
+    }
+
+    public int[] updateStartEnd(int start, int end, int currentLen, int changedLen, int diff, String current, String changed) {
+        Log.e("START/END BEFORE", String.format("%d, %d", start, end));
+        if (start > end || start < 0) {
+            return new int[]{-1, -1};
+        }
 
         if (changedLen > currentLen) {
             // text was added
-            if (!changed.substring(0, currentLen).equals(current)) {
+            if (!changed.substring(0, end).equals(current.substring(0, end))) {
                 // text was added before the cursor
                 start += diff;
                 end += diff;
             }
         } else {
             // text was deleted
-            if (!current.substring(0, changedLen).equals(changed)) {
+            if (end > changedLen || (end <= changedLen &&
+                    !current.substring(0, end).equals(changed.substring(0, end)))) {
+            //if (!current.substring(0, changedLen).equals(changed)) {
                 // text was removed before the cursor
                 start -= diff;
                 end -= diff;
             }
         }
-        try {
-            this.knife.setSelection(start, end);
-        } catch (IndexOutOfBoundsException e) {
-            // happens if the user is typing absurdly quickly
-            e.printStackTrace();
-        }
+        Log.e("START/END AFTER", String.format("%d, %d", start, end));
+        return new int[]{start, end};
     }
 
     private TextWatcher getTextWatcher() {
@@ -356,20 +378,32 @@ public class DocumentActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                currentHtml = knife.toHtml();
-                if (!currentHtml.equals(changedHtml)) {
-                    setStartEnd(knife.getSelectionStart(), knife.getSelectionEnd());
-                    ref.child("data").setValue(currentHtml);
-                    // changedHtml = currentHtml;
-                }
+                addChangeToDatabase();
             }
         };
+    }
+
+    public void addChangeToDatabase() {
+        currentHtml = knife.toHtml();
+        if (!currentHtml.equals(changedHtml)) {
+            ref.child("data").setValue(currentHtml);
+        }
     }
 
     private void setStartEnd(int start, int end) {
         this.startPosition = start;
         this.endPosition = end;
+        Log.e("START/END SET", String.format("%d, %d", start, end));
 
+
+    }
+
+    public String getCurrentHtml() {
+        return currentHtml;
+    }
+
+    public void setCurrentHtml(String currentHtml) {
+        this.currentHtml = currentHtml;
     }
 
     @Override
