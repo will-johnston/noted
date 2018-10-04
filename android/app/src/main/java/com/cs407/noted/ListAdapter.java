@@ -14,19 +14,13 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 
 
 public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> {
@@ -216,10 +210,13 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
 //                        intent.putExtra("databaseReference", "");
 //                    }
                     intent.putExtra("title", file.getTitle());
+                    intent.putExtra("id", file.getId());
                     context.startActivity(intent);
                 }
                 else if(file.getType().equals(FileType.IMAGE.toString())) {
                     Intent intent = new Intent(context, ImageActivity.class);
+                    intent.putExtra("title", file.getTitle());
+                    intent.putExtra("id", file.getId());
                     context.startActivity(intent);
                 }
             }

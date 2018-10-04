@@ -12,20 +12,24 @@ import { environment } from '../environments/environment';
 import { AngularFireModule } from 'angularfire2';
 import { AngularFireDatabaseModule } from 'angularfire2/database';
 import { AngularFireAuthModule } from 'angularfire2/auth';
-import { MyMaterialModule } from './material.module'; 
+import { AngularFireStorageModule } from 'angularfire2/storage';
+import { MyMaterialModule } from './material.module';
 
-import {NgxElectronModule} from 'ngx-electron'
-import {QuillModule} from 'ngx-quill'
+import { NgxElectronModule } from 'ngx-electron';
+import { QuillModule } from 'ngx-quill';
 
 import { AuthService } from './services/auth.service';
 import { FilesystemService } from './services/filesystem.service';
+
+import { HttpClientModule } from '@angular/common/http';
+import { RouterModule } from '@angular/router';
 
 @NgModule({
   declarations: [
     AppComponent,
     LoginComponent,
     HomescreenComponent,
-    NoteComponent
+    NoteComponent,
   ],
   imports: [
     BrowserModule,
@@ -34,11 +38,14 @@ import { FilesystemService } from './services/filesystem.service';
     AngularFireModule.initializeApp(environment.firebase, 'angular-auth-firebase'),
     AngularFireDatabaseModule,
     AngularFireAuthModule,
+    AngularFireStorageModule,
     NgxElectronModule,
     MyMaterialModule,
-    QuillModule
+    QuillModule,
+    HttpClientModule,
+    RouterModule
   ],
-  providers: [AuthService, FilesystemService ],
+  providers: [AuthService, FilesystemService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

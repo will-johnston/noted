@@ -7,7 +7,10 @@
 <button (click)='saveNote()'>Save</button>
 <button (click)='deleteNote()'>Delete</button>
 <a routerLink="/homescreen"><button>Back</button></a>
-<!--<div id="editor2">
-    <p>2</p>
-</div>-->
-<quill-editor #editor class="editor2" (onEditorCreated)="setFocus($event)"></quill-editor>
+<button class="btn btn-primary" id="start" (click)="start();">Record</button>
+<button class="btn btn-primary" id="stop" disabled=true>Stop</button>
+<quill-editor class="editor2" 
+    (onEditorCreated)="setFocus($event)"
+    (onContentChanged)="editorContentChanged($event)"
+></quill-editor>
+<audio controls></audio>
