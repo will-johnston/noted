@@ -20,9 +20,15 @@ import { AppComponent } from '../app.component';
 
 import { QuillEditorComponent } from 'ngx-quill';
 
+import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
+
 declare var MediaRecorder: any;
 declare var Blob: any;
 declare var ConcatenateBlobs: any;
+
+
+
+
 
 @Component({
   selector: 'app-note',
@@ -56,7 +62,8 @@ export class NoteComponent implements OnInit, OnDestroy {
     private _electronService: ElectronService,
     private storage: AngularFireStorage,
     private filesystemService: FilesystemService,
-    private appComponent : AppComponent
+    private appComponent : AppComponent,
+    private confirmationDialogService: ConfirmationDialogService
   ) {
     this.text = "";
     this.html = "";
@@ -73,7 +80,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       )
       .subscribe(data => {
         //console.log('view child + directly subscription', data)
-        
+
         console.log("text %s, html %s", data.text, data.html);
     });
     */
@@ -322,15 +329,19 @@ export class NoteComponent implements OnInit, OnDestroy {
     //this.noteRef.update({ htmltext : this.html});
     this.noteTextRef.update({ data: this.html });
   }
-  deleteNote() {
-    /*
-      TODO:
-        1. Create a button to delete a note 
+  deleteNote(id : string, name :string ) {
+    /*  TODO:
+        1. Create a button to delete a note
           I've created a temporary button for testing, make an actual button
         2. Create a ‘confirm deletion’ modal to confirm the user’s intention to delete the note
         3. If confirm, call do what's below, else do nothing
     */
-    this.__delete();
+
+    this.confirmationDialogService.confirm('Please confirm', 'Sure you want to delete ' + name+'?')
+    .then((confirmed)=> {if (confirmed) {this.__delete();}});
+
+
+
   }
   //Permanently deletes a note
   __delete() {

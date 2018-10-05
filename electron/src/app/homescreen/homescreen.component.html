@@ -21,7 +21,7 @@
             <mat-icon>create_new_folder</mat-icon>
             <span>Create Folder</span>
           </button>
-        </mat-menu>   
+        </mat-menu>
   </div>
 </div>
 
@@ -44,14 +44,14 @@
       rowspan="1">
       <div>
         {{note.name}}
-        <input #idField id="idField" type="hidden" value={{note.id}} /> 
+        <input #idField id="idField" type="hidden" value={{note.id}} />
         <br />
         <button mat-raised-button color="primary" (click)="gotoNote(idField.value)">Go to Note</button>
-        <button mat-icon-button color="accent" (click)="deleteNote(idField.value)">
+        <button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
           <mat-icon aria-label="Delete">delete</mat-icon>
         </button>
       </div>
-    
+
   </mat-grid-tile>
 </mat-grid-list>
 

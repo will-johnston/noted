@@ -1,4 +1,4 @@
-import { Component, OnInit, NgModule, Inject } from '@angular/core';
+import { Component, OnInit, NgModule, Inject, Input } from '@angular/core';
 import { FilesystemService } from '../services/filesystem.service';
 import { Router, ActivatedRoute, NavigationStart } from '@angular/router';
 import { Note } from '../note/Note'
@@ -6,20 +6,23 @@ import { Folder } from './Folder'
 import { NavList } from './NavList';
 import * as firebase from 'firebase';
 
+import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
+
+
 @Component({
   selector: 'app-homescreen',
   templateUrl: './homescreen.component.html',
   styleUrls: ['./homescreen.component.css']
 })
 export class HomescreenComponent implements OnInit {
-
+  @Input() note: Note;
   notes : Note[];
   folders: Folder[];
   userid : string = null;
   //navLoc : string[];
   navList : NavList<string>;
   navLoc : string[];
-  constructor(private filesystemService : FilesystemService, private router : Router, private activeRoute : ActivatedRoute) {
+  constructor(private filesystemService : FilesystemService, private router : Router, private activeRoute : ActivatedRoute, private confirmationDialogService: ConfirmationDialogService) {
     this.navList = new NavList<string>();
     this.navLoc = this.navList.list;
     this.navList.push("/");
@@ -86,20 +89,22 @@ export class HomescreenComponent implements OnInit {
       console.log(error.log)
     });
   }
-  deleteNote(id : string) {
+  deleteNote(id : string, name :string ) {
     /*
       TODO:
-        1. Create a button to delete a note 
+        1. Create a button to delete a note
           I've created a temporary button for testing, make an actual button
         2. Create a ‘confirm deletion’ modal to confirm the user’s intention to delete the note
         3. If confirm, call do what's below, else do nothing
     */
-    if (this.filesystemService.deleteNoteFromId(id)) {
+    this.confirmationDialogService.confirm('Please confirm', 'Sure you want to deletei ' + name+'?')
+    .then((confirmed)=> {if (confirmed) {this.filesystemService.deleteNoteFromId(id)}});
+    /*if (this.filesystemService.deleteNoteFromId(id)) {
       //works
     }
     else {
       //didn't work
-    }
+    }*/
   }
 
   ngOnInit() {
@@ -110,6 +115,6 @@ export class HomescreenComponent implements OnInit {
       t.goBackTo('/');
     });
   }
-  
+
 
 }

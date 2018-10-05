@@ -6,14 +6,14 @@
 </ng-template>
 <mat-toolbar>
     <button (click)='saveNote()' mat-stroked-button><mat-icon>save</mat-icon></button>
-    <button (click)='deleteNote()' mat-stroked-button><mat-icon>delete</mat-icon></button>
+    <button (click)='deleteNote(noteid, noteInfo.name)' mat-stroked-button><mat-icon>delete</mat-icon></button>
     <a routerLink="/homescreen" mat-stroked-button><mat-icon>arrow_back</mat-icon></a>
     <audio controls></audio>
     <button mat-stroked-button color="primary" id="start" (click)="start();"><mat-icon>fiber_manual_record</mat-icon></button>
     <button mat-stroked-button color="warn" id="stop" disabled=true><mat-icon>stop</mat-icon></button>
 </mat-toolbar>
 
-<quill-editor class="editor2" 
+<quill-editor class="editor2"
     (onEditorCreated)="setFocus($event)"
     (onContentChanged)="editorContentChanged($event)"
 ></quill-editor>

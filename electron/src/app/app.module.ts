@@ -15,6 +15,8 @@ import { AngularFireAuthModule } from 'angularfire2/auth';
 import { AngularFireStorageModule } from 'angularfire2/storage';
 import { MyMaterialModule } from './material.module';
 
+
+
 import { NgxElectronModule } from 'ngx-electron';
 import { QuillModule } from 'ngx-quill';
 
@@ -23,6 +25,9 @@ import { FilesystemService } from './services/filesystem.service';
 
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
+import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogService } from './confirmation-dialog/confirmation-dialog.service';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -30,6 +35,7 @@ import { RouterModule } from '@angular/router';
     LoginComponent,
     HomescreenComponent,
     NoteComponent,
+    ConfirmationDialogComponent,
   ],
   imports: [
     BrowserModule,
@@ -43,9 +49,11 @@ import { RouterModule } from '@angular/router';
     MyMaterialModule,
     QuillModule,
     HttpClientModule,
-    RouterModule
+    RouterModule,
+    NgbModule.forRoot()
   ],
-  providers: [AuthService, FilesystemService],
+  providers: [AuthService, FilesystemService, ConfirmationDialogService],
+  entryComponents: [ ConfirmationDialogComponent ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
