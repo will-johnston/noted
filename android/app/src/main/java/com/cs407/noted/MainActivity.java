@@ -85,90 +85,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        // toolbar setup
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
-        getSupportActionBar().setDisplayShowHomeEnabled(false);
-
-
-        //get instance of firebase storage
-        firebaseStorage = FirebaseStorage.getInstance();
-
-        // recycler view setup
-        recyclerView = findViewById(R.id.recycler_view);
-        root = new com.cs407.noted.File("root", "", "noted", null, null, FileType.FOLDER.toString(), null);
-        root.setId("root");
-        // root.setHasListener(true);  // we have a child event listener for the first level of file system
-        listAdapter = new ListAdapter(null, root);
-        recyclerView.setAdapter(listAdapter);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-
-        // fab setup
+        setupToolbar();
+        setupRecyclerView();
         setUpFloatingActionMenu();
-
-        //check if user is logged in
+        firebaseStorage = FirebaseStorage.getInstance();
         if (checkLogin()) {
-            String displayName = currentUser.getDisplayName();
-            //Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
-
-
-            // database setup
-            database = FirebaseDatabase.getInstance();
-            String path = String.format("users/%s", currentUser.getUid());
-            this.myRef = database.getReference(path);
-            DatabaseReference filesRef = database.getReference(path);
-            // add listener
-            filesRef.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    if (dataSnapshot == null) {
-                        return;
-                    }
-                    List<com.cs407.noted.File> files = new ArrayList<>();
-                    for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                        com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
-                        // locally set the parents
-                        files.add(file);
-                    }
-                    // add files as root's children
-                    root.setChildren(null);
-
-                    // update parent
-                    List<com.cs407.noted.File> updatedFiles = new ArrayList<>();
-                    for (com.cs407.noted.File file : files) {
-                        root.addChild(file);
-                        updatedFiles.add(setFileParents(file, root));
-                    }
-
-                    listAdapter.setItemListMaintainCurrentDirectory(updatedFiles);
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                }
-            });
+            // user is logged in so we can access their data
+            setupDatabase();
         }
     }
-
-    private boolean checkLogin() {
-        // get instance of firebase authenticator
-        firebaseAuth = FirebaseAuth.getInstance();
-        currentUser = firebaseAuth.getCurrentUser();
-        if(currentUser == null) {
-            //show login activity
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-
 
     @Override
     public void onStart() {
@@ -176,7 +101,6 @@ public class MainActivity extends AppCompatActivity {
 
         //check if user is logged in
         if (checkLogin()) {
-
             int cameraPermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
             int storagePermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
             if (cameraPermission == PackageManager.PERMISSION_DENIED && storagePermission == PackageManager.PERMISSION_DENIED) {
@@ -194,6 +118,87 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         checkLogin();
+    }
+
+    private boolean checkLogin() {
+        // get instance of firebase authenticator
+        firebaseAuth = FirebaseAuth.getInstance();
+        currentUser = firebaseAuth.getCurrentUser();
+        if(currentUser == null) {
+            //show login activity
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private void onSignOut() {
+        // Firebase sign out
+        firebaseAuth.signOut();
+
+        // Google sign out
+        //app crashes here because the client variable doesn't persist
+        GoogleAuthSingleton.getInstance().client.signOut();
+
+        //show login activity
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
+    }
+
+    private void setupToolbar() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        getSupportActionBar().setDisplayShowHomeEnabled(false);
+    }
+
+    private void setupRecyclerView() {
+        recyclerView = findViewById(R.id.recycler_view);
+        root = new com.cs407.noted.File("root", "", "noted", null, null, FileType.FOLDER.toString(), null);
+        root.setId("root");
+        // root.setHasListener(true);  // we have a child event listener for the first level of file system
+        listAdapter = new ListAdapter(null, root);
+        recyclerView.setAdapter(listAdapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    private void setupDatabase() {
+
+        // database setup
+        database = FirebaseDatabase.getInstance();
+        String path = String.format("users/%s", currentUser.getUid());
+        this.myRef = database.getReference(path);
+        DatabaseReference filesRef = database.getReference(path);
+        // add listener
+        filesRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                List<com.cs407.noted.File> files = new ArrayList<>();
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
+                    // locally set the parents
+                    files.add(file);
+                }
+                // add files as root's children
+                root.setChildren(null);
+
+                // update parent
+                List<com.cs407.noted.File> updatedFiles = new ArrayList<>();
+                for (com.cs407.noted.File file : files) {
+                    root.addChild(file);
+                    updatedFiles.add(setFileParents(file, root));
+                }
+
+                listAdapter.setItemListMaintainCurrentDirectory(updatedFiles);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     @Override
@@ -274,7 +279,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     private com.cs407.noted.File setFileParents(com.cs407.noted.File file, com.cs407.noted.File parent) {
         if (file == null) { return null; }
         // set parent
@@ -316,9 +320,6 @@ public class MainActivity extends AppCompatActivity {
         myRef = myRef.getParent().getParent();
     }
 
-    public String getDatabaseRefPath() {
-        return myRef.toString();
-    }
 
     public void removeFile(com.cs407.noted.File file, com.cs407.noted.File parent) {
         DatabaseReference fileContents = database.getReference("fileContents");
@@ -334,11 +335,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-//    private com.cs407.noted.File getffffRootFromFile(com.cs407.noted.File file) {
-//        while (!file.getId().equals("root")) {
-//            file = file
-//        }
-//    }
 
     private DatabaseReference.CompletionListener getDatabaseCompletionListener(final com.cs407.noted.File file) {
         final Context context = this;
@@ -353,19 +349,6 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-    private void onSignOut() {
-        // Firebase sign out
-        firebaseAuth.signOut();
-
-        // Google sign out
-        //app crashes here because the client variable doesn't persist
-        GoogleAuthSingleton.getInstance().client.signOut();
-
-        //show login activity
-        Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
-    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -543,14 +526,6 @@ public class MainActivity extends AppCompatActivity {
 
     public String getName() {
         return this.getName();
-    }
-
-    public ListAdapter getListAdapter() {
-        return listAdapter;
-    }
-
-    public DatabaseReference getMyRef() {
-        return myRef;
     }
 
     public com.cs407.noted.File getRoot() {

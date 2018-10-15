@@ -64,16 +64,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         }
     }
 
-    public void setItemList(List<File> fileList) {
-        if (this.fileList == null) {
-            this.fileList = new ArrayList<File>();
-        } else {
-            this.fileList.clear();
-            this.fileList.addAll(fileList);
-            Collections.sort(this.fileList);
-        }
-        this.notifyDataSetChanged();
-    }
+
 
     public void setItemListMaintainCurrentDirectory(List<File> files) {
         if (files.isEmpty()) {
@@ -116,18 +107,17 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         }
     }
 
-
-    private File getRoot() {
-        File current = this.parent;
-        if (parent.getParent() == null) {
-            // we are already at the root
-            return parent;
+    public void setItemList(List<File> fileList) {
+        if (this.fileList == null) {
+            this.fileList = new ArrayList<File>();
+        } else {
+            this.fileList.clear();
+            this.fileList.addAll(fileList);
+            Collections.sort(this.fileList);
         }
-        while (current.getParent() != null) {
-            current = current.getParent();
-        }
-        return current;
+        this.notifyDataSetChanged();
     }
+
 
     public void addNewFile(File file, DatabaseReference ref) {
         // get the key in the database, which will serve as the id of the new file
@@ -147,9 +137,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
 
 
 
-
-
-
     @NonNull
     @Override
     public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -158,6 +145,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 .inflate(R.layout.custom_list_item, parent, false);
         return new MyViewHolder(view);
     }
+
 
     @Override
     public void onBindViewHolder(@NonNull final MyViewHolder holder, int position) {
