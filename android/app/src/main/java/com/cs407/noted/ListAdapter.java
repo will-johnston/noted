@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -74,37 +75,35 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
 
         } else {
             File file = files.get(0);
-            File root = file.getParent();  // this is the root node of the user
+            File root = file.getParent();  // this will always be the root node of the user
+            if (root == null) {
+                return; // something is terribly wrong– the root should be initialized
+            }
             List<File> children = new ArrayList<>();
             String parent_id = this.parent.getId();
-            if (root == null) {
-                // something is terribly wrong– the root should be initialized
-                return;
-            }
-            Queue<File> queue = new LinkedList<>();
-            queue.add(root);
-
-            while (!queue.isEmpty()) {
-                File current = queue.poll();
-                if (current.getId().equals(parent_id)) {
-                    // found it, update
-                    children.clear();
-                    if (current.getChildren() != null) {
-                        children.addAll(current.getChildren().values());
-                    }
+            // find parent, set its children accordingly
+            File parent = bfs(parent_id, root);
+            if (parent != null) {
+                if (parent.getChildren() != null) {
+                    children.addAll(parent.getChildren().values());
                     setItemList(children);
-                    return;
-
                 }
-                if (current.getChildren() != null) {
-                    children.clear();
-                    children.addAll(current.getChildren().values());
-                    for (File child : children) {
-                        queue.add(child);
-                    }
-                }
+            } else {
+                setItemList(new ArrayList<File>());
             }
         }
+    }
+
+    public File findFile(String id) {
+        // get to root directory
+        //TODO: see if this changes parent
+        File root = parent;
+        Log.e("parent before", parent.getId());
+        while (!root.getId().equals("root")) {
+            root = root.getParent();
+        }
+        Log.e("parent after", parent.getId());
+        return bfs(id, root);
     }
 
     public void setItemList(List<File> fileList) {
@@ -168,7 +167,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
 
                 // if type is folder, change list to list file's children
                 if (file.getType().equals(FileType.FOLDER.toString())) {
-                    Toast.makeText(context, "Folder!", Toast.LENGTH_SHORT).show();
                     List<File> children;
                     if (file.getChildren() != null) {
                         children = new ArrayList<>();
@@ -191,12 +189,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 }
                 else if(file.getType().equals(FileType.DOCUMENT.toString())) {
                     Intent intent = new Intent(context, DocumentActivity.class);
-//                    if (context instanceof MainActivity) {
-//
-//                        intent.putExtra("databaseReference", ((MainActivity) context).getDatabaseRefPath());
-//                    } else {
-//                        intent.putExtra("databaseReference", "");
-//                    }
                     intent.putExtra("title", file.getTitle());
                     intent.putExtra("id", file.getId());
                     context.startActivity(intent);
@@ -260,19 +252,14 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         }
     }
 
-    @Override
-    public int getItemCount() {
-        return fileList.size();
-    }
-
 
 
     class MyViewHolder extends RecyclerView.ViewHolder {
+
         TextView title;
         ImageView icon;
         ImageButton menuButton;
         View listItem;
-
         public MyViewHolder(View itemView) {
             super(itemView);
 
@@ -281,5 +268,28 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
             icon = itemView.findViewById(R.id.listIcon);
             menuButton = itemView.findViewById(R.id.menuButton);
         }
+
+    }
+
+    @Override
+    public int getItemCount() {
+        return fileList.size();
+    }
+
+    /* utilities */
+    private File bfs(String id, File root) {
+        Queue<File> queue = new LinkedList<>();
+        queue.add(root);
+
+        while (!queue.isEmpty()) {
+            File current = queue.poll();
+            if (current.getId().equals(id)) {
+                return current;
+            }
+            if (current.getChildren() != null) {
+                queue.addAll(current.getChildren().values());
+            }
+        }
+        return null;
     }
 }

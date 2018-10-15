@@ -37,6 +37,8 @@ import android.widget.Toast;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -158,7 +160,6 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycler_view);
         root = new com.cs407.noted.File("root", "", "noted", null, null, FileType.FOLDER.toString(), null);
         root.setId("root");
-        // root.setHasListener(true);  // we have a child event listener for the first level of file system
         listAdapter = new ListAdapter(null, root);
         recyclerView.setAdapter(listAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -326,7 +327,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             String id = file.getId();
             myRef.child(id).removeValue(getDatabaseCompletionListener(file));
-            // TODO: remove file only if owner of file
+            // TODO: remove files for all shared users if owner of file
             fileContents.child(id).removeValue();
         } catch (DatabaseException e) {
             e.printStackTrace();
@@ -475,7 +476,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     public boolean addFolderOrDocument(String text, FileType type) {
 
         if (! (type.equals(FileType.DOCUMENT) || type.equals(FileType.FOLDER)) ) {
@@ -505,6 +505,83 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
     }
+
+
+    /* SHARING */
+
+    /*
+    This function takes in the file to be shared and the user id of who to share with
+    and updates the newly shared users file system on firebase so that the new user can
+    access the file. Takes in the extra argument of email address to confirm with the current user
+    if the file was successfully shared
+     */
+    private void updateSharedUsersFileSystem(String file_id, String shared_user_id, String shared_user_email) {
+        com.cs407.noted.File file = listAdapter.findFile(file_id);
+        if (file == null) {
+            Toast.makeText(this, "Couldn't share file.", Toast.LENGTH_SHORT).show();
+        } else {
+            DatabaseReference refSrc = getRefSrc(file);
+            DatabaseReference refDest = getRefDest(shared_user_id);
+            copyFile(refSrc, refDest, shared_user_email);
+        }
+    }
+
+    private DatabaseReference getRefSrc(com.cs407.noted.File file) {
+        String uid = currentUser.getUid();
+        String path = file.getId();
+        String id;
+
+        // add to the files path starting from the from bottom ((now we here)) in reverse order
+        while (! (id = file.getParent().getId()).equals("root")) {
+            path = String.format("%s/children/%s", id, path);
+        }
+
+        // add the root of the ref
+        path = String.format("%s/%s", uid, path);
+        return database.getReference(path);
+    }
+
+
+    private DatabaseReference getRefDest(String shared_user_id) {
+        String path = String.format("users/%s", shared_user_id);
+        return database.getReference(path);
+    }
+
+    /*
+    Copy values (file) from source to destination in firebase
+    To do this, we need to create a single event listener, so that we can copy over the data snapshot
+     */
+    private void copyFile(DatabaseReference src, final DatabaseReference dest, final String shared_user) {
+        final Context context = this;
+        // create listener so that we can copy the value over
+        ValueEventListener valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                dest.setValue(dataSnapshot.getValue()).
+                        addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isComplete()) {
+                            Toast.makeText(context, String.format("Shared with %s", shared_user),
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(context, "Failed to share file",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+        src.addListenerForSingleValueEvent(valueEventListener);  // add one time listener
+    }
+
+
+
 
 
     private TextLength checkTextLength(String text) {
