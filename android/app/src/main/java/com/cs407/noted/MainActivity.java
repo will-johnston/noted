@@ -92,8 +92,6 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         getSupportActionBar().setDisplayShowHomeEnabled(false);
 
-        // get instance of firebase authenticator
-        firebaseAuth = FirebaseAuth.getInstance();
 
         //get instance of firebase storage
         firebaseStorage = FirebaseStorage.getInstance();
@@ -112,13 +110,7 @@ public class MainActivity extends AppCompatActivity {
         setUpFloatingActionMenu();
 
         //check if user is logged in
-        currentUser = firebaseAuth.getCurrentUser();
-        if(currentUser == null) {
-            //show login activity
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
-        }
-        else {
+        if (checkLogin()) {
             String displayName = currentUser.getDisplayName();
             //Snackbar.make(findViewById(R.id.main_layout), "Logged in as " + displayName, Snackbar.LENGTH_SHORT).show();
 
@@ -162,6 +154,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private boolean checkLogin() {
+        // get instance of firebase authenticator
+        firebaseAuth = FirebaseAuth.getInstance();
+        currentUser = firebaseAuth.getCurrentUser();
+        if(currentUser == null) {
+            //show login activity
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+            return false;
+        } else {
+            return true;
+        }
+    }
+
 
 
     @Override
@@ -169,12 +175,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
 
         //check if user is logged in
-        currentUser = firebaseAuth.getCurrentUser();
-        if(currentUser == null) {
-            //show login activity
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
-        } else {
+        if (checkLogin()) {
 
             int cameraPermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
             int storagePermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -188,20 +189,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-    }
 
     @Override
     protected void onResume() {
         super.onResume();
-        currentUser = firebaseAuth.getCurrentUser();
-        if(currentUser == null) {
-            //show login activity
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
-        }
+        checkLogin();
     }
 
     @Override

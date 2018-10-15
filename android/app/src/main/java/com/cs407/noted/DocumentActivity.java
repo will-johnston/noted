@@ -204,12 +204,9 @@ public class DocumentActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                // only trigger if there is non-empty text
-                //if (s.length() > 0) {
-                    last_edit_time = System.currentTimeMillis();
-                    // run input_finish_checker after the delay
-                    handler.postDelayed(input_finish_checker, delay);
-                //}
+                last_edit_time = System.currentTimeMillis();
+                // run input_finish_checker after the delay
+                handler.postDelayed(input_finish_checker, delay);
             }
         };
     }
