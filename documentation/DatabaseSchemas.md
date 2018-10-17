@@ -30,19 +30,19 @@ When to update the array:
 Fields:
 1. title
 The title of the note, what the filesystem will show it as.
-Ex: 'a study in scarlet'
+Ex: `a study in scarlet`
 2. path
 The full path of the note. Used in updating lastEditedBy as well as other note metadata.
-Ex: users/vs1RclX9B9cM4rkQcvWb5CZuMur1/-LO3tpAXVFl_yHTd4ZuY/children/-LO3uMMyWJReguUJtdem
+Ex: `users/vs1RclX9B9cM4rkQcvWb5CZuMur1/-LO3tpAXVFl_yHTd4ZuY/children/-LO3uMMyWJReguUJtdem`
 3. filePath
 the full path to the file contents of the note.
-Ex: fileContents/-LO3uMMyWJReguUJtdem
+Ex: `fileContents/-LO3uMMyWJReguUJtdem`
 4. owner
 The userID of the person who created this note, doesn't have to be the person that shared it to you.
-Ex: vs1RclX9B9cM4rkQcvWb5CZuMur1
+Ex: `vs1RclX9B9cM4rkQcvWb5CZuMur1`
 5. noteID
 the elementID of the shared note.
-Ex: -LO3uMMyWJReguUJtdem
+Ex: `-LO3uMMyWJReguUJtdem`
 
 #### lastEditedBy
 Never null. This field stores the userID of whoever edited the note last. When the note is first created, lastEditedBy is set to the userid of the creator. 
@@ -54,15 +54,15 @@ Never null. This field stores the userID of whoever edited the note last. When t
 The userList is used as a centralized way to get information about any user at a given time. This is critical for sharing notes as individual user data must be updated. Whenever a user first uses noted, they are added to this list.
 
 ### Proposed Service API
-1. register(User) : void
+1. `register(User) : void`
 Checks if a user is in the userList
 - If not in the list, the user and their details are added to the list
 - If in the list, do nothing
-2. search(User) : User
+2. `search(User) : User`
 Searches for a User based on given search criteria and returns the full User info based if found
 - Criteria: username || email
 - Returns username, email, id, name || null
-3. get(userID) : User
+3. `get(userID) : User`
 Returns a User with a given id.
 - Returns username, email, id, name || null
 
