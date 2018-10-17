@@ -14,5 +14,5 @@ Trying to document as much as possible to avoid any confusion.
 `npm start`
 
 ## Building
-TODO
-`npm run build` will run a built version of the Angular source but will not produce a binary.
+TODO - AVOID FOR NOW
+`npm run build` will run a built version of the Angular source but will not produce a binary. Produces weird issues that aren't producable with `npm start`.
