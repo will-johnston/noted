@@ -118,7 +118,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
     }
 
 
-    public void addNewFile(File file, DatabaseReference ref) {
+    public void addNewFile(File file, DatabaseReference ref, String uid, DatabaseReference fileContents) {
         // get the key in the database, which will serve as the id of the new file
         String key = ref.push().getKey();
 
@@ -128,11 +128,15 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
 
         // add file to database (listener will add it to the view)
         try {
+            // add file to user's file system
             ref.child(key).setValue(file);
+            // set user as owner of the file
+            fileContents.child(file.getId()).child("owner").setValue(uid);
         } catch (com.google.firebase.database.DatabaseException e) {
             Toast.makeText(context, "Can't add file, maximum depth exceeded", Toast.LENGTH_SHORT).show();
         }
     }
+
 
 
 

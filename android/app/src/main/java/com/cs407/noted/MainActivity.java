@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.net.Uri;
@@ -25,9 +24,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.text.Editable;
 import android.text.InputType;
-import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
@@ -50,11 +47,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -62,8 +57,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -73,6 +66,8 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseUser currentUser;
     private FirebaseDatabase database;
     private DatabaseReference myRef;  // this will store the database reference at the current path
+    private DatabaseReference fileContents;
+
     private com.cs407.noted.File root;
     private static final int PICK_IMAGE = 1;
     private static final int TAKE_PICTURE = 2;
@@ -198,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
     private void setupDatabase() {
 
         // database setup
+        fileContents = database.getReference("fileContents");
         String path = String.format("users/%s", currentUser.getUid());
         this.myRef = database.getReference(path);
         DatabaseReference filesRef = database.getReference(path);
@@ -352,7 +348,6 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void removeFile(com.cs407.noted.File file, com.cs407.noted.File parent) {
-        DatabaseReference fileContents = database.getReference("fileContents");
         try {
             String id = file.getId();
             myRef.child(id).removeValue(getDatabaseCompletionListener(file));
@@ -405,7 +400,7 @@ public class MainActivity extends AppCompatActivity {
                     int icon = R.drawable.image;
                     com.cs407.noted.File file = new com.cs407.noted.File(
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
-                    listAdapter.addNewFile(file, myRef);
+                    listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents);
 
                     //upload the picture to Firebase storage
                     StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
@@ -444,7 +439,7 @@ public class MainActivity extends AppCompatActivity {
                     String input_text = input.getText().toString();
                     com.cs407.noted.File file = new com.cs407.noted.File(
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
-                    listAdapter.addNewFile(file, myRef);
+                    listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents);
 
                     try {
                         //rotate the image
@@ -526,7 +521,7 @@ public class MainActivity extends AppCompatActivity {
             com.cs407.noted.File file = new com.cs407.noted.File(
                     null, null, input_text, null, null,
                     type.toString(), null);
-            listAdapter.addNewFile(file, myRef);
+            listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents);
             return true;
         } else {
             // the text is too large, so don't accept it
