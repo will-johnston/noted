@@ -87,7 +87,7 @@ public class DocumentActivity extends AppCompatActivity {
                     // local text has not been initialized, so initialize it
                     currentHtml = knife.toHtml();
                 }
-                if (fc == null) {
+                if (fc.getData() == null) {
                     // no data in database yet
                     return;
                 }
