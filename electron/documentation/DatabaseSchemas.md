@@ -2,7 +2,7 @@
 The following are the schemas for the database 'tables'
 
 ## User
-[JSON Schema](user.schema.json)
+[JSON Schema](../../documentation/user.schema.json)
 
 ### Types
 The three types of fields in the user 'table' are DOCUMENT/FOLDER/IMAGE case-sensitive.
