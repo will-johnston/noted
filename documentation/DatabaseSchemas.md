@@ -15,9 +15,9 @@ The notifications array is meant to be a simple and fast way to quickly add and 
 
 Fields:
 1. text
-What the notification will say. See [Notifications](Notifications.md) for "standard messages".
+- What the notification will say. See [Notifications](Notifications.md) for "standard messages".
 2. type
-Currently null. Not sure if this is needed, but may be used in the future.
+- Currently null. Not sure if this is needed, but may be used in the future.
 
 #### shared[]
 The shared array is meant as a way for the filesystem to display notes shared with the user. It is meant to be similar to Google Drive's "Shared with Me" tab. Whenever a note is shared with a user, this array must be updated. Whenever a shared note is deleted, this array must be updated to reflect the change. The filesystem must listen for changes to handle these events.
@@ -29,20 +29,20 @@ When to update the array:
 
 Fields:
 1. title
-The title of the note, what the filesystem will show it as.
-Ex: `a study in scarlet`
+- The title of the note, what the filesystem will show it as.
+- Ex: `a study in scarlet`
 2. path
-The full path of the note. Used in updating lastEditedBy as well as other note metadata.
-Ex: `users/vs1RclX9B9cM4rkQcvWb5CZuMur1/-LO3tpAXVFl_yHTd4ZuY/children/-LO3uMMyWJReguUJtdem`
+- The full path of the note. Used in updating lastEditedBy as well as other note metadata.
+- Ex: `users/vs1RclX9B9cM4rkQcvWb5CZuMur1/-LO3tpAXVFl_yHTd4ZuY/children/-LO3uMMyWJReguUJtdem`
 3. filePath
-the full path to the file contents of the note.
-Ex: `fileContents/-LO3uMMyWJReguUJtdem`
+- the full path to the file contents of the note.
+- Ex: `fileContents/-LO3uMMyWJReguUJtdem`
 4. owner
-The userID of the person who created this note, doesn't have to be the person that shared it to you.
-Ex: `vs1RclX9B9cM4rkQcvWb5CZuMur1`
+- The userID of the person who created this note, doesn't have to be the person that shared it to you.
+- Ex: `vs1RclX9B9cM4rkQcvWb5CZuMur1`
 5. noteID
-the elementID of the shared note.
-Ex: `-LO3uMMyWJReguUJtdem`
+- the elementID of the shared note.
+- Ex: `-LO3uMMyWJReguUJtdem`
 
 #### lastEditedBy
 Never null. This field stores the userID of whoever edited the note last. When the note is first created, lastEditedBy is set to the userid of the creator. 
