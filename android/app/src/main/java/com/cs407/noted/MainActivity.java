@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
         setupRecyclerView();
         setUpFloatingActionMenu();
         firebaseStorage = FirebaseStorage.getInstance();
+        database = FirebaseDatabase.getInstance();
         if (checkLogin()) {
             // user is logged in so we can access their data
             setupDatabase();
@@ -132,8 +133,37 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             return false;
         } else {
+            verifyUserPII(currentUser);
             return true;
         }
+    }
+
+    private void verifyUserPII(final FirebaseUser user) {
+        // verifies that the users personally identifiable info is in the database
+        String path = String.format("userList/%s", user.getUid());
+        final DatabaseReference userListRef = database.getReference(path);
+        ValueEventListener valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (!dataSnapshot.hasChild("id")) {
+                    // The user isn't in the database
+                    addUserPII(user, userListRef);
+
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+        userListRef.addListenerForSingleValueEvent(valueEventListener);
+    }
+
+    private void addUserPII(FirebaseUser user, DatabaseReference userListRef) {
+        userListRef.child("username").setValue(user.getDisplayName());
+        userListRef.child("email").setValue(user.getEmail());
+        userListRef.child("id").setValue(user.getUid());
     }
 
     private void onSignOut() {
@@ -168,7 +198,6 @@ public class MainActivity extends AppCompatActivity {
     private void setupDatabase() {
 
         // database setup
-        database = FirebaseDatabase.getInstance();
         String path = String.format("users/%s", currentUser.getUid());
         this.myRef = database.getReference(path);
         DatabaseReference filesRef = database.getReference(path);
@@ -515,6 +544,9 @@ public class MainActivity extends AppCompatActivity {
     access the file. Takes in the extra argument of email address to confirm with the current user
     if the file was successfully shared
      */
+
+
+
     private void updateSharedUsersFileSystem(String file_id, String shared_user_id, String shared_user_email) {
         com.cs407.noted.File file = listAdapter.findFile(file_id);
         if (file == null) {
