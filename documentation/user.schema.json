@@ -3,14 +3,12 @@
         "elementID": {                          //Note type
             "title": "document1",               //non-unique title
             "type": "DOCUMENT",                 //type must be DOCUMENT to signify this field is a note
-            "lastEditedBy": "userID",           //only notes can have this field as non-null
             "children": null,                   //notes can't have children
             "parent_id" : "elementID"           //The parent ID of which we are a child of
         },
         "elementID": {                          //Folder type
             "title": "folder",
             "type": "FOLDER",                   //type must be FOLDER to signify this field is a folder
-            "lastEditedBy": null,               //Always null for a folder
             "children": {                       //only folders can have this field as non-null
                 "elementID": {                  //Document within a folder
                     "title": "document2",
@@ -23,7 +21,6 @@
         "elementID": {                          //Image type
             "title": "image",
             "type": "IMAGE",                    //Must be IMAGE
-            "lastEditedBy": null,               //Always null
             "children": null                    //Always null
         },
         "notifications" : [                     //Array of notification objects that a user hasn't responded to
@@ -37,7 +34,6 @@
                 "title" : "note title",         //title of note to be displayed in filesystem
                 "path" : "users/43/324",        //where the note is actually located
                 "filePath" : "fileContents/43/324",//where the fileContents of the note is actually located
-                "owner" : "userID",             //who owns the actual file (may not be necessary)
                 "noteID" : "elementID"          //the id of the note that's been shared to us (can be retrieved from either of the path fields)
             }
         ]
