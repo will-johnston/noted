@@ -2,7 +2,7 @@
 The following are the schemas for the database 'tables'
 
 ## Information Covered
-More indepth documentation can be found [here](/electron/documentation/DatabaseSchemas.md) as this document will cover some proposed changes
+More indepth documentation can be found [here](/electron/documentation/DatabaseSchemas.md) as this document will cover some proposed changes.
 
 ## User
 [JSON Schema](user.schema.json)
@@ -37,15 +37,12 @@ Fields:
 3. filePath
 - the full path to the file contents of the note.
 - Ex: `fileContents/-LO3uMMyWJReguUJtdem`
-4. owner
-- The userID of the person who created this note, doesn't have to be the person that shared it to you.
-- Ex: `vs1RclX9B9cM4rkQcvWb5CZuMur1`
 5. noteID
 - the elementID of the shared note.
 - Ex: `-LO3uMMyWJReguUJtdem`
 
 #### lastEditedBy
-Never null. This field stores the userID of whoever edited the note last. When the note is first created, lastEditedBy is set to the userid of the creator. 
+Moved to file/ instead of users/.
 
 ## UserList
 [JSON Schema](userList.schema.json)
@@ -60,11 +57,11 @@ Checks if a user is in the userList
 - If in the list, do nothing
 2. `search(User) : User`
 Searches for a User based on given search criteria and returns the full User info based if found
-- Criteria: username || email
-- Returns username, email, id, name || null
+- Criteria: email
+- Returns email, id, name || null
 3. `get(userID) : User`
 Returns a User with a given id.
-- Returns username, email, id, name || null
+- Returns email, id, name || null
 
 ### Issues
 1. Search is expensive
@@ -73,3 +70,30 @@ The currently implementation only allows for linear searching (O(n)) and may req
 - Could use an additional SQL based database hosted elsewhere to get better search performance
 - Could restructure to use binary search
 - Could use [ElasticSearch](https://www.elastic.co/products/elasticsearch)
+
+## File
+[JSON Schema](file.schema.json)
+
+### Sharing and Notification Changes
+These are the proposed changes to the file/ object relating to how notes are shared and how the edit history is semi-remembered.
+
+#### sharedWith[]
+The sharedWith[] array is meant to store all users who have access to a shared note. When a user is shared a note, this array must also be maintained. This array is meant to help deal with deletion events (deleting a shared note) and modification events (changing the title of a shared note). 
+
+Values:
+1. userID 
+- sharedWith[] is a single type array of type userID.
+
+#### lastEditedBy
+Never null. This field stores the userID of whoever edited the note last. When the note is first created, lastEditedBy is set to the userid of the creator. 
+
+#### Owner
+Never null. This field stores the userID of whoever owns/created the note that is being accessed. 
+
+#### Issues
+1. lastEditedBy can suffer from race conditions
+- How: Two clients saving their edits at the same time
+- Solution: Do nothing. One client will ultimately update the state last and will be considered the last editor.
+2. sharedWith[] can contain duplicates
+- How: Two clients sharing to the same person at the same time
+- Solution: TBD
