@@ -2,7 +2,7 @@
 The following are the schemas for the database 'tables'
 
 ## Information Covered
-More indepth documentation can be found [here](/electron/documentation/DatabaseSchemas.md) as this document will cover some proposed changes
+More indepth documentation can be found [here](/electron/documentation/DatabaseSchemas.md) as this document will cover some proposed changes.
 
 ## User
 [JSON Schema](user.schema.json)
@@ -73,3 +73,8 @@ The currently implementation only allows for linear searching (O(n)) and may req
 - Could use an additional SQL based database hosted elsewhere to get better search performance
 - Could restructure to use binary search
 - Could use [ElasticSearch](https://www.elastic.co/products/elasticsearch)
+
+## File
+[JSON Schema](file.schema.json)
+
+### Sharing and Notification Changes
