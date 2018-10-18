@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth firebaseAuth;
     private RecyclerView recyclerView;
     private ListAdapter listAdapter;
+    private GoogleApiClient googleApiClient;
     private FirebaseUser currentUser;
     private FirebaseDatabase database;
     private DatabaseReference myRef;  // this will store the database reference at the current path
@@ -85,8 +86,6 @@ public class MainActivity extends AppCompatActivity {
     private Uri imageUri;
     private File output=null;
     private FirebaseStorage firebaseStorage;
-
-    GoogleApiClient googleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
