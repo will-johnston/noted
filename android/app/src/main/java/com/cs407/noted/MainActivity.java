@@ -37,6 +37,11 @@ import android.widget.Toast;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -81,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
     private File output=null;
     private FirebaseStorage firebaseStorage;
 
+    GoogleApiClient googleApiClient;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -106,6 +113,11 @@ public class MainActivity extends AppCompatActivity {
         listAdapter = new ListAdapter(null, root);
         recyclerView.setAdapter(listAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this, null)
+                .addApi(Auth.GOOGLE_SIGN_IN_API)
+                .build();
 
 
         // fab setup
@@ -185,6 +197,8 @@ public class MainActivity extends AppCompatActivity {
             } else if (storagePermission == PackageManager.PERMISSION_DENIED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_REQUEST);
             }
+
+            googleApiClient.connect();
         }
     }
 
@@ -366,13 +380,15 @@ public class MainActivity extends AppCompatActivity {
         // Firebase sign out
         firebaseAuth.signOut();
 
-        // Google sign out
-        //app crashes here because the client variable doesn't persist
-        GoogleAuthSingleton.getInstance().client.signOut();
-
-        //show login activity
-        Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
+        // Google Sign out
+        Auth.GoogleSignInApi.signOut(googleApiClient).setResultCallback(
+            new ResultCallback<Status>() {
+                @Override
+                public void onResult(Status status) {
+                    Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+                    startActivity(intent);
+                }
+            });
     }
 
     @Override
