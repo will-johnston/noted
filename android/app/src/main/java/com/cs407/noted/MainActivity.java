@@ -25,6 +25,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
@@ -57,6 +58,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+
+import ir.mirrajabi.searchdialog.SimpleSearchDialogCompat;
+import ir.mirrajabi.searchdialog.core.BaseSearchDialogCompat;
+import ir.mirrajabi.searchdialog.core.SearchResultListener;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -156,9 +162,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addUserPII(FirebaseUser user, DatabaseReference userListRef) {
-        userListRef.child("username").setValue(user.getDisplayName());
-        userListRef.child("email").setValue(user.getEmail());
-        userListRef.child("id").setValue(user.getUid());
+        User userObj = new User(user.getDisplayName(), user.getEmail(), user.getUid());
+        userListRef.setValue(userObj);
     }
 
     private void onSignOut() {
@@ -197,15 +202,20 @@ public class MainActivity extends AppCompatActivity {
         String path = String.format("users/%s", currentUser.getUid());
         this.myRef = database.getReference(path);
         DatabaseReference filesRef = database.getReference(path);
-        // add listener
+        // add listener for file system
         filesRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 List<com.cs407.noted.File> files = new ArrayList<>();
                 for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                    com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
-                    // locally set the parents
-                    files.add(file);
+                    if (ds.getKey().equals("shared")) {
+                        // we have reached the shared items
+                        //TODO: add shared reference
+                    } else {
+                        com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
+                        // locally set the parents
+                        files.add(file);
+                    }
                 }
                 // add files as root's children
                 root.setChildren(null);
@@ -533,15 +543,114 @@ public class MainActivity extends AppCompatActivity {
 
     /* SHARING */
 
+
+    /*
+    Here, the function loads the list of users, and then calls for the search dialog to show
+    Note this function takes in a file that we want to share. This is because when the user to
+    share with is selected, we will share the file with him/her
+    file.
+    TODO: change from file to reference
+    TODO: share even if you're not the owner
+     */
+    public void loadSearchDialog(final com.cs407.noted.File file) {
+        //TODO: add loading bar
+        String path = "userList";
+        final DatabaseReference userListRef = database.getReference(path);
+        ValueEventListener valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                ArrayList<SearchModel> items = new ArrayList<>();
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    User user = ds.getValue(User.class);
+                    // add all users except the current user
+                   // if (user != null && !user.getId().equals(currentUser.getUid())) {
+                        String userTitle = String.format("%s (%s)", user.getName(), user.getEmail());
+                        SearchModel searchModel = new SearchModel(userTitle, user.getId());
+                        items.add(searchModel);
+                   // }
+                }
+                // make sure there are items that we can search for
+                if (items.size() == 0) {
+                    Toast.makeText(MainActivity.this, "No users to share with!",
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    showSearchDialog(items, file);
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
+        };
+        userListRef.addListenerForSingleValueEvent(valueEventListener);
+    }
+
+    private void showSearchDialog(ArrayList<SearchModel> items, final com.cs407.noted.File file) {
+        new SimpleSearchDialogCompat<>(MainActivity.this, "Search Users",
+                "Enter a user's name or email",null, items,
+                new SearchResultListener<SearchModel>() {
+                    @Override
+                    public void onSelected(BaseSearchDialogCompat dialog, SearchModel item, int position) {
+                        convertSharedFileThenVerifyAndShare(file, item.getId());
+                        dialog.dismiss();
+                    }
+                }).show();
+    }
+
+    private void convertSharedFileThenVerifyAndShare(com.cs407.noted.File file, String userID) {
+        // convert file to SharedFile
+        String title = file.getTitle();
+        String path = String.format("placeholder path");
+        String filePath = String.format("fileContents/%s", file.getId());
+        String noteID = file.getId();
+        SharedFile sharedFile = new SharedFile(title, path, filePath, noteID);
+
+        // make sure the file isn't already shared with the user
+        verifyAndShare(file, userID, sharedFile);
+
+    }
+
+    private void verifyAndShare(final com.cs407.noted.File file, final String userID, final SharedFile sharedFile) {
+        final Context context = this;
+        String path = String.format("fileContents/%s/sharedUsers", file.getId());
+        final DatabaseReference sharedFilesRef = database.getReference(path);
+        ValueEventListener valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    String sharedID = (String) ds.getValue();
+                    if (sharedID.equals(userID)) {
+                        // user has already been shared this file
+                        Toast.makeText(context, "User already has access this file!",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+                // if we get here, the user doesn't already have access, so share it
+                shareFile(file, userID, sharedFile, sharedFilesRef);
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
+        };
+        sharedFilesRef.addListenerForSingleValueEvent(valueEventListener);
+    }
+
+    private void shareFile(com.cs407.noted.File file, String userID, SharedFile sharedFile, DatabaseReference sharedFilesRef) {
+        // create reference for the shared user
+        String refPath = String.format("users/%s/shared", userID);
+        DatabaseReference sharedRef = database.getReference(refPath);
+        sharedRef.push().setValue(sharedFile);
+
+        // add user to shared files list
+        sharedFilesRef.push().setValue(userID);
+        Toast.makeText(this, "File shared!", Toast.LENGTH_SHORT).show();
+    }
+
+
     /*
     This function takes in the file to be shared and the user id of who to share with
     and updates the newly shared users file system on firebase so that the new user can
     access the file. Takes in the extra argument of email address to confirm with the current user
     if the file was successfully shared
      */
-
-
-
     private void updateSharedUsersFileSystem(String file_id, String shared_user_id, String shared_user_email) {
         com.cs407.noted.File file = listAdapter.findFile(file_id);
         if (file == null) {

@@ -224,15 +224,22 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
+                // position of item and the file at that position
+                int position = holder.getAdapterPosition();
+                File file = fileList.get(position);
+
                 switch (item.getItemId()) {
                     case R.id.action_remove:
-                        int position = holder.getAdapterPosition();
-                        File file = fileList.get(position);
                         if (context instanceof MainActivity) {
                             // tell main activity to remove file with myRef
                             ((MainActivity) context).removeFile(file, parent);
                         }
                         return true;
+                    case R.id.action_share:
+                        if (context instanceof MainActivity) {
+                            ((MainActivity) context).loadSearchDialog(file);
+                            // TODO: Share the file here
+                        }
                     default:
                         return false;
                 }
