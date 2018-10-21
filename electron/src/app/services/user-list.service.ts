@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { AngularFireDatabase } from '@angular/fire/database';
+import * as firebase from 'firebase';
 import { User } from './UserList.User'
 
 @Injectable({
@@ -10,12 +12,9 @@ import { User } from './UserList.User'
   Handles registering users into the userList database
 */
 export class UserListService {
-
-  constructor() {
-    /*
-      TODO
-      Setup reference to userList/
-    */
+  private userListRef : any;
+  constructor(private fireDatabase: AngularFireDatabase) {
+   this.userListRef = fireDatabase.list('userList/');
   }
   /*Registers a user in the userList
     Notes: should call everytime a user logs in
@@ -28,6 +27,38 @@ export class UserListService {
         1. If registered, exit
       3. push new user to the list
     */
+   console.log("Called register with %o", user);
+    if (user == null || user == undefined) {
+      console.error("register() was given an invalid user :: null/undefined");
+      return;
+    }
+    if (user.id == null || user.id == undefined) {
+      console.error("register() was given an invalid user :: bad id");
+      return;
+    }
+    if (user.email == null || user.email == undefined) {
+      console.error("register() was given an invalid user :: bad email");
+      return;
+    }
+    //Ignore per Issue #37
+    /*if (user.name == null || user.name == undefined) {
+      console.error("register() was given an invalid user :: bad name");
+      return;
+    }*/
+    this.get(user.id).then(value => {
+      //do nothing
+      //console.log("Already registered!");
+      return;
+    }).catch(reason => {
+      if (reason != null) {
+        console.error("register() was unable to search user :: bad id");
+        return;
+      }
+      //add to userList
+      this.userListRef.set(user.id, { email : user.email, id : user.id, name : user.name});
+      //console.log(`Added (${user.name}, ${user.id}) to userList`);
+      return;
+    });
   }
   /*finds a user in the userList and returns it
     user argument contains search options, must contain one valid field
@@ -66,6 +97,21 @@ export class UserListService {
         1. If the object is null, reject the Promise with null
         2. Else, create a new User object and resolve the Promise with the new user
     */
-    return null;
+    return new Promise((resolve, reject) => {
+      if (userID == null || userID == undefined)
+        reject('userID is invalid');
+      else {
+        let userObjectRef = this.fireDatabase.object(`userList/${userID}`);
+        userObjectRef.valueChanges().subscribe(actions => {
+          console.log("Value of get is %o", actions);
+          if (actions == null)
+            reject(null);
+          else {
+            var data : any = actions;
+            resolve(new User(data.email, data.id, data.name));
+          }
+        });
+      }
+    });
   }
 }

@@ -52,6 +52,7 @@ export class FilesystemService {
           this.ready();
         }
       });
+      console.log("currentUser: %o", firebase.auth().currentUser);
    }
   /*getNotes() {
       //this.notes.push({ id: 0, name : "note1", folder : null});

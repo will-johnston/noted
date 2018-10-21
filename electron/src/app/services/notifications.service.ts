@@ -38,6 +38,7 @@ export class NotificationsService {
         1. If it doesn't exists, exit
       4. remove notification from user
     */
+   return null;
   }
 
 
