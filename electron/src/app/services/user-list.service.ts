@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
 import * as firebase from 'firebase';
 import { User } from './UserList.User'
+import { isNullOrUndefined } from 'util';
 
 @Injectable({
   providedIn: 'root'
@@ -82,8 +83,40 @@ export class UserListService {
         1. If it matches, create a new User object and resolve the Promise with the new user
       5. If element doesn't exist, reject the Promise with null
     */
+    if (user != null && !isNullOrUndefined(user.id)) {
+      return this.get(user.id);
+    }
     return new Promise<User>((resolve, reject) => {
-      reject(null);
+      if (isNullOrUndefined(user)) {
+        reject('search() was given an invalid user to search');
+        return;
+      }
+      if (isNullOrUndefined(user.name) && isNullOrUndefined(user.email)) {
+        reject('search() was given an invalid search term');
+        return;
+      }
+      if (!isNullOrUndefined(user.email)) {
+        //search by email
+        this.userListRef.valueChanges().subscribe(value => {
+          value.forEach(data => {
+            if (data.email == user.email) {
+              resolve(new User(data.email, data.id, data.name));
+            }
+          });
+          reject(null);
+        });
+      }
+      else if (!isNullOrUndefined(user.name)) {
+        //search by name
+        this.userListRef.valueChanges().subscribe(value => {
+          value.forEach(data => {
+            if (data.name == user.name) {
+              resolve(new User(data.email, data.id, data.name));
+            }
+          });
+          reject(null);
+        });
+      }
     });
   }
   /*Returns a given user and their stored info

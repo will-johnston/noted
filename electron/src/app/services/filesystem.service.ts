@@ -8,6 +8,8 @@ import { Folder } from '../homescreen/Folder'
 import { Path, PathType } from '../homescreen/Path';
 import { UserHelperService } from './userhelper.service';
 import { HomescreenComponent } from '../homescreen/homescreen.component';
+import { UserListService } from './user-list.service';
+import { User } from './UserList.User';
 
 @Injectable({
   providedIn: 'root'
@@ -28,7 +30,7 @@ export class FilesystemService {
   public homescreen : HomescreenComponent;
   public onReady : any[] = Array();   //callbacks for when the filesystem is ready
 
-  constructor(private fireDatabase: AngularFireDatabase, private userHelper : UserHelperService) {
+  constructor(private fireDatabase: AngularFireDatabase, private userHelper : UserHelperService, private userListService : UserListService) {
     this.notes = Array();
     this.folders = Array();
     this.currentNotes = Array();
@@ -52,7 +54,7 @@ export class FilesystemService {
           this.ready();
         }
       });
-      console.log("currentUser: %o", firebase.auth().currentUser);
+      
    }
   /*getNotes() {
       //this.notes.push({ id: 0, name : "note1", folder : null});
