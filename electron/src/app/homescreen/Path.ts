@@ -3,6 +3,7 @@ export class Path {
     public inRootDirectory : boolean;          //if we're at '/';
     public addedChild : boolean;               //within a /children location
     private addedUserId : boolean;
+    private userId : string;
     list : string[];
     constructor(type : PathType) {
         this.type = type;
@@ -26,6 +27,7 @@ export class Path {
         if (this.type == PathType.users) {
             this.list.push(id + '/');
             this.addedUserId = true;
+            this.userId = id;
             return true;
         }
         else
@@ -91,6 +93,7 @@ export class Path {
     //assumes pathStr is an insertion string
     static FromString(pathStr : string) : Path {
         var path : Path;
+        var type : PathType;
         if (pathStr == null) {
             console.error("FromString() was given a null pathStr to deserialize");
             return null;
@@ -98,12 +101,15 @@ export class Path {
         var pathStrSplit : string[] = pathStr.split('/');
         if (pathStrSplit[0] === "users") {
             path = new Path(PathType.users);
+            type = PathType.users;
         }
-        else if (pathStrSplit[1] === "fileContents") {
+        else if (pathStrSplit[0] === "fileContents") {
             path = new Path(PathType.fileContents);
+            type = PathType.fileContents;
         }
         else {
             console.error("FromString() was given an invalid pathStr to deserialize. No type!");
+            return null;
         }
         for (var i = 1; i < pathStrSplit.length; i++) {
             //keywords : children
@@ -111,7 +117,8 @@ export class Path {
 
             //check key locations
             if (i == 1) {
-                path.addUserId(pathStrSplit[i]);
+                if (type == PathType.users) path.addUserId(pathStrSplit[i]);
+                if (type == PathType.fileContents) path.addId(pathStrSplit[i]);
             }
             else {
                 //check keywords
