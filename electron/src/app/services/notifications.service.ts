@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { UserListService } from './user-list.service';
 import { Notif } from './Notifications.Notif';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -47,5 +48,8 @@ export class NotificationsService {
     return new Promise<boolean>((resolve, reject) => {
       reject(null);
     });
+  }
+  getNotifications(userID : string) : Observable<Notif> {
+    return null;
   }
 }

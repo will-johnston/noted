@@ -4,6 +4,7 @@ import { Router, ActivatedRoute, NavigationStart } from '@angular/router';
 import { Note } from '../note/Note'
 import { Folder } from './Folder'
 import { NavList } from './NavList';
+import { Path } from './Path';
 import * as firebase from 'firebase';
 
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
@@ -32,10 +33,13 @@ export class HomescreenComponent implements OnInit {
 
     this.navList = new NavList<string>();
     this.navLoc = this.navList.list;
-    this.navList.push("/");
-    this.sharingService.getSharedNote('PSkJKXOw66gP0Y862X5GJMNViXJ3', '-hgf').
+    this.navList.push("/"); 
+    /*this.sharingService.getSharedUsers(Path.FromString('fileContents/-LNGvqD26zCgP-pAt3Sw'))
+    .then(users => {console.log("Shared users: %o", users);})
+    .catch(err => {console.log("Error: %o", err);});*/
+    /*this.sharingService.getSharedNote('PSkJKXOw66gP0Y862X5GJMNViXJ3', '-hgf').
     then((note) => { console.log("Found note: %o", note)}).
-    catch((err) => { console.log("Error: %o", err)});
+    catch((err) => { console.log("Error: %o", err)});*/
     this.router.events.subscribe(event => {
       //console.log("Router event: %o", event);
       if (event instanceof NavigationStart) {

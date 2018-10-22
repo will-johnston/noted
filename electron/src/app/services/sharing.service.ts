@@ -39,7 +39,27 @@ export class SharingService {
         1. Iterate through keys, add values to array
       5. Resolve promise with created array
     */
-    return null;
+    return new Promise((resolve, reject) => {
+      if (isNullOrUndefined(path)) {
+        reject("Null path");
+        return;
+      }
+      let fileSharedRef = this.fireDatabase.list(`${path.toString()}/sharedWith`);
+      let users : string[] = Array<string>();
+      fileSharedRef.valueChanges().subscribe(value => {
+        if (value == null) {
+          reject(null);
+          return;
+        }
+        else {
+          value.forEach(data => {
+            //each data should be a userID
+            users.push((data as string));
+          });
+          resolve(users);
+        }
+      });
+    });
   }
   /*share a note, notify the user as well
     shareTo : userID of who is being shared the file
