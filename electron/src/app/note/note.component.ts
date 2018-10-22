@@ -87,13 +87,13 @@ export class NoteComponent implements OnInit, OnDestroy {
       }
     });
     this.loadAudio();
+    this.highlightIfAudio();
   }
 
   //This is definitely cheating, but it seems to work... [Ryan]
   updateEditorText(text: string) {
     if (text != null) {
       this.editor.root.innerHTML = text;
-      this.highlightIfAudio();
     }
   }
 
@@ -103,10 +103,14 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   getAudioEdits() {
-    this.originalContent = null;
-    this.edits = [];
     // get audio edits
     this.fireDatabase.list('/audioTracking/' + this.noteid).valueChanges().subscribe(res => {
+      // get initial cursor position
+      var range = this.editor.getSelection();
+      // clear any existing highlighting
+      this.unhighlightEdits(this.edits, this.editor.getSelection())
+      this.originalContent = null;
+      this.edits = [];
       res.forEach(item => {
         let edit = {};
         for (let [key, value] of Object.entries(item)) {
@@ -135,8 +139,36 @@ export class NoteComponent implements OnInit, OnDestroy {
       console.log(this.originalContent)
 
       // highlight audio edits within note
-      // TODO:
+      if (this.edits.length > 0) {
+        this.highlightEdits(this.edits, this.editor.getSelection());
+      }
     });
+  }
+
+  highlightEdits(edits, range) {
+    for (var x = 0; x < edits.length; x++) {
+      this.editor.setSelection(edits[x].index, edits[x].content.length, 'silent');
+      this.editor.format('background', 'rgb(153, 204, 255)', 'silent');
+    }
+    if (range) {
+      this.editor.setSelection(range.index, range.length, 'silent');
+      this.editor.format('background', false, 'silent');
+    } else {
+      this.editor.setSelection(false)
+    } 
+  }
+
+  unhighlightEdits(edits, range) {
+    for (var x = 0; x < edits.length; x++) {
+      this.editor.setSelection(edits[x].index, edits[x].content.length, 'silent');
+      this.editor.format('background', false, 'silent');
+    }
+    if (range) {
+      this.editor.setSelection(range.index, range.length, 'silent');
+      this.editor.format('background', false, 'silent');
+    } else {
+      this.editor.setSelection(false)
+    } 
   }
 
   createFileContents(value) {
