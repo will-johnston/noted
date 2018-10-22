@@ -5,13 +5,13 @@ import { AngularFireDatabase, AngularFireObject } from '@angular/fire/database';
 import { AngularFireStorageModule } from '@angular/fire/storage';
 import { ElectronService } from 'ngx-electron';
 import { AngularFireStorage } from 'angularfire2/storage';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import * as firebase from 'firebase';
 import { FilesystemService } from '../services/filesystem.service';
 import { Note } from './Note';
 
 //import Quill from 'quill';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { AppComponent } from '../app.component';
 
 // override p with div tag
@@ -25,10 +25,6 @@ import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-d
 declare var MediaRecorder: any;
 declare var Blob: any;
 declare var ConcatenateBlobs: any;
-
-
-
-
 
 @Component({
   selector: 'app-note',
@@ -55,6 +51,10 @@ export class NoteComponent implements OnInit, OnDestroy {
   subscribed: boolean = false;
   text: string;
   html: string;
+
+  edits: Array<any>;
+  originalContent: string = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -62,29 +62,15 @@ export class NoteComponent implements OnInit, OnDestroy {
     private _electronService: ElectronService,
     private storage: AngularFireStorage,
     private filesystemService: FilesystemService,
-    private appComponent : AppComponent,
+    private appComponent: AppComponent,
     private confirmationDialogService: ConfirmationDialogService
   ) {
     this.text = "";
     this.html = "";
+    this.edits = new Array();
   }
 
   ngOnInit() {
-    /*
-    console.log(this.editor);
-    this.editor
-      .onContentChanged
-      .pipe(
-        debounceTime(400),
-        distinctUntilChanged()
-      )
-      .subscribe(data => {
-        //console.log('view child + directly subscription', data)
-
-        console.log("text %s, html %s", data.text, data.html);
-    });
-    */
-    //this.editor.content = "Loading Note...";
     this.route.params.forEach((params: Params) => {
       if (params['userid'] !== undefined || params['userid'] !== null) {
         console.log("User ID: %s", params['userid']);
@@ -100,7 +86,6 @@ export class NoteComponent implements OnInit, OnDestroy {
         this.startSubscription(params['notepath']);
       }
     });
-
     this.loadAudio();
   }
 
@@ -108,7 +93,50 @@ export class NoteComponent implements OnInit, OnDestroy {
   updateEditorText(text: string) {
     if (text != null) {
       this.editor.root.innerHTML = text;
+      this.highlightIfAudio();
     }
+  }
+
+  highlightIfAudio() {
+    console.log("HIGHLIGHT IF AUDIO")
+    this.getAudioEdits();
+  }
+
+  getAudioEdits() {
+    this.originalContent = null;
+    this.edits = [];
+    // get audio edits
+    this.fireDatabase.list('/audioTracking/' + this.noteid).valueChanges().subscribe(res => {
+      res.forEach(item => {
+        let edit = {};
+        for (let [key, value] of Object.entries(item)) {
+          if (key == "content") { // its the original content
+            console.log("original content: " + value);
+            this.originalContent = value;
+          } else { // it's a timestamp
+            if (key == "timestamp") { // log the timestamp
+              edit["timestamp"] = value;
+            }
+            else if (value[0].retain && value[1].insert) { // log the ops
+              edit["index"] = value[0].retain;
+              edit["content"] = value[1].insert;
+            }
+          }
+        }
+        // push the edit to global edits array
+        if (Object.keys(edit).length != 0) {
+          console.log(this.edits.push(edit));
+        }
+      });
+      // finished retrieving edits
+      console.log("CHOOCHOO~~~")
+      console.log(this.edits[0])
+      console.log(this.edits[1])
+      console.log(this.originalContent)
+
+      // highlight audio edits within note
+      // TODO:
+    });
   }
 
   createFileContents(value) {
@@ -130,17 +158,17 @@ export class NoteComponent implements OnInit, OnDestroy {
       //this.noteRef = this.fireDatabase.object(notepath).valueChanges();
       this.noteRef = this.fireDatabase.object(notepath);
       this.noteRef.valueChanges()
-      .subscribe(value => {
-        if (value == null) {
-          this.noteInfo = null;
-          this.appComponent.noteTitle = "";
-          //note has been destroyed
-          //do nothing out of respect
-        }
-        else {
-          this.noteInfo = new Note(value.title, value.id, notepath, null);
-        }
-      });
+        .subscribe(value => {
+          if (value == null) {
+            this.noteInfo = null;
+            this.appComponent.noteTitle = "";
+            //note has been destroyed
+            //do nothing out of respect
+          }
+          else {
+            this.noteInfo = new Note(value.title, value.id, notepath, null);
+          }
+        });
       this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
       console.log("noteTextRef %s", "fileContents/" + this.noteid);
       this.noteTextRef.valueChanges()
@@ -178,16 +206,16 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.html = html;
     if (this.recording) { // currently recording audio
       var timestamp = Math.floor((Date.now() - this.startTime) / 1000); // timestamp in seconds from start
-      this.fireDatabase.object("/audioTracking/" + this.noteid + "/" + timestamp).set({ delta: delta })
-      .then(_ => {
-        console.log("Tracked edit at: " + timestamp);
-        for (let i = 0; i < delta.ops.length; i++) {
-          const element = delta.ops[i];
-          console.log(element)
-        }
-      }).catch(err => {
-        console.log("Audio Tracking Error: %s", err);
-      });
+      this.fireDatabase.object("/audioTracking/" + this.noteid + "/" + timestamp).set({ delta: delta.ops, timestamp: timestamp })
+        .then(_ => {
+          console.log("Tracked edit at: " + timestamp);
+          for (let i = 0; i < delta.ops.length; i++) {
+            const element = delta.ops[i];
+            console.log(element)
+          }
+        }).catch(err => {
+          console.log("Audio Tracking Error: %s", err);
+        });
     }
   }
 
@@ -329,7 +357,7 @@ export class NoteComponent implements OnInit, OnDestroy {
     //this.noteRef.update({ htmltext : this.html});
     this.noteTextRef.update({ data: this.html });
   }
-  deleteNote(id : string, name :string ) {
+  deleteNote(id: string, name: string) {
     /*  TODO:
         1. Create a button to delete a note
           I've created a temporary button for testing, make an actual button
@@ -337,8 +365,8 @@ export class NoteComponent implements OnInit, OnDestroy {
         3. If confirm, call do what's below, else do nothing
     */
 
-    this.confirmationDialogService.confirm('Please confirm', 'Sure you want to delete ' + name+'?')
-    .then((confirmed)=> {if (confirmed) {this.__delete();}});
+    this.confirmationDialogService.confirm('Please confirm', 'Sure you want to delete ' + name + '?')
+      .then((confirmed) => { if (confirmed) { this.__delete(); } });
 
 
 
