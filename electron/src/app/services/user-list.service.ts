@@ -106,7 +106,8 @@ export class UserListService {
           reject(null);
         });
       }
-      else if (!isNullOrUndefined(user.name)) {
+      //Disabled per Issue #37
+      else if (!isNullOrUndefined(user.name) && false) {
         //search by name
         this.userListRef.valueChanges().subscribe(value => {
           value.forEach(data => {
@@ -116,6 +117,16 @@ export class UserListService {
           });
           reject(null);
         });
+      }
+      else {
+        if (!isNullOrUndefined(user.name)) {
+          reject('search() cannot search on names per Issue #37');
+          return;
+        }
+        else {
+          reject('search() failed to search');
+          return;
+        }
       }
     });
   }

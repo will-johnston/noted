@@ -113,7 +113,7 @@ export class SharingService {
     Doesn't delete a notification if it exists
   */
   deleteSharedNote() : void {
-
+    throw new Error("To be Implemented");
   }
 
   //gets a shared note if it exists
