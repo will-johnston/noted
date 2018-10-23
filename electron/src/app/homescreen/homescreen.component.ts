@@ -4,10 +4,14 @@ import { Router, ActivatedRoute, NavigationStart } from '@angular/router';
 import { Note } from '../note/Note'
 import { Folder } from './Folder'
 import { NavList } from './NavList';
+import { Path } from './Path';
 import * as firebase from 'firebase';
 
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
-
+import { SharingService } from '../services/sharing.service';
+import { UserListService } from '../services/user-list.service';
+import { NotificationsService } from '../services/notifications.service';
+import { Notif } from '../services/Notifications.Notif';
 
 @Component({
   selector: 'app-homescreen',
@@ -21,16 +25,39 @@ export class HomescreenComponent implements OnInit {
   userid : string = null;
   //navLoc : string[];
   navList : NavList<string>;
+  debug : false;
   navLoc : string[];
-  constructor(private filesystemService : FilesystemService, private router : Router, private activeRoute : ActivatedRoute, private confirmationDialogService: ConfirmationDialogService) {
+  constructor(private filesystemService : FilesystemService, 
+    private router : Router, 
+    private activeRoute : ActivatedRoute, 
+    private confirmationDialogService: ConfirmationDialogService,
+    private sharingService : SharingService,
+    private userListService : UserListService,
+    private notificationService : NotificationsService) {
+
     this.navList = new NavList<string>();
     this.navLoc = this.navList.list;
-    this.navList.push("/");
+    this.navList.push("/"); 
+    /*this.sharingService.getSharedUsers(Path.FromString('fileContents/-LNGvqD26zCgP-pAt3Sw'))
+    .then(users => {console.log("Shared users: %o", users);})
+    .catch(err => {console.log("Error: %o", err);});*/
+    /*this.sharingService.getSharedNote('PSkJKXOw66gP0Y862X5GJMNViXJ3', '-hgf').
+    then((note) => { console.log("Found note: %o", note)}).
+    catch((err) => { console.log("Error: %o", err)});*/
+    /*Notif.ShareNoteNotification(this.userListService, 'vs1RclX9B9cM4rkQcvWb5CZuMur1', 'interstellar', false)
+    .then(notification => {
+      this.notificationService.notify('vs1RclX9B9cM4rkQcvWb5CZuMur1', notification);
+    })
+    .catch(err => {
+      console.error("ShareNoteNotification err: %s", err);
+    });*/
+    
+
     this.router.events.subscribe(event => {
       //console.log("Router event: %o", event);
       if (event instanceof NavigationStart) {
         if (event.url.indexOf('homescreen')) {
-          console.log("navigated to the homescreen");
+          if (this.debug) console.log("navigated to the homescreen");
           //TODO handle renavigate
           //this.ngOnInit();
         }
@@ -63,13 +90,13 @@ export class HomescreenComponent implements OnInit {
   }
   goBackTo(name) {
     this.navList.goto(name);
-    console.log('navlist is %o', this.navList.list);
+    if (this.debug) console.log('navlist is %o', this.navList.list);
     this.filesystemService.updateCurrentState(this.navList.list);
     this.getNotes();
     this.getFolders();
   }
   gotoNote(id) {
-    console.log("navigate with id=%s", id);
+    if (this.debug) console.log("navigate with id=%s", id);
     //this.router.navigate(['note']);
     var note = this.filesystemService.getNote(id);
     if (note == null) {
@@ -97,7 +124,7 @@ export class HomescreenComponent implements OnInit {
         2. Create a ‘confirm deletion’ modal to confirm the user’s intention to delete the note
         3. If confirm, call do what's below, else do nothing
     */
-    this.confirmationDialogService.confirm('Please confirm', 'Sure you want to deletei ' + name+'?')
+    this.confirmationDialogService.confirm('Please confirm', 'Are you sure you want to delete ' + name+'?')
     .then((confirmed)=> {if (confirmed) {this.filesystemService.deleteNoteFromId(id)}});
     /*if (this.filesystemService.deleteNoteFromId(id)) {
       //works
