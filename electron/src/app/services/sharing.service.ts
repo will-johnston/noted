@@ -65,8 +65,9 @@ export class SharingService {
     shareTo : userID of who is being shared the file
     noteInfo : info about the note being shared
     shareFrom : name/email of the person sharing the file
+    notification : the notification that will be sent to the sharedUser
   */
-  shareNote(shareTo : string, noteInfo : SharedNote, shareFrom : string) : Promise<void> {
+  shareNote(shareTo : string, noteInfo : SharedNote, shareFrom : string, notification : Notif) : Promise<void> {
     /*
       Procedure
       1. Handle null arguments
@@ -84,7 +85,7 @@ export class SharingService {
         return;
       }
       //check if the user has already been shared the file
-      this.getSharedNote(shareTo, noteInfo.noteID).then((found) => {
+      this._getSharedNote(shareTo, noteInfo.noteID).then((found) => {
         if (found) {
           //note has already been shared
           reject("Note has already been shared to user");
@@ -97,7 +98,7 @@ export class SharingService {
           let fileContentsShared = this.fireDatabase.list(`${noteInfo.filePath}/sharedWith`);
           userSharedRef.push({title : noteInfo.title, path : noteInfo.path.toString(), filePath : noteInfo.filePath.toString(), noteID: noteInfo.noteID});
           fileContentsShared.push(shareTo);
-          this.notificationsService.notify(shareTo, new Notif(`${shareFrom} has shared ${noteInfo.title} with you`));
+          this.notificationsService.notify(shareTo, notification);
           resolve();
         }
         else {
@@ -114,15 +115,9 @@ export class SharingService {
   deleteSharedNote() : void {
 
   }
-  //gets all shared notes for a given user
-  getSharedNotes(userID : string) : Observable<SharedNote[]> {
-    return new Observable(() => {
-
-    });
-  }
 
   //gets a shared note if it exists
-  getSharedNote(userID : string, noteID : string) : Promise<SharedNote> {
+  _getSharedNote(userID : string, noteID : string) : Promise<SharedNote> {
     //get note from users/ shared[]
     return new Promise((resolve, reject) => {
       if (isNullOrUndefined(userID) || isNullOrUndefined(noteID)) {

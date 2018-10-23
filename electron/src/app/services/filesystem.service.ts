@@ -277,8 +277,8 @@ export class FilesystemService {
                 if (this.debug) console.log("Action: %o", action);
                 if (this.debug) console.log("payload: %o", action.payload.val());
                 var element = this.makeElement(action.payload.val());
-                if (element.type == null) {
-                  
+                if (element == null || element.type == null) {
+                  //ignore
                 }
                 else if (element.type === "DOCUMENT") {
                   this.notes.push(element as Note);

@@ -9,7 +9,9 @@ import * as firebase from 'firebase';
 
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { SharingService } from '../services/sharing.service';
-
+import { UserListService } from '../services/user-list.service';
+import { NotificationsService } from '../services/notifications.service';
+import { Notif } from '../services/Notifications.Notif';
 
 @Component({
   selector: 'app-homescreen',
@@ -29,7 +31,9 @@ export class HomescreenComponent implements OnInit {
     private router : Router, 
     private activeRoute : ActivatedRoute, 
     private confirmationDialogService: ConfirmationDialogService,
-    private sharingService : SharingService) {
+    private sharingService : SharingService,
+    private userListService : UserListService,
+    private notificationService : NotificationsService) {
 
     this.navList = new NavList<string>();
     this.navLoc = this.navList.list;
@@ -40,6 +44,15 @@ export class HomescreenComponent implements OnInit {
     /*this.sharingService.getSharedNote('PSkJKXOw66gP0Y862X5GJMNViXJ3', '-hgf').
     then((note) => { console.log("Found note: %o", note)}).
     catch((err) => { console.log("Error: %o", err)});*/
+    /*Notif.ShareNoteNotification(this.userListService, 'vs1RclX9B9cM4rkQcvWb5CZuMur1', 'interstellar', false)
+    .then(notification => {
+      this.notificationService.notify('vs1RclX9B9cM4rkQcvWb5CZuMur1', notification);
+    })
+    .catch(err => {
+      console.error("ShareNoteNotification err: %s", err);
+    });*/
+    
+
     this.router.events.subscribe(event => {
       //console.log("Router event: %o", event);
       if (event instanceof NavigationStart) {
