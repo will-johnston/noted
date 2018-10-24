@@ -120,7 +120,7 @@ export class NoteComponent implements OnInit, OnDestroy {
         }
         // push the edit to global edits array
         if (Object.keys(edit).length != 0) {
-          console.log(this.edits.push(edit));
+          this.edits.push(edit);
         }
       });
 
@@ -136,10 +136,11 @@ export class NoteComponent implements OnInit, OnDestroy {
       this.editor.setSelection(edits[x].index, edits[x].content.length, 'silent');
       this.editor.format('background', 'rgb(153, 204, 255)', 'silent');
     }
-    if (range) {
+    // set the cursor back to the original position
+    if (range) { // cursor is somewhere
       this.editor.setSelection(range.index, range.length, 'silent');
-      this.editor.format('background', false, 'silent');
-    } else {
+      this.editor.format('background', 'white', 'silent');
+    } else { // editor wasn't in focus
       this.editor.setSelection(false, 'silent');
     }
   }
