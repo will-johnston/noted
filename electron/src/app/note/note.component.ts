@@ -35,7 +35,6 @@ export class NoteComponent implements OnInit, OnDestroy {
   private audioBlob: Blob;
   private recording: Boolean = false;
   private startTime: number;
-  private trackingRef: AngularFireObject<any>;
 
   public editor;
 
@@ -50,7 +49,6 @@ export class NoteComponent implements OnInit, OnDestroy {
   html: string;
 
   edits: Array<any>;
-  originalContent: string = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -88,26 +86,32 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   //This is definitely cheating, but it seems to work... [Ryan]
-  updateEditorText(text: string) {
+  updateEditorText(text: string, range) {
     if (text != null) {
       this.editor.root.innerHTML = text;
+      // set the cursor back to the original position
+      if (range) { // cursor is somewhere
+        console.log("range: " + range.index);
+        this.editor.setSelection(range.index, range.length, 'silent');
+        this.editor.format('background', false, 'silent');
+      } else { // editor wasn't in focus
+        this.editor.setSelection(false, 'silent');
+      }
     }
+    this.highlightIfAudio();
   }
 
   highlightIfAudio() {
     // get audio edits
     this.fireDatabase.list('/audioTracking/' + this.noteid).valueChanges().subscribe(res => {
       // clear any existing highlighting
-      this.unhighlightAllEdits(this.editor.getSelection())
-      this.originalContent = null;
+      this.unhighlightAllEdits(this.editor.getSelection());
       this.edits = [];
+
+      // fetch edits from firebase
       res.forEach(item => {
         let edit = {};
         for (let [key, value] of Object.entries(item)) {
-          if (key == "content") { // its the original content
-            console.log("original content: " + value);
-            this.originalContent = value;
-          } else { // it's a timestamp
             if (key == "timestamp") { // log the timestamp
               edit["timestamp"] = value;
             }
@@ -115,7 +119,6 @@ export class NoteComponent implements OnInit, OnDestroy {
               edit["index"] = value[0].retain;
               edit["content"] = value[1].insert;
             }
-          }
         }
         // push the edit to global edits array
         if (Object.keys(edit).length != 0) {
@@ -131,29 +134,33 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   highlightEdits(edits, range) {
-    for (var x = 0; x < edits.length; x++) {
-      this.editor.setSelection(edits[x].index, edits[x].content.length, 'silent');
-      this.editor.format('background', 'rgb(153, 204, 255)', 'silent');
-    }
-    // set the cursor back to the original position
-    if (range) { // cursor is somewhere
-      this.editor.setSelection(range.index, range.length, 'silent');
-      this.editor.format('background', false, 'silent');
-    } else { // editor wasn't in focus
-      this.editor.setSelection(false, 'silent');
+    if (edits.length > 0) {
+      for (var x = 0; x < edits.length; x++) {
+        this.editor.setSelection(edits[x].index, edits[x].content.length, 'silent');
+        this.editor.format('background', 'rgb(153, 204, 255)', 'silent');
+      }
+      // set the cursor back to the original position
+      if (range) { // cursor is somewhere
+        this.editor.setSelection(range.index, range.length, 'silent');
+        this.editor.format('background', false, 'silent');
+      } else { // editor wasn't in focus
+        this.editor.setSelection(false, 'silent');
+      }
     }
   }
 
   unhighlightEdits(edits, range) {
-    for (var x = 0; x < edits.length; x++) {
-      this.editor.setSelection(edits[x].index, edits[x].content.length, 'silent');
-      this.editor.format('background', false, 'silent');
-    }
-    if (range) {
-      this.editor.setSelection(range.index, range.length, 'silent');
-      this.editor.format('background', false, 'silent');
-    } else {
-      this.editor.setSelection(false, 'silent')
+    if (edits.length > 0) {
+      for (var x = 0; x < edits.length; x++) {
+        this.editor.setSelection(edits[x].index, edits[x].content.length, 'silent');
+        this.editor.format('background', false, 'silent');
+      }
+      if (range) {
+        this.editor.setSelection(range.index, range.length, 'silent');
+        this.editor.format('background', false, 'silent');
+      } else {
+        this.editor.setSelection(false, 'silent')
+      }
     }
   }
 
@@ -211,7 +218,7 @@ export class NoteComponent implements OnInit, OnDestroy {
           else {
             this.noteInfo.text = value.data;
             this.appComponent.noteTitle = this.noteInfo.name;
-            this.updateEditorText(this.noteInfo.text);
+            this.updateEditorText(this.noteInfo.text, this.editor.getSelection());
           }
         });
     }
@@ -240,15 +247,17 @@ export class NoteComponent implements OnInit, OnDestroy {
             const element = delta.ops[i];
             console.log(element)
           }
+          this.highlightIfAudio();
         }).catch(err => {
           console.log("Audio Tracking Error: %s", err);
         });
     }
   }
 
-  editorSelectionChanged({editor, range, oldRange, source}) {
+  editorSelectionChanged({ editor, range, oldRange, source }) {
     if (source == "user" && this.recording == false) {
       this.edits.forEach(element => {
+        // check if you're at the end of an edit
         if (range.index == element.index + element.content.length) {
           this.editor.format('background', false, 'silent');
         }
@@ -281,10 +290,9 @@ export class NoteComponent implements OnInit, OnDestroy {
         this.startTime = Date.now();
 
         // delete any previous tracking data
+        this.unhighlightAllEdits(this.editor.getSelection());
         this.edits = [];
-        this.fireDatabase.object("/audioTracking/" + this.noteid).remove().then( () => {
-          // add original content to the database
-          this.fireDatabase.object("/audioTracking/" + this.noteid + "/original").set({ content: this.editor.root.innerHTML });
+        this.fireDatabase.object("/audioTracking/" + this.noteid).remove().then(() => {
           this.highlightIfAudio();
         });
       });
@@ -396,9 +404,10 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
   //Save the file in firebase
   saveNote() {
-    //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
-    //this.noteRef.update({ htmltext : this.html});
-    this.noteTextRef.update({ data: this.html });
+    var cleanHtml = this.html
+      .replace('<span style=\"background-color: rgb(153, 204, 255);\">', '')
+      .replace('</span>', '');
+    this.noteTextRef.update({ data: cleanHtml });
   }
   deleteNote(id: string, name: string) {
     /*  TODO:
@@ -417,6 +426,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   //Permanently deletes a note
   __delete() {
     if (this.filesystemService.deleteNote(this.noteInfo)) {
+
       this.router.navigate(['homescreen']);
     }
     else {
