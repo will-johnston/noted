@@ -254,6 +254,18 @@ export class NoteComponent implements OnInit, OnDestroy {
     }
   }
 
+  editorSelectionChanged({editor, range, oldRange, source}) {
+    if (source == "user") {
+      this.edits.forEach(element => {
+        if (range.index >= element.index && range.index < element.index + element.content.length) {
+          const audio = document.querySelector('audio');
+          audio.currentTime = element.timestamp;
+          return;
+        }
+      });
+    }
+  }
+
   /* Audio Player Starts Recording */
   public start() {
     this.toggleButton("start");
