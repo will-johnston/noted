@@ -32,7 +32,6 @@ declare var Blob: any;
 })
 export class NoteComponent implements OnInit, OnDestroy {
 
-  private audioContext: AudioContext;
   private audioBlob: Blob;
   private recording: Boolean = false;
   private startTime: number;
@@ -99,7 +98,7 @@ export class NoteComponent implements OnInit, OnDestroy {
     // get audio edits
     this.fireDatabase.list('/audioTracking/' + this.noteid).valueChanges().subscribe(res => {
       // clear any existing highlighting
-      this.unhighlightEdits(this.edits, this.editor.getSelection())
+      this.unhighlightAllEdits(this.editor.getSelection())
       this.originalContent = null;
       this.edits = [];
       res.forEach(item => {
@@ -163,16 +162,7 @@ export class NoteComponent implements OnInit, OnDestroy {
     (may not work correctly until audio edits have finished loading from firebase) 
   */
   unhighlightAllEdits(range) {
-    for (var x = 0; x < this.edits.length; x++) {
-      this.editor.setSelection(this.edits[x].index, this.edits[x].content.length, 'silent');
-      this.editor.format('background', false, 'silent');
-    }
-    if (range) {
-      this.editor.setSelection(range.index, range.length, 'silent');
-      this.editor.format('background', false, 'silent');
-    } else {
-      this.editor.setSelection(false, 'silent')
-    }
+    this.unhighlightEdits(this.edits, range);
   }
 
   createFileContents(value) {
@@ -257,10 +247,10 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   editorSelectionChanged({editor, range, oldRange, source}) {
-    if (source == "user") {
+    if (source == "user" && this.recording == false) {
       this.edits.forEach(element => {
         if (range.index == element.index + element.content.length) {
-          this.editor.format('background', 'white', 'silent');
+          this.editor.format('background', false, 'silent');
         }
         if (range.index >= element.index && range.index < element.index + element.content.length) {
           const audio = document.querySelector('audio');
@@ -367,9 +357,6 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   loadAudio() {
-    // load audio context
-    this.audioContext = new AudioContext;
-
     // load audio from database
     var audioRef = this.storage.ref('audio/' + this.noteid);
     if (audioRef) {
