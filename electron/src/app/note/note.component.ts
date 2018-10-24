@@ -139,7 +139,7 @@ export class NoteComponent implements OnInit, OnDestroy {
     // set the cursor back to the original position
     if (range) { // cursor is somewhere
       this.editor.setSelection(range.index, range.length, 'silent');
-      this.editor.format('background', 'white', 'silent');
+      this.editor.format('background', false, 'silent');
     } else { // editor wasn't in focus
       this.editor.setSelection(false, 'silent');
     }
@@ -171,7 +171,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       this.editor.setSelection(range.index, range.length, 'silent');
       this.editor.format('background', false, 'silent');
     } else {
-      this.editor.setSelection(false)
+      this.editor.setSelection(false, 'silent')
     }
   }
 
@@ -241,10 +241,11 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.text = text;
     this.html = html;
     if (this.recording) { // currently recording audio
-      var timestamp = Math.floor((Date.now() - this.startTime) / 1000); // timestamp in seconds from start
-      this.fireDatabase.object("/audioTracking/" + this.noteid + "/" + timestamp).set({ delta: delta.ops, timestamp: timestamp })
+      var fullTimestamp = Date.now() - this.startTime;
+      var roundedTimestamp = Math.floor(fullTimestamp / 1000); // timestamp in seconds from start
+      this.fireDatabase.object("/audioTracking/" + this.noteid + "/" + fullTimestamp).set({ delta: delta.ops, timestamp: roundedTimestamp })
         .then(_ => {
-          console.log("Tracked edit at: " + timestamp);
+          console.log("Tracked edit at: " + fullTimestamp);
           for (let i = 0; i < delta.ops.length; i++) {
             const element = delta.ops[i];
             console.log(element)
@@ -258,10 +259,12 @@ export class NoteComponent implements OnInit, OnDestroy {
   editorSelectionChanged({editor, range, oldRange, source}) {
     if (source == "user") {
       this.edits.forEach(element => {
+        if (range.index == element.index + element.content.length) {
+          this.editor.format('background', 'white', 'silent');
+        }
         if (range.index >= element.index && range.index < element.index + element.content.length) {
           const audio = document.querySelector('audio');
           audio.currentTime = element.timestamp;
-          return;
         }
       });
     }
@@ -288,10 +291,12 @@ export class NoteComponent implements OnInit, OnDestroy {
         this.startTime = Date.now();
 
         // delete any previous tracking data
-        this.fireDatabase.object("/audioTracking/" + this.noteid).remove();
-
-        // add original content to the database
-        this.fireDatabase.object("/audioTracking/" + this.noteid + "/original").set({ content: this.editor.root.innerHTML })
+        this.edits = [];
+        this.fireDatabase.object("/audioTracking/" + this.noteid).remove().then( () => {
+          // add original content to the database
+          this.fireDatabase.object("/audioTracking/" + this.noteid + "/original").set({ content: this.editor.root.innerHTML });
+          this.highlightIfAudio();
+        });
       });
 
       // when recording is stopped
