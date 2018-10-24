@@ -104,8 +104,9 @@ export class NoteComponent implements OnInit, OnDestroy {
   highlightIfAudio() {
     // get audio edits
     this.fireDatabase.list('/audioTracking/' + this.noteid).valueChanges().subscribe(res => {
+      var curPos = this.editor.getSelection();
       // clear any existing highlighting
-      this.unhighlightAllEdits(this.editor.getSelection());
+      this.unhighlightAllEdits(curPos);
       this.edits = [];
 
       // fetch edits from firebase
@@ -128,7 +129,7 @@ export class NoteComponent implements OnInit, OnDestroy {
 
       // highlight audio edits within note
       if (this.edits.length > 0) {
-        this.highlightEdits(this.edits, this.editor.getSelection());
+        this.highlightEdits(this.edits, curPos);
       }
     });
   }
