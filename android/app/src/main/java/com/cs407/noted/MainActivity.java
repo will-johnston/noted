@@ -9,7 +9,9 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -53,6 +55,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -72,11 +75,11 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseAuth firebaseAuth;
     private RecyclerView recyclerView;
-    private ListAdapter listAdapter;
+    public static ListAdapter listAdapter;
     private GoogleApiClient googleApiClient;
     private FirebaseUser currentUser;
     private FirebaseDatabase database;
-    private DatabaseReference myRef;  // this will store the database reference at the current path
+    public static DatabaseReference myRef;  // this will store the database reference at the current path
     private com.cs407.noted.File root;
     private static final int PICK_IMAGE = 1;
     private static final int TAKE_PICTURE = 2;
@@ -420,10 +423,11 @@ public class MainActivity extends AppCompatActivity {
                     //upload the picture to Firebase storage
                     StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
                     try {
-                        InputStream inputStream = getApplicationContext().getContentResolver().openInputStream(imageUri);
-                        ref.putStream(inputStream);
+                        ByteArrayOutputStream baos = prepareBitmap(imageUri);
+                        ref.putBytes(baos.toByteArray());
                     }
-                    catch(FileNotFoundException e1) {
+                    catch(Exception e) {
+                        e.printStackTrace();
                     }
                 }
             });
@@ -456,20 +460,14 @@ public class MainActivity extends AppCompatActivity {
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
                     listAdapter.addNewFile(file, myRef);
 
+                    StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
                     try {
-                        //rotate the image
-                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(cr, imageUri);
-                        Matrix matrix = new Matrix();
-                        matrix.postRotate(90);
-                        Bitmap newBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-
-                        //upload the picture to Firebase storage
-                        StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
+                        ByteArrayOutputStream baos = prepareBitmap(imageUri);
                         ref.putBytes(baos.toByteArray());
                     }
-                    catch(IOException e) {}
+                    catch(Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             });
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -483,6 +481,44 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private ByteArrayOutputStream prepareBitmap(Uri imageUri) throws Exception {
+        InputStream inputStream1 = getApplicationContext().getContentResolver().openInputStream(imageUri);
+        InputStream inputStream2 = getApplicationContext().getContentResolver().openInputStream(imageUri);
+
+        ExifInterface exif = new ExifInterface(inputStream1);
+        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+        int rotate = 0;
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                rotate = 270;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                rotate = 180;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                rotate = 90;
+                break;
+        }
+
+        BufferedInputStream bis = new BufferedInputStream(inputStream2);
+        Bitmap bitmap = BitmapFactory.decodeStream(bis);
+        Matrix matrix = new Matrix();
+        matrix.postRotate(rotate);
+        Bitmap newBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+
+        int maxSize = 4 * 1024 * 1024;
+        int quality = 98;
+
+        while(baos.size() > maxSize) {
+            baos = new ByteArrayOutputStream();
+            newBitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+            quality -= 2;
+        }
+
+        return baos;
+    }
 
     private void respondToFolderOrDocumentClick(FloatingActionsMenu floatingActionsMenu, final FileType type) {
         floatingActionsMenu.collapse();
