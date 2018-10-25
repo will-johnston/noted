@@ -30,6 +30,8 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
@@ -50,6 +52,7 @@ public class ImageActivity extends AppCompatActivity {
     private Bitmap bitmap;
     private RequestQueue queue;
     private String bitmapURL;
+    private String title;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +63,7 @@ public class ImageActivity extends AppCompatActivity {
         translateButton = (Button)findViewById(R.id.translateButton);
 
         Intent intent = getIntent();
-        String title = intent.getStringExtra("title");
+        title = intent.getStringExtra("title");
         String id = intent.getStringExtra("id");
 
         ActionBar actionBar = getSupportActionBar();
@@ -238,6 +241,16 @@ public class ImageActivity extends AppCompatActivity {
                                     }
 
                                     Log.d("hi", resultString);
+
+                                    com.cs407.noted.File file = new com.cs407.noted.File(
+                                        null, null, title, null, null, FileType.DOCUMENT.toString(), null);
+                                    MainActivity.listAdapter.addNewFile(file, MainActivity.myRef);
+
+                                    FirebaseDatabase database = FirebaseDatabase.getInstance();
+                                    DatabaseReference ref = database.getReference("fileContents/" + file.getId());
+                                    HashMap<String, Object> nodeVal = new HashMap<>();
+                                    nodeVal.put("data", "<p>" + resultString + "</p>");
+                                    ref.updateChildren(nodeVal);
 
                                     Toast.makeText(getApplicationContext(), "Image has been translated", Toast.LENGTH_LONG).show();
                                 }

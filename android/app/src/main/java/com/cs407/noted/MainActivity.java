@@ -75,11 +75,11 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseAuth firebaseAuth;
     private RecyclerView recyclerView;
-    private ListAdapter listAdapter;
+    public static ListAdapter listAdapter;
     private GoogleApiClient googleApiClient;
     private FirebaseUser currentUser;
     private FirebaseDatabase database;
-    private DatabaseReference myRef;  // this will store the database reference at the current path
+    public static DatabaseReference myRef;  // this will store the database reference at the current path
     private com.cs407.noted.File root;
     private static final int PICK_IMAGE = 1;
     private static final int TAKE_PICTURE = 2;
@@ -484,7 +484,6 @@ public class MainActivity extends AppCompatActivity {
     private ByteArrayOutputStream prepareBitmap(Uri imageUri) throws Exception {
         InputStream inputStream1 = getApplicationContext().getContentResolver().openInputStream(imageUri);
         InputStream inputStream2 = getApplicationContext().getContentResolver().openInputStream(imageUri);
-        //int size = inputStream1.available();
 
         ExifInterface exif = new ExifInterface(inputStream1);
         int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
