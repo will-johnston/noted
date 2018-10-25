@@ -484,6 +484,7 @@ public class MainActivity extends AppCompatActivity {
     private ByteArrayOutputStream prepareBitmap(Uri imageUri) throws Exception {
         InputStream inputStream1 = getApplicationContext().getContentResolver().openInputStream(imageUri);
         InputStream inputStream2 = getApplicationContext().getContentResolver().openInputStream(imageUri);
+        //int size = inputStream1.available();
 
         ExifInterface exif = new ExifInterface(inputStream1);
         int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
@@ -507,6 +508,15 @@ public class MainActivity extends AppCompatActivity {
         Bitmap newBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+
+        int maxSize = 4 * 1024 * 1024;
+        int quality = 98;
+
+        while(baos.size() > maxSize) {
+            baos = new ByteArrayOutputStream();
+            newBitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+            quality -= 2;
+        }
 
         return baos;
     }
