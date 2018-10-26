@@ -34,6 +34,7 @@ import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
@@ -44,6 +45,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -54,13 +57,11 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -420,11 +421,28 @@ public class MainActivity extends AppCompatActivity {
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
                     listAdapter.addNewFile(file, myRef);
 
+                    ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                    spinner.setVisibility(View.VISIBLE);
+
                     //upload the picture to Firebase storage
                     StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
                     try {
                         ByteArrayOutputStream baos = prepareBitmap(imageUri);
-                        ref.putBytes(baos.toByteArray());
+                        UploadTask task = ref.putBytes(baos.toByteArray());
+                        task.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                                spinner.setVisibility(View.GONE);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                                ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                                spinner.setVisibility(View.GONE);
+                                Toast.makeText(getApplicationContext(), "Failed to upload image", Toast.LENGTH_LONG).show();
+                            }
+                        });
                     }
                     catch(Exception e) {
                         e.printStackTrace();
@@ -460,10 +478,27 @@ public class MainActivity extends AppCompatActivity {
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
                     listAdapter.addNewFile(file, myRef);
 
+                    ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                    spinner.setVisibility(View.VISIBLE);
+
                     StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
                     try {
                         ByteArrayOutputStream baos = prepareBitmap(imageUri);
-                        ref.putBytes(baos.toByteArray());
+                        UploadTask task = ref.putBytes(baos.toByteArray());
+                        task.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                                spinner.setVisibility(View.GONE);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                                ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                                spinner.setVisibility(View.GONE);
+                                Toast.makeText(getApplicationContext(), "Failed to upload image", Toast.LENGTH_LONG).show();
+                            }
+                        });
                     }
                     catch(Exception e) {
                         e.printStackTrace();
