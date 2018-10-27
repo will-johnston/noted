@@ -55,8 +55,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
@@ -73,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseDatabase database;
     private DatabaseReference myRef;  // this will store the database reference at the current path
     private DatabaseReference fileContents;
+    private List<SharedFile> sharedFiles;
 
     private com.cs407.noted.File root;
     private static final int PICK_IMAGE = 1;
@@ -93,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
         setUpFloatingActionMenu();
         firebaseStorage = FirebaseStorage.getInstance();
         database = FirebaseDatabase.getInstance();
+        sharedFiles = new ArrayList<>();
         if (checkLogin()) {
             // user is logged in so we can access their data
             setupDatabase();
@@ -210,7 +214,15 @@ public class MainActivity extends AppCompatActivity {
                 for (DataSnapshot ds : dataSnapshot.getChildren()) {
                     if (ds.getKey().equals("shared")) {
                         // we have reached the shared items
-                        //TODO: add shared reference
+                        ArrayList<SharedFile> shared = new ArrayList<>();
+                        for (DataSnapshot ds2: ds.getChildren()) {
+                            SharedFile sharedFile = ds2.getValue(SharedFile.class);
+                            shared.add(sharedFile);
+                            convertAndAddSharedFile(sharedFile);
+                        }
+                        // add to global var to keep track for sharing
+                        sharedFiles.clear();
+                        sharedFiles.addAll(shared);
                     } else {
                         com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
                         // locally set the parents
@@ -235,6 +247,26 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    private void convertAndAddSharedFile(SharedFile sharedFile) {
+        DatabaseReference databaseReference = database.getReference(sharedFile.getPath());
+        databaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                // get the file
+                com.cs407.noted.File file = dataSnapshot.getValue(com.cs407.noted.File.class);
+                com.cs407.noted.File updatedFile = setFileParents(file, root);
+                // call list adapter function to add shared file as root's child
+                listAdapter.addFileToRoot(updatedFile);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
     }
 
     @Override
@@ -540,6 +572,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private TextLength checkTextLength(String text) {
+        if (text == null) {
+            return TextLength.NIL;
+        }
+        int len = text.length();
+        if (len < 1) {
+            return TextLength.EMPTY;
+        }
+        else if (len > 255) {
+            return TextLength.TOO_LARGE;
+        } else {
+            return TextLength.VALID;
+        }
+
+
+    }
+
+    public String getName() {
+        return this.getName();
+    }
+
+    public com.cs407.noted.File getRoot() {
+        return root;
+    }
+
 
     /* SHARING */
 
@@ -563,11 +620,16 @@ public class MainActivity extends AppCompatActivity {
                 for (DataSnapshot ds : dataSnapshot.getChildren()) {
                     User user = ds.getValue(User.class);
                     // add all users except the current user
-                   // if (user != null && !user.getId().equals(currentUser.getUid())) {
-                        String userTitle = String.format("%s (%s)", user.getName(), user.getEmail());
+                   if (user != null && !user.getId().equals(currentUser.getUid())) {
+                        String userTitle;
+                        if (user.getName() != null) {
+                             userTitle = String.format("%s (%s)", user.getEmail(), user.getName());
+                        }  else {
+                            userTitle = String.format("%s", user.getEmail());
+                        }
                         SearchModel searchModel = new SearchModel(userTitle, user.getId());
                         items.add(searchModel);
-                   // }
+                   }
                 }
                 // make sure there are items that we can search for
                 if (items.size() == 0) {
@@ -598,150 +660,207 @@ public class MainActivity extends AppCompatActivity {
     private void convertSharedFileThenVerifyAndShare(com.cs407.noted.File file, String userID) {
         // convert file to SharedFile
         String title = file.getTitle();
-        String path = String.format("placeholder path");
-        String filePath = String.format("fileContents/%s", file.getId());
+        String fileContentsPath = String.format("fileContents/%s", file.getId());
         String noteID = file.getId();
-        SharedFile sharedFile = new SharedFile(title, path, filePath, noteID);
+        // setting the path to null, because we set that information later
+        SharedFile sharedFile = new SharedFile(title, null, fileContentsPath, noteID);
 
         // make sure the file isn't already shared with the user
+        // then once that's verified, share the file
         verifyAndShare(file, userID, sharedFile);
-
     }
 
+
     private void verifyAndShare(final com.cs407.noted.File file, final String userID, final SharedFile sharedFile) {
-        final Context context = this;
-        String path = String.format("fileContents/%s/sharedUsers", file.getId());
+        List<String> IDList = flattenFileStructureExtractIDsExcludeParent(file);
+
+
+        ValueEventListener valueEventListenerForSharedChildren =
+                getValueEventListenerForSharedChildren(userID);
+        ValueEventListener valueEventListenerForSharedFile =
+                getValueEventListenerForSharedFile(file, userID, sharedFile);
+
+        // make sure all the parents children aren't already shared with the user as well
+        // and if so, remove it from the 'shared' list
+        for (String id: IDList) {
+            String path = String.format("fileContents/%s", id);
+            final DatabaseReference sharedFilesRef = database.getReference(path);
+            sharedFilesRef.addListenerForSingleValueEvent(valueEventListenerForSharedChildren);
+        }
+        String path = String.format("fileContents/%s", file.getId());
         final DatabaseReference sharedFilesRef = database.getReference(path);
-        ValueEventListener valueEventListener = new ValueEventListener() {
+        sharedFilesRef.addListenerForSingleValueEvent(valueEventListenerForSharedFile);
+    }
+
+    // value event listener used to remove files from a user A's "shared" list if the file being
+    // shared with A is the parent of another shared file
+    private ValueEventListener getValueEventListenerForSharedChildren(final String userID) {
+        return new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                String ownerID = null;
                 for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                    String sharedID = (String) ds.getValue();
-                    if (sharedID.equals(userID)) {
-                        // user has already been shared this file
-                        Toast.makeText(context, "User already has access this file!",
-                                Toast.LENGTH_SHORT).show();
-                        return;
+                    if (ds.getKey().equals("sharedUsers")) {
+                        // make sure the user is not already on the shared users list
+                        for (DataSnapshot d1: ds.getChildren()) {
+                            String sharedID = (String) d1.getValue();
+                            if (sharedID.equals(userID)) {
+                                // user has already been shared this file, remove it from shared
+                                searchAndRemoveFileFromShared(dataSnapshot.getKey(), userID);
+                                return;
+                            }
+                        }
                     }
                 }
-                // if we get here, the user doesn't already have access, so share it
-                shareFile(file, userID, sharedFile, sharedFilesRef);
             }
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {}
         };
-        sharedFilesRef.addListenerForSingleValueEvent(valueEventListener);
     }
 
-    private void shareFile(com.cs407.noted.File file, String userID, SharedFile sharedFile, DatabaseReference sharedFilesRef) {
-        // create reference for the shared user
-        String refPath = String.format("users/%s/shared", userID);
-        DatabaseReference sharedRef = database.getReference(refPath);
-        sharedRef.push().setValue(sharedFile);
-
-        // add user to shared files list
-        sharedFilesRef.push().setValue(userID);
-        Toast.makeText(this, "File shared!", Toast.LENGTH_SHORT).show();
-    }
-
-
-    /*
-    This function takes in the file to be shared and the user id of who to share with
-    and updates the newly shared users file system on firebase so that the new user can
-    access the file. Takes in the extra argument of email address to confirm with the current user
-    if the file was successfully shared
-     */
-    private void updateSharedUsersFileSystem(String file_id, String shared_user_id, String shared_user_email) {
-        com.cs407.noted.File file = listAdapter.findFile(file_id);
-        if (file == null) {
-            Toast.makeText(this, "Couldn't share file.", Toast.LENGTH_SHORT).show();
-        } else {
-            DatabaseReference refSrc = getRefSrc(file);
-            DatabaseReference refDest = getRefDest(shared_user_id);
-            copyFile(refSrc, refDest, shared_user_email);
-        }
-    }
-
-    private DatabaseReference getRefSrc(com.cs407.noted.File file) {
-        String uid = currentUser.getUid();
-        String path = file.getId();
-        String id;
-
-        // add to the files path starting from the from bottom ((now we here)) in reverse order
-        while (! (id = file.getParent().getId()).equals("root")) {
-            path = String.format("%s/children/%s", id, path);
-        }
-
-        // add the root of the ref
-        path = String.format("%s/%s", uid, path);
-        return database.getReference(path);
-    }
-
-
-    private DatabaseReference getRefDest(String shared_user_id) {
-        String path = String.format("users/%s", shared_user_id);
-        return database.getReference(path);
-    }
-
-    /*
-    Copy values (file) from source to destination in firebase
-    To do this, we need to create a single event listener, so that we can copy over the data snapshot
-     */
-    private void copyFile(DatabaseReference src, final DatabaseReference dest, final String shared_user) {
+    // value event listener to verify that the file has not already been shared with the user
+    // if it hasn't call the shareFile method
+    private ValueEventListener getValueEventListenerForSharedFile(final com.cs407.noted.File file,
+                                                                  final String userID,
+                                                                  final SharedFile sharedFile) {
         final Context context = this;
-        // create listener so that we can copy the value over
-        ValueEventListener valueEventListener = new ValueEventListener() {
+        return new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                dest.setValue(dataSnapshot.getValue()).
-                        addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        if (task.isComplete()) {
-                            Toast.makeText(context, String.format("Shared with %s", shared_user),
-                                    Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(context, "Failed to share file",
-                                    Toast.LENGTH_SHORT).show();
+                String ownerID = null;
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    if (ds.getKey().equals("sharedUsers")) {
+                        // make sure the user is not already on the shared users list
+                        for (DataSnapshot d1: ds.getChildren()) {
+                            String sharedID = (String) d1.getValue();
+                            if (sharedID.equals(userID)) {
+                                // user has already been shared this file
+                                Toast.makeText(context, "User already has access this file!",
+                                        Toast.LENGTH_SHORT).show();
+                                return;
+                            }
                         }
+                    } else {
+                        // get owner id here
+                        ownerID = (String) ds.getValue();
                     }
-                });
+                }
+                // if we get here, the user doesn't already have access, so share it
+                shareFile(file, userID, sharedFile, ownerID);
             }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
+        };
 
+    }
+
+    // find the file in the shared folder for the user, then remove it
+    private void searchAndRemoveFileFromShared(final String fileID, final String userID) {
+        String path = String.format("users/%s/shared", userID);
+        DatabaseReference df = database.getReference(path);
+        df.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot ds: dataSnapshot.getChildren()) {
+                    SharedFile sf = ds.getValue(SharedFile.class);
+                    String id = sf.getNoteID();
+                    if (id.equals(fileID)) {
+                        String path = String.format("users/%s/shared/%s", userID, ds.getKey());
+                        DatabaseReference df = database.getReference(path);
+                        df.removeValue();
+                        break;
+                    }
+                }
+            }
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
-        };
-        src.addListenerForSingleValueEvent(valueEventListener);  // add one time listener
+        });
     }
 
 
+    private List<String> flattenFileStructureExtractIDsExcludeParent(com.cs407.noted.File file) {
+        ArrayList<String> list = new ArrayList<>();
+        Queue<com.cs407.noted.File> queue = new LinkedList<>();
+        queue.add(file);
 
-
-
-    private TextLength checkTextLength(String text) {
-        if (text == null) {
-            return TextLength.NIL;
+        while (!queue.isEmpty()) {
+            com.cs407.noted.File current = queue.poll();
+            if (current.getId() != file.getId()) {
+                list.add(current.getId());
+            }
+            if (current.getChildren() != null) {
+                queue.addAll(current.getChildren().values());
+            }
         }
-        int len = text.length();
-        if (len < 1) {
-            return TextLength.EMPTY;
-        }
-        else if (len > 255) {
-            return TextLength.TOO_LARGE;
+        return list;
+    }
+
+    private void shareFile(com.cs407.noted.File file, String userID, SharedFile sharedFile,
+                           String ownerID) {
+        if (currentUser.getUid().equals(ownerID)) {
+            // this means the current user is also the owner, so we get the current user's path
+            // to the file and add it to the shared file
+            sharedFile.setPath(getOwnerPath(file, ownerID));
         } else {
-            return TextLength.VALID;
+            // we need to find the file id in the current user's shared file's list
+            // and then get the correct ownerPath
+            for (SharedFile sf: this.sharedFiles) {
+                if (sf.getNoteID().equals(file.getId())) {
+                    // we have found the file to add
+                    sharedFile.setPath(sf.getPath());
+                }
+            }
+            // if we can't find it, abort
+            if (sharedFile.getPath() == null) {
+                return;
+            }
+        }
+        // create reference for the shared user
+        String refPath = String.format("users/%s/shared", userID);
+        DatabaseReference sharedRef = database.getReference(refPath);
+        // add to 'shared' list in user's file system
+        sharedRef.push().setValue(sharedFile);
+
+        // add user to shared files list for the file and its children
+        addUserToSharedFilesList(file, userID);
+        Toast.makeText(this, "File shared!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void addUserToSharedFilesList(com.cs407.noted.File file, String userID) {
+        String path = String.format("fileContents/%s/sharedUsers", file.getId());
+        DatabaseReference databaseReference = database.getReference(path);
+        databaseReference.push().setValue(userID);
+        List<com.cs407.noted.File> children;
+
+        // recursively add user to file's children's shared list as well
+        if (file.getChildren() != null) {
+            children = new ArrayList<>();
+            children.addAll(file.getChildren().values());
+            for (com.cs407.noted.File child: children) {
+                addUserToSharedFilesList(child, userID);
+            }
         }
 
-
     }
 
-    public String getName() {
-        return this.getName();
+    private String getOwnerPath(com.cs407.noted.File file, String uid) {
+        String path = file.getId();
+        com.cs407.noted.File fileRef = file;
+        String id;
+
+        // add to the files path starting from the from bottom ((now we here)) in reverse order
+        while (! (id = fileRef.getParent().getId()).equals("root")) {
+            path = String.format("%s/children/%s", id, path);
+            fileRef = fileRef.getParent();
+        }
+
+        // add the root of the ref
+        path = String.format("users/%s/%s", uid, path);
+        return path;
     }
 
-    public com.cs407.noted.File getRoot() {
-        return root;
-    }
+
+
 }

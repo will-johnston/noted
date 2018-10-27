@@ -94,6 +94,23 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         }
     }
 
+    public void addFileToRoot(File file) {
+        File root = getRoot();
+        root.addChild(file);
+        if (this.parent.getId().equals("root")) {
+            fileList.add(file);
+        }
+        notifyDataSetChanged();
+    }
+
+    private File getRoot() {
+        File parentRef = this.parent;
+        while (!parentRef.getId().equals("root")) {
+            parentRef = parentRef.getParent();
+        }
+        return parentRef;
+    }
+
     public File findFile(String id) {
         // get to root directory
         //TODO: see if this changes parent
@@ -167,6 +184,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
             public void onClick(View v) {
                 // get list item at holder position
                 int position = holder.getAdapterPosition();
+                assert position > -1;
                 File file = fileList.get(position);
 
                 // if type is folder, change list to list file's children
