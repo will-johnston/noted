@@ -72,6 +72,8 @@ public class MainActivity extends AppCompatActivity {
     private DatabaseReference myRef;  // this will store the database reference at the current path
     private DatabaseReference fileContents;
     private List<SharedFile> sharedFiles;
+
+    private int convertedSharedFilesSize;
     private List<com.cs407.noted.File> convertedSharedFiles;
 
     private com.cs407.noted.File root;
@@ -116,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_REQUEST);
             }
         }
+        checkIntent();
     }
 
 
@@ -123,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         checkLogin();
+        checkIntent();
     }
 
     private boolean checkLogin() {
@@ -137,6 +141,20 @@ public class MainActivity extends AppCompatActivity {
         } else {
             verifyUserPII(currentUser);
             return true;
+        }
+    }
+
+    private void checkIntent() {
+        Intent intent = getIntent();
+        if (intent != null) {
+            String flag = intent.getStringExtra("flag");
+            if (flag != null && flag.equals("deleted")) {
+                // the document activity has been deleted and brought the user back to the main
+                // activity. Let the user know
+                Toast.makeText(this,
+                        "The document you were editing has been deleted.",
+                        Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -234,8 +252,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void convertSharedFilesUpdateItemList(List<com.cs407.noted.File> files,
                                                   List<SharedFile> shared) {
-        int size = shared.size();
-        if (size == 0) {
+        convertedSharedFilesSize = shared.size();
+        if (convertedSharedFilesSize == 0) {
             updateView(files);
         } else {
             this.convertedSharedFiles = new ArrayList<>();
@@ -244,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
                     DatabaseReference databaseReference = database.getReference(sharedFile.getPath());
                     // get data of shared file
                     databaseReference.addValueEventListener(
-                            getValueEventListenerForConvertingSharedFiles(size, files, sharedFile));
+                            getValueEventListenerForConvertingSharedFiles(files, sharedFile));
                 }
             }
         }
@@ -261,12 +279,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private ValueEventListener getValueEventListenerForConvertingSharedFiles(
-            final int size, final List<com.cs407.noted.File> files, final SharedFile sharedFile) {
+            final List<com.cs407.noted.File> files, final SharedFile sharedFile) {
         return new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 // get the file
                 com.cs407.noted.File convertedFile = dataSnapshot.getValue(com.cs407.noted.File.class);
+                if (convertedFile == null) {
+                    // a shared file has been deleted
+//                    convertedSharedFilesSize--;
+//                    if (convertedSharedFiles.size() >= convertedSharedFilesSize) {
+//                        // we have added all the files we need, so now we update the recycler view
+//                        convertedSharedFiles.addAll(files);
+//                        // add files as root's children
+//                        updateView(convertedSharedFiles);
+//                    }
+                    return;
+                }
                 if (alreadyListening(sharedFile)) {
                     //convertedFile.setParent(root);
                     com.cs407.noted.File convertedAndUpdatedFile = setFileParents(convertedFile, root);
@@ -276,7 +305,7 @@ public class MainActivity extends AppCompatActivity {
                 if (convertedFile != null) {
                     convertedSharedFiles.add(convertedFile);
                     sharedFiles.add(sharedFile);
-                    if (convertedSharedFiles.size() == size) {
+                    if (convertedSharedFiles.size() == convertedSharedFilesSize) {
                         // we have added all the files we need, so now we update the recycler view
                         convertedSharedFiles.addAll(files);
                         // add files as root's children
@@ -441,11 +470,9 @@ public class MainActivity extends AppCompatActivity {
             }
             // if we got here, we know the current user is the owner
             // remove all shared users from file
-            findAndRemoveSharedUsersFromFile(file.getId());
-            // now remove file from current users file system and from fileContents in firebase
-            myRef.child(id).removeValue(getDatabaseCompletionListener(file));
-            fileContents.child(id).removeValue();
-            removeUserFromSharedUsers(file.getId(), currentUser.getUid());
+            // this will then call to remove the file itself
+            findAndRemoveSharedUsersFromFile(id, file);
+
         } catch (DatabaseException e) {
             e.printStackTrace();
             String err = String.format("Failed to remove %s", file.getTitle());
@@ -453,7 +480,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void findAndRemoveSharedUsersFromFile(final String fileID) {
+    private void findAndRemoveSharedUsersFromFile(final String fileID, final com.cs407.noted.File file) {
         String path = String.format("fileContents/%s/sharedUsers", fileID);
         DatabaseReference df = database.getReference(path);
         df.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -463,6 +490,9 @@ public class MainActivity extends AppCompatActivity {
                     String userID = (String) ds.getValue();
                     searchAndRemoveFileFromShared(fileID, userID);
                 }
+                // now remove file from current users file system and from fileContents in firebase
+                myRef.child(fileID).removeValue(getDatabaseCompletionListener(file));
+                fileContents.child(fileID).removeValue();
             }
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
