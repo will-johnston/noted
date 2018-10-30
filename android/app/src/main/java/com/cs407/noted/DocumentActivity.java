@@ -36,6 +36,7 @@ public class DocumentActivity extends AppCompatActivity {
     private String title;
     private String id;
     private DatabaseReference ref;
+    private String imageId;
 
     // cursor positions
     private int startPosition;  //the start position of the cursor
@@ -258,6 +259,12 @@ public class DocumentActivity extends AppCompatActivity {
             case R.id.redo:
                 knife.redo();
                 break;
+            case R.id.showOriginalImage:
+                Intent intent = new Intent(getApplicationContext(), ImageActivity.class);
+                intent.putExtra("title", title);
+                intent.putExtra("id", imageId);
+                getApplicationContext().startActivity(intent);
+                break;
             default:
                 break;
         }
@@ -274,6 +281,30 @@ public class DocumentActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        /*check if the node contains a "image" property
+        if so, then this document was generated with an image
+            the image id is the value of the image property
+            show the view original image button in the toolbar
+        if not, then this document was not generated with an image
+            so no need to do anything*/
+        final Menu menuFinal = menu;
+        DatabaseReference imageRef = ref.child("image");
+        ValueEventListener eventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()) {
+                    imageId = (String)dataSnapshot.getValue();
+                    Log.d("hi", imageId);
+                    MenuItem item = menuFinal.findItem(R.id.showOriginalImage);
+                    item.setVisible(true);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        };
+        imageRef.addListenerForSingleValueEvent(eventListener);
+
         getMenuInflater().inflate(R.menu.menu_document, menu);
         return super.onCreateOptionsMenu(menu);
     }

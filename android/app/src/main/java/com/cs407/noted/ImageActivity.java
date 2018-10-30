@@ -53,6 +53,7 @@ public class ImageActivity extends AppCompatActivity {
     private RequestQueue queue;
     private String bitmapURL;
     private String title;
+    private String id;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +65,7 @@ public class ImageActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         title = intent.getStringExtra("title");
-        String id = intent.getStringExtra("id");
+        id = intent.getStringExtra("id");
 
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
@@ -250,6 +251,7 @@ public class ImageActivity extends AppCompatActivity {
                                     DatabaseReference ref = database.getReference("fileContents/" + file.getId());
                                     HashMap<String, Object> nodeVal = new HashMap<>();
                                     nodeVal.put("data", "<p>" + resultString + "</p>");
+                                    nodeVal.put("image", id);
                                     ref.updateChildren(nodeVal);
 
                                     Toast.makeText(getApplicationContext(), "Image has been translated", Toast.LENGTH_LONG).show();

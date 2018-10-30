@@ -13,4 +13,11 @@
         android:icon="@drawable/ic_action_redo"
         app:showAsAction="ifRoom">
     </item>
+
+    <item android:id="@+id/showOriginalImage"
+        android:title="@string/menu_show_original_image"
+        android:icon="@drawable/image"
+        app:showAsAction="ifRoom"
+        android:visible="false">
+    </item>
 </menu>
