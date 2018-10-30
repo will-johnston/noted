@@ -64,6 +64,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
     private DatabaseReference fileContents;
     private List<SharedFile> sharedFiles;
 
-    private int convertedSharedFilesSize;
+    private int sharedFileSize;
     private List<com.cs407.noted.File> convertedSharedFiles;
 
     public static DatabaseReference myRef;  // this will store the database reference at the current path
@@ -273,8 +274,15 @@ public class MainActivity extends AppCompatActivity {
 
     private void convertSharedFilesUpdateItemList(List<com.cs407.noted.File> files,
                                                   List<SharedFile> shared) {
-        int size = shared.size();
-        if (size == 0) {
+        if (shared.size() < sharedFileSize) {
+            if (convertedSharedFiles != null) {
+                removeNecessarySharedFiles(shared);
+            }
+        }
+
+        setSize(shared.size());
+
+        if (shared.size() == 0) {
             updateView(files);
             convertedSharedFiles = new ArrayList<>();
             sharedFiles = new ArrayList<>();
@@ -282,16 +290,41 @@ public class MainActivity extends AppCompatActivity {
             if (this.convertedSharedFiles == null) {
                 this.convertedSharedFiles = new ArrayList<>();
             }
+            boolean addedSharedFiles = false;   // handles case where we have shared files,
+            // but none of them were added
             for (SharedFile sharedFile : shared) {
                 if (!alreadyListening(sharedFile)) {
+                    addedSharedFiles = true;
                     DatabaseReference databaseReference = database.getReference(sharedFile.getPath());
                     // get data of shared file
                     databaseReference.addValueEventListener(
-                            getValueEventListenerForConvertingSharedFiles(files, sharedFile, size));
+                            getValueEventListenerForConvertingSharedFiles(files, sharedFile));
                 }
+            }
+            if (!addedSharedFiles) {
+                // get all the shared files and add them to files, no updates from shared files,
+                // but updates from owner's files
+                List<com.cs407.noted.File> sharedFiles = getAllSharedFilesFromConverted(shared);
+                files.addAll(sharedFiles);
+                updateView(files);
             }
         }
 
+    }
+
+
+
+    private List<com.cs407.noted.File> getAllSharedFilesFromConverted(List<SharedFile> shared) {
+        List<com.cs407.noted.File> files = new ArrayList<>();
+        for (com.cs407.noted.File file: convertedSharedFiles) {
+            for (SharedFile sharedFile: shared) {
+                if (sharedFile.getNoteID().equals(file.getId())) {
+                    files.add(file);
+                    break;
+                }
+            }
+        }
+        return files;
     }
 
     private boolean alreadyListening(SharedFile sharedFile) {
@@ -304,7 +337,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private ValueEventListener getValueEventListenerForConvertingSharedFiles(
-            final List<com.cs407.noted.File> files, final SharedFile sharedFile, final int size) {
+            final List<com.cs407.noted.File> files, final SharedFile sharedFile) {
         return new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -312,13 +345,7 @@ public class MainActivity extends AppCompatActivity {
                 com.cs407.noted.File convertedFile = dataSnapshot.getValue(com.cs407.noted.File.class);
                 if (convertedFile == null) {
                     // a shared file has been deleted
-//                    convertedSharedFilesSize--;
-//                    if (convertedSharedFiles.size() >= convertedSharedFilesSize) {
-//                        // we have added all the files we need, so now we update the recycler view
-//                        convertedSharedFiles.addAll(files);
-//                        // add files as root's children
-//                        updateView(convertedSharedFiles);
-//                    }
+                    decrementSize();
                     return;
                 }
                 if (alreadyListening(sharedFile)) {
@@ -329,10 +356,11 @@ public class MainActivity extends AppCompatActivity {
 
                 if (convertedFile != null) {
                     convertedSharedFiles.add(convertedFile);
+                    addAllPossibleFilesToConverted(files);
                     sharedFiles.add(sharedFile);
-                    if (convertedSharedFiles.size() == size) {
+                    if (convertedSharedFiles.size() == sharedFileSize + files.size()) {
                         // we have added all the files we need, so now we update the recycler view
-                        convertedSharedFiles.addAll(files);
+                        // convertedSharedFiles.addAll(files);
                         // add files as root's children
                         updateView(convertedSharedFiles);
                     }
@@ -344,6 +372,53 @@ public class MainActivity extends AppCompatActivity {
 
             }
         };
+    }
+
+    private synchronized void incrementSize() {
+        sharedFileSize++;
+    }
+    private synchronized void decrementSize() {
+        sharedFileSize--;
+    }
+    private synchronized void setSize(int size) {
+        sharedFileSize = size;
+    }
+
+    private void removeNecessarySharedFiles(List<SharedFile> shared) {
+        // remove files that are in convertedSharedFiles but not in shared
+        // this is handling when we delete a shared file from a sharedUsers directory
+        Iterator<com.cs407.noted.File> iterator = convertedSharedFiles.iterator();
+
+        while (iterator.hasNext()) {
+            com.cs407.noted.File file1 = iterator.next();
+            boolean isIn = false;
+            for (SharedFile sharedFile: shared) {
+                if (sharedFile.getNoteID().equals(file1.getId())) {
+                    // remove the file
+                    isIn = true;
+                    break;
+                }
+            }
+            if (!isIn) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private  void addAllPossibleFilesToConverted(List<com.cs407.noted.File> files) {
+        for (com.cs407.noted.File file : files) {
+            boolean isIn = false;
+            for (Iterator<com.cs407.noted.File> iterator = convertedSharedFiles.iterator(); iterator.hasNext();) {
+                com.cs407.noted.File file1 = iterator.next();
+                if (file.getId().equals(file1.getId())) {
+                    isIn = true;
+                    break;
+                }
+            }
+            if (!isIn) {
+                convertedSharedFiles.add(file);
+            }
+        }
     }
 
     @Override

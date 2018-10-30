@@ -205,35 +205,36 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
             try {
                 df.child(key).setValue(file);
                 // set owner of shared file as owner of the file
+                fileContents.child(file.getId()).child("owner").setValue(owner);
+            } catch (com.google.firebase.database.DatabaseException e) {
+                Toast.makeText(context, "Can't add file, maximum depth exceeded", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            if (uid == null) {
+                uid = ((MainActivity) context).getCurrentUserUid();
+            }
+            if (database == null) {
+                database = ((MainActivity) context).getDatabase();
+            }
+            if (fileContents == null) {
+                fileContents = database.getReference("fileContents");
+            }
+            // get the key in the database, which will serve as the id of the new file
+            String key = ref.push().getKey();
+
+            // set id and parent id to help with file traversal and database listener
+            file.setId(key);
+            file.setParent_id(this.parent.getId());
+
+            // add file to database (listener will add it to the view)
+            try {
+                // add file to user's file system
+                ref.child(key).setValue(file);
+                // set user as owner of the file
                 fileContents.child(file.getId()).child("owner").setValue(uid);
             } catch (com.google.firebase.database.DatabaseException e) {
                 Toast.makeText(context, "Can't add file, maximum depth exceeded", Toast.LENGTH_SHORT).show();
             }
-        }
-        if (uid == null) {
-            uid = ((MainActivity)context).getCurrentUserUid();
-        }
-        if (database == null) {
-            database = ((MainActivity)context).getDatabase();
-        }
-        if (fileContents == null) {
-            fileContents = database.getReference("fileContents");
-        }
-        // get the key in the database, which will serve as the id of the new file
-        String key = ref.push().getKey();
-
-        // set id and parent id to help with file traversal and database listener
-        file.setId(key);
-        file.setParent_id(this.parent.getId());
-
-        // add file to database (listener will add it to the view)
-        try {
-            // add file to user's file system
-            ref.child(key).setValue(file);
-            // set user as owner of the file
-            fileContents.child(file.getId()).child("owner").setValue(uid);
-        } catch (com.google.firebase.database.DatabaseException e) {
-            Toast.makeText(context, "Can't add file, maximum depth exceeded", Toast.LENGTH_SHORT).show();
         }
     }
 
