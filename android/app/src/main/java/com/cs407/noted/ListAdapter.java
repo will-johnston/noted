@@ -19,8 +19,10 @@ import com.google.firebase.database.DatabaseReference;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 
@@ -94,13 +96,64 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         }
     }
 
-    public void addFileToRoot(File file) {
-        File root = getRoot();
-        root.addChild(file);
-        if (this.parent.getId().equals("root")) {
-            fileList.add(file);
+    public void triggerUpdate(File file) {
+        // get the root of the current list
+        File root = file.getParent(); // this will always be root
+        // find the old file in the list
+        File old = bfs(file.getId(), root);
+        // replace the old file with the new one
+        File parent = old.getParent();
+        Map<String, File> parent_children = parent.getChildren();
+        parent_children.remove(file.getId());
+        parent_children.put(file.getId(), file);
+        parent.setChildren(parent_children);
+
+        File current_parent = bfs(this.parent.getId(), parent);
+        List<File> children = new ArrayList<>();
+        if (current_parent != null) {
+            if (current_parent.getChildren() != null) {
+                children.addAll(current_parent.getChildren().values());
+                setItemList(children);
+            }
+        } else {
+            setItemList(new ArrayList<File>());
         }
         notifyDataSetChanged();
+        // set item list to the correct directory
+    }
+
+    public void removeFileFromFileList(File file) {
+        fileList.remove(file);
+        notifyDataSetChanged();
+    }
+
+    public void addFileToRoot(File file) {
+        File root = getRoot();
+        File sharedFile = bfs(file.getId(), root);
+        // update the file
+        Map<String, File> children_mapped = root.getChildren();
+        Map<String, File> updatedChildren = new HashMap<>();
+        for (File f: children_mapped.values()) {
+            if (!f.getId().equals(file.getId())) {
+                updatedChildren.put(f.getId(), f);
+            }
+        }
+        updatedChildren.put(file.getId(), file);
+        root.setChildren(updatedChildren);
+        setItemList((List<File>) updatedChildren.values());
+
+        String parent_id = this.parent.getId();
+        List<File> children = new ArrayList<>();
+        // find parent, set its children accordingly
+        File parent = bfs(parent_id, root);
+        if (parent != null) {
+            if (parent.getChildren() != null) {
+                children.addAll(parent.getChildren().values());
+                setItemList(children);
+            }
+        } else {
+            setItemList(new ArrayList<File>());
+        }
     }
 
     private File getRoot() {
