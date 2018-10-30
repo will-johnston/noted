@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,11 +16,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 
@@ -64,6 +68,110 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         }
     }
 
+
+
+    public void setItemListMaintainCurrentDirectory(List<File> files) {
+        if (files.isEmpty()) {
+            // we must be at the root directory, but force it anyways
+            // TODO: set ref back to root
+            setItemList(new ArrayList<File>());
+
+        } else {
+            File file = files.get(0);
+            File root = file.getParent();  // this will always be the root node of the user
+            if (root == null) {
+                return; // something is terribly wrong– the root should be initialized
+            }
+            List<File> children = new ArrayList<>();
+            String parent_id = this.parent.getId();
+            // find parent, set its children accordingly
+            File parent = bfs(parent_id, root);
+            if (parent != null) {
+                if (parent.getChildren() != null) {
+                    children.addAll(parent.getChildren().values());
+                    setItemList(children);
+                    this.parent.setChildren(mapTheList(children));
+                } else {
+                    setItemList(new ArrayList<File>());
+                    this.parent.setChildren(mapTheList(null));
+                }
+            } else {
+                setItemList(new ArrayList<File>());
+                this.parent.setChildren(mapTheList(null));
+            }
+        }
+    }
+
+    public void triggerUpdate(File file) {
+        // get the root of the current list
+        File root = file.getParent(); // this will always be root
+        // find the old file in the list
+        File old = bfs(file.getId(), root);
+        // replace the old file with the new one
+        File parent = old.getParent();
+        Map<String, File> parent_children = parent.getChildren();
+        parent_children.remove(file.getId());
+        parent_children.put(file.getId(), file);
+        parent.setChildren(parent_children);
+
+        File current_parent = bfs(this.parent.getId(), parent);
+        // current_parent.setParent(this.parent.getParent());
+        while (current_parent == null) {
+            this.parent = this.parent.getParent();
+            current_parent = bfs(this.parent.getId(), parent);
+            if (context instanceof MainActivity) {
+                ((MainActivity) context).changeActionBarTitle(this.parent.getTitle());
+            }
+        }
+        List<File> children = new ArrayList<>();
+        if (current_parent != null) {
+            if (current_parent.getChildren() != null) {
+                children.addAll(current_parent.getChildren().values());
+                setItemList(children);
+                this.parent.setChildren(mapTheList(children));
+            } else {
+                setItemList(new ArrayList<File>());
+                this.parent.setChildren(null);
+            }
+        } else {
+            setItemList(new ArrayList<File>());
+            this.parent.setChildren(null);
+        }
+        // set item list to the correct directory
+    }
+
+    private Map<String, File> mapTheList(List<File> list) {
+        if (list == null) {
+            return null;
+        }
+        Map<String, File> map = new HashMap<>();
+        for (File f: list) {
+            map.put(f.getId(), f);
+        }
+        return map;
+    }
+
+
+    private File getRoot() {
+        File parentRef = this.parent;
+        while (!parentRef.getId().equals("root")) {
+            parentRef = parentRef.getParent();
+        }
+        return parentRef;
+    }
+
+    public File findFile(String id) {
+        // get to root directory
+        //TODO: see if this changes parent
+        File root = parent;
+        Log.e("parent before", parent.getId());
+        while (!root.getId().equals("root")) {
+            root = root.getParent();
+        }
+        Log.e("parent after", parent.getId());
+        return bfs(id, root);
+    }
+
     public void setItemList(List<File> fileList) {
         if (this.fileList == null) {
             this.fileList = new ArrayList<File>();
@@ -75,77 +183,88 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         this.notifyDataSetChanged();
     }
 
-    public void setItemListMaintainCurrentDirectory(List<File> files) {
-        if (files.isEmpty()) {
-            // we must be at the root directory, but force it anyways
-            // TODO: set ref back to root
-            setItemList(new ArrayList<File>());
 
+    public void addNewFile(File file, DatabaseReference ref, String uid,
+                           DatabaseReference fileContents, List<SharedFile> sharedFiles,
+                           FirebaseDatabase database) {
+        SharedFile sf;
+        if ((sf = getSharedFileIfParentIsSharedFile(sharedFiles)) != null) {
+            /* if parent is shared file, the then location of the file in the database
+                is under a different owner. Therefore, we update it on that users file
+                system, and our listener will handle updating it for this user  */
+            // create a new database reference
+            String finalPath = getFinalPath(sf, ref);
+            String sfPath = sf.getPath();
+            // get the owner from the shared file path
+            String owner = sf.getPath().substring(sfPath.indexOf("/") + 1, sfPath.indexOf("/", sfPath.indexOf("/") + 1));
+            DatabaseReference df = database.getReference(finalPath);
+            String key = df.push().getKey();
+            // set id and parent id
+            file.setId(key);
+            file.setParent_id(this.parent.getId());
+            try {
+                df.child(key).setValue(file);
+                // set owner of shared file as owner of the file
+                fileContents.child(file.getId()).child("owner").setValue(owner);
+            } catch (com.google.firebase.database.DatabaseException e) {
+                Toast.makeText(context, "Can't add file, maximum depth exceeded", Toast.LENGTH_SHORT).show();
+            }
         } else {
-            File file = files.get(0);
-            File root = file.getParent();  // this is the root node of the user
-            List<File> children = new ArrayList<>();
-            String parent_id = this.parent.getId();
-            if (root == null) {
-                // something is terribly wrong– the root should be initialized
-                return;
+            if (uid == null) {
+                uid = ((MainActivity) context).getCurrentUserUid();
             }
-            Queue<File> queue = new LinkedList<>();
-            queue.add(root);
+            if (database == null) {
+                database = ((MainActivity) context).getDatabase();
+            }
+            if (fileContents == null) {
+                fileContents = database.getReference("fileContents");
+            }
+            // get the key in the database, which will serve as the id of the new file
+            String key = ref.push().getKey();
 
-            while (!queue.isEmpty()) {
-                File current = queue.poll();
-                if (current.getId().equals(parent_id)) {
-                    // found it, update
-                    children.clear();
-                    if (current.getChildren() != null) {
-                        children.addAll(current.getChildren().values());
-                    }
-                    setItemList(children);
-                    return;
+            // set id and parent id to help with file traversal and database listener
+            file.setId(key);
+            file.setParent_id(this.parent.getId());
 
-                }
-                if (current.getChildren() != null) {
-                    children.clear();
-                    children.addAll(current.getChildren().values());
-                    for (File child : children) {
-                        queue.add(child);
-                    }
-                }
+            // add file to database (listener will add it to the view)
+            try {
+                // add file to user's file system
+                ref.child(key).setValue(file);
+                // set user as owner of the file
+                fileContents.child(file.getId()).child("owner").setValue(uid);
+            } catch (com.google.firebase.database.DatabaseException e) {
+                Toast.makeText(context, "Can't add file, maximum depth exceeded", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-
-    private File getRoot() {
-        File current = this.parent;
-        if (parent.getParent() == null) {
-            // we are already at the root
-            return parent;
-        }
-        while (current.getParent() != null) {
-            current = current.getParent();
-        }
-        return current;
+    private String getFinalPath(SharedFile sf, DatabaseReference ref) {
+        // get the path from the shared file it matches with, and adds the extra path
+        // if you have traversed deeper into the shared file directory
+        String path = sf.getPath();
+        String match = path.substring(path.lastIndexOf("/") + 1, path.length());
+        int matchLength = match.length();
+        String refPath = ref.toString();
+        String addedPath = refPath.substring(refPath.lastIndexOf(match) + matchLength + 1, refPath.length());
+        String finalPath = path + "/" + addedPath;
+        return finalPath;
     }
 
-    public void addNewFile(File file, DatabaseReference ref) {
-        // get the key in the database, which will serve as the id of the new file
-        String key = ref.push().getKey();
-
-        // set id and parent id to help with file traversal and database listener
-        file.setId(key);
-        file.setParent_id(this.parent.getId());
-
-        // add file to database (listener will add it to the view)
-        try {
-            ref.child(key).setValue(file);
-        } catch (com.google.firebase.database.DatabaseException e) {
-            Toast.makeText(context, "Can't add file, maximum depth exceeded", Toast.LENGTH_SHORT).show();
+    private SharedFile getSharedFileIfParentIsSharedFile(List<SharedFile> sharedFiles) {
+        if (sharedFiles == null) {
+            return null;
         }
+        File parent = this.parent;
+        while (!parent.getId().equals("root")) {
+            for (SharedFile f : sharedFiles) {
+                if (f.getNoteID().equals(parent.getId())) {
+                    return f;
+                }
+            }
+            parent = parent.getParent();
+        }
+        return null;
     }
-
-
 
 
 
@@ -158,6 +277,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 .inflate(R.layout.custom_list_item, parent, false);
         return new MyViewHolder(view);
     }
+
 
     @Override
     public void onBindViewHolder(@NonNull final MyViewHolder holder, int position) {
@@ -176,11 +296,11 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
             public void onClick(View v) {
                 // get list item at holder position
                 int position = holder.getAdapterPosition();
+                assert position > -1;
                 File file = fileList.get(position);
 
                 // if type is folder, change list to list file's children
                 if (file.getType().equals(FileType.FOLDER.toString())) {
-                    Toast.makeText(context, "Folder!", Toast.LENGTH_SHORT).show();
                     List<File> children;
                     if (file.getChildren() != null) {
                         children = new ArrayList<>();
@@ -203,12 +323,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 }
                 else if(file.getType().equals(FileType.DOCUMENT.toString())) {
                     Intent intent = new Intent(context, DocumentActivity.class);
-//                    if (context instanceof MainActivity) {
-//
-//                        intent.putExtra("databaseReference", ((MainActivity) context).getDatabaseRefPath());
-//                    } else {
-//                        intent.putExtra("databaseReference", "");
-//                    }
                     intent.putExtra("title", file.getTitle());
                     intent.putExtra("id", file.getId());
                     context.startActivity(intent);
@@ -240,15 +354,22 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
+                // position of item and the file at that position
+                int position = holder.getAdapterPosition();
+                File file = fileList.get(position);
+
                 switch (item.getItemId()) {
                     case R.id.action_remove:
-                        int position = holder.getAdapterPosition();
-                        File file = fileList.get(position);
                         if (context instanceof MainActivity) {
                             // tell main activity to remove file with myRef
                             ((MainActivity) context).removeFile(file, parent);
                         }
                         return true;
+                    case R.id.action_share:
+                        if (context instanceof MainActivity) {
+                            ((MainActivity) context).loadSearchDialog(file);
+                            // TODO: Share the file here
+                        }
                     default:
                         return false;
                 }
@@ -272,19 +393,14 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         }
     }
 
-    @Override
-    public int getItemCount() {
-        return fileList.size();
-    }
-
 
 
     class MyViewHolder extends RecyclerView.ViewHolder {
+
         TextView title;
         ImageView icon;
         ImageButton menuButton;
         View listItem;
-
         public MyViewHolder(View itemView) {
             super(itemView);
 
@@ -293,5 +409,28 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
             icon = itemView.findViewById(R.id.listIcon);
             menuButton = itemView.findViewById(R.id.menuButton);
         }
+
+    }
+
+    @Override
+    public int getItemCount() {
+        return fileList.size();
+    }
+
+    /* utilities */
+    private File bfs(String id, File root) {
+        Queue<File> queue = new LinkedList<>();
+        queue.add(root);
+
+        while (!queue.isEmpty()) {
+            File current = queue.poll();
+            if (current.getId().equals(id)) {
+                return current;
+            }
+            if (current.getChildren() != null) {
+                queue.addAll(current.getChildren().values());
+            }
+        }
+        return null;
     }
 }

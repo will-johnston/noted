@@ -84,11 +84,21 @@ public class DocumentActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 FileContents fc = dataSnapshot.getValue(FileContents.class);
+
                 if (currentHtml  == null) {
                     // local text has not been initialized, so initialize it
                     currentHtml = knife.toHtml();
                 }
                 if (fc == null) {
+                    // the file is no longer available
+                    //go back to main activity
+                    Intent myIntent = new Intent(getApplicationContext(), MainActivity.class)
+                            .setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                    myIntent.putExtra("flag", "deleted");
+                    startActivityForResult(myIntent, 0);
+                    return;
+                }
+                if (fc.getData() == null) {
                     // no data in database yet
                     return;
                 }
@@ -205,12 +215,9 @@ public class DocumentActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                // only trigger if there is non-empty text
-                //if (s.length() > 0) {
-                    last_edit_time = System.currentTimeMillis();
-                    // run input_finish_checker after the delay
-                    handler.postDelayed(input_finish_checker, delay);
-                //}
+                last_edit_time = System.currentTimeMillis();
+                // run input_finish_checker after the delay
+                handler.postDelayed(input_finish_checker, delay);
             }
         };
     }
@@ -250,7 +257,7 @@ public class DocumentActivity extends AppCompatActivity {
                 //go back to main activity
                 Intent myIntent = new Intent(getApplicationContext(), MainActivity.class)
                         .setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                // myIntent.putExtra("databaseReference", filePath);
+                myIntent.putExtra("flag", "normal");
                 startActivityForResult(myIntent, 0);
                 break;
             case R.id.undo:

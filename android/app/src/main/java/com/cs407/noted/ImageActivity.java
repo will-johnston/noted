@@ -245,7 +245,7 @@ public class ImageActivity extends AppCompatActivity {
 
                                     com.cs407.noted.File file = new com.cs407.noted.File(
                                         null, null, title, null, null, FileType.DOCUMENT.toString(), null);
-                                    MainActivity.listAdapter.addNewFile(file, MainActivity.myRef);
+                                    MainActivity.listAdapter.addNewFile(file, MainActivity.myRef, null, null, null, null);
 
                                     FirebaseDatabase database = FirebaseDatabase.getInstance();
                                     DatabaseReference ref = database.getReference("fileContents/" + file.getId());
