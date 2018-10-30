@@ -1,0 +1,10 @@
+{
+    "fileID" : {                        //fileId is the same as the elementId which references this file
+        "data" : "some data",           //may be null, inherits the bound type
+        "sharedWith" : [                //array of all the users this file is currently shared to
+            "userID"                    //userID's are stored and can be looked up with the use of the userList
+        ],
+        "lastEditedBy" : "userID",      //whoever edited this document last
+        "owner" : "userID"              //who owns the actual file
+    }
+}

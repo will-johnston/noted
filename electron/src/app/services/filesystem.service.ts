@@ -8,6 +8,8 @@ import { Folder } from '../homescreen/Folder'
 import { Path, PathType } from '../homescreen/Path';
 import { UserHelperService } from './userhelper.service';
 import { HomescreenComponent } from '../homescreen/homescreen.component';
+import { UserListService } from './user-list.service';
+import { User } from './UserList.User';
 
 @Injectable({
   providedIn: 'root'
@@ -24,11 +26,12 @@ export class FilesystemService {
   private userRef : any;
   private values : Observable<any>;
   private subscribed : boolean;
+  debug = false;
 
   public homescreen : HomescreenComponent;
   public onReady : any[] = Array();   //callbacks for when the filesystem is ready
 
-  constructor(private fireDatabase: AngularFireDatabase, private userHelper : UserHelperService) {
+  constructor(private fireDatabase: AngularFireDatabase, private userHelper : UserHelperService, private userListService : UserListService) {
     this.notes = Array();
     this.folders = Array();
     this.currentNotes = Array();
@@ -42,7 +45,7 @@ export class FilesystemService {
     }*/
       firebase.auth().onAuthStateChanged((user) => {
         if (user) {
-          console.log("userid : %s", user.uid);
+          if (this.debug) console.log("userid : %s", user.uid);
           this.userid = user.uid;
           //this.updateCurrentState(['/']);
           this.currentPath = Path.RootPath(user.uid);
@@ -52,18 +55,8 @@ export class FilesystemService {
           this.ready();
         }
       });
+      
    }
-  /*getNotes() {
-      //this.notes.push({ id: 0, name : "note1", folder : null});
-      for (var i = 0; i < 10; i++) {
-       /* var note = new Note();
-        note.folder = null;
-        note.id = i.toString();
-        note.name = "note " + i;
-        this.notes.push(note);*/
-      /*}
-      return this.notes;
-  }*/
 
   ready() {
     for (var i = 0; i < this.onReady.length; i++) {
@@ -89,8 +82,8 @@ export class FilesystemService {
         return innerchild;
       }
       else {
-        console.error("innerchild (%s/%s) was returned but id's don't match", innerchild.name, innerchild.id);
-        console.error("innerchild.id (%s) vs requested id (%s)", innerchild.id, id);
+        if (this.debug) console.error("innerchild (%s/%s) was returned but id's don't match", innerchild.name, innerchild.id);
+        if (this.debug) console.error("innerchild.id (%s) vs requested id (%s)", innerchild.id, id);
       }
     }
     return null;
@@ -165,24 +158,24 @@ export class FilesystemService {
       folder = this.getFolder(parentId);
       if (folder == null) {
         //failed to get parent folder
-        console.error("constructPathFromChild() failed to get parentFolder (id=%s) for child (id=%s)", parentId, childId);
+        if (this.debug) console.error("constructPathFromChild() failed to get parentFolder (id=%s) for child (id=%s)", parentId, childId);
         return null;
       }
     }
     path = Path.FromString(folder.path);
     if (path == null) {
-      console.error("constructPathFromChild() failed calling Path.FromString() with folder.path=%s", folder.path);
+      if (this.debug) console.error("constructPathFromChild() failed calling Path.FromString() with folder.path=%s", folder.path);
       return null;
     }
-    console.log("Parent path: %s", path.toString());
+    if (this.debug) console.log("Parent path: %s", path.toString());
     path.addChild(childId);
-    console.log("Path after adding child: %s", path.toString());
+    if (this.debug) console.log("Path after adding child: %s", path.toString());
     return path;
   }
   //makes a local Note|Folder object from raw firebase data
   makeElement(element : any) : Note | Folder {
     if (element == null) {
-      console.error("makeElement() given null element to translate");
+      if (this.debug) console.error("makeElement() given null element to translate");
       return null;
     }
     if (element.type === "DOCUMENT") {
@@ -191,7 +184,7 @@ export class FilesystemService {
         //element is a child, set parentId, set folder, and calculate it's path
         var parentFolder : Folder = this.getFolder(element.parent_id);
         if (parentFolder == null) {
-          console.error("makeElement failed to get parentFolder (id=%s) for child (id=%s)", element.parent_id, element.id);
+          if (this.debug) console.error("makeElement failed to get parentFolder (id=%s) for child (id=%s)", element.parent_id, element.id);
           return null;
         }
         note = new Note(element.title, element.id, this.constructPathFromChild(element.id, element.parent_id, parentFolder).toString(), parentFolder);
@@ -210,7 +203,7 @@ export class FilesystemService {
         //element is a child, set parentId, set folder, and calculate it's path
         var parentFolder : Folder = this.getFolder(element.parent_id);
         if (parentFolder == null) {
-          console.error("makeElement failed to get parentFolder (id=%s) for child (id=%s)", element.parent_id, element.id);
+          if (this.debug) console.error("makeElement failed to get parentFolder (id=%s) for child (id=%s)", element.parent_id, element.id);
           return null;
         }
         folder = new Folder(element.title, element.id, element.children, this.constructPathFromChild(element.id, element.parent_id, parentFolder).toString(), parentFolder);
@@ -224,7 +217,7 @@ export class FilesystemService {
       return folder;
     }
     else {
-      console.error("makeElement() doesn't know how to handle type: %s", element.type);
+      if (this.debug) console.error("makeElement() doesn't know how to handle type: %s", element.type);
       return null;
     }
   }
@@ -245,7 +238,7 @@ export class FilesystemService {
           return;
         }
         actions.forEach(action => {
-          console.log("Action Type %s", action.type);
+          if (this.debug) console.log("Action Type %s", action.type);
           if (action.type === "child_changed") {
             /*if (action.payload.val().id == null) {
               console.log("null id on child_changed, must set id");
@@ -261,30 +254,33 @@ export class FilesystemService {
                 //have all children been deleted?
                 //has one child been deleted?
                 if (action.payload.val().children == null) {
-                  console.log("All children have been killed!");
+                  if (this.debug) console.log("All children have been killed!");
                   folder.killKids();
                   return;
                 }
                 var keys = Object.keys(action.payload.val().children);
-                console.log("keys.length: %d, children.length: %d", keys.length, folder.children.length);
+                if (this.debug) console.log("keys.length: %d, children.length: %d", keys.length, folder.children.length);
                 if (keys.length < folder.children.length) {
-                  console.log("A child has been killed!");
+                  if (this.debug) console.log("A child has been killed!");
                   folder.killKid(keys);
                   return;
                 }
                 else if (keys.length > folder.children.length) {
-                  console.log("A child has been added!");
+                  if (this.debug) console.log("A child has been added!");
                 }
                 else if (keys.length == folder.children.length) {
-                  console.log("A child has changed!");
+                  if (this.debug) console.log("A child has changed!");
                 }
               }
               if (action.payload.val().children == null) {
                 //no children, so 'child_changed' shouldn't have been called
-                console.log("Action: %o", action);
-                console.log("payload: %o", action.payload.val());
+                if (this.debug) console.log("Action: %o", action);
+                if (this.debug) console.log("payload: %o", action.payload.val());
                 var element = this.makeElement(action.payload.val());
-                if (element.type === "DOCUMENT") {
+                if (element == null || element.type == null) {
+                  //ignore
+                }
+                else if (element.type === "DOCUMENT") {
                   this.notes.push(element as Note);
                 }
                 else {
@@ -297,14 +293,14 @@ export class FilesystemService {
               var keys = Object.keys(action.payload.val().children);
               for (var i = 0; i < keys.length; i++) {
                 var child = action.payload.val().children[keys[i]];
-                console.log("Child Object: %o", child);
-                console.log("Parent Object: %o", action.payload.val());
+                if (this.debug) console.log("Child Object: %o", child);
+                if (this.debug) console.log("Parent Object: %o", action.payload.val());
                 if (child.id == null || child.parent_id == null) {
-                  console.log("must set id");
+                  if (this.debug) console.log("must set id");
                   this.fireDatabase.list(this.currentPath.toInsertString()).update(keys[i], { id : keys[i], parent_id : action.payload.val().id});
                 }
                 else {
-                  console.log("ids set, must update folder")
+                  if (this.debug) console.log("ids set, must update folder")
                   //get folder
                   //var folder : Folder = this.getFolder(child.parent_id);
                   var folder_element = folder.containsLocalElement(child.id);
@@ -315,10 +311,10 @@ export class FilesystemService {
                     //add the element
                     var actualElement : Folder | Note = this.makeElement(child);
                     if (actualElement == null) {
-                      console.error("Unable to create element from firebase data");
+                      if (this.debug) console.error("Unable to create element from firebase data");
                     }
                     else if (actualElement.folder == null) {
-                      console.error("Failed to resolve parent folder of child from firebase data");
+                      if (this.debug) console.error("Failed to resolve parent folder of child from firebase data");
                     }
                     else {
                       actualElement.folder.addChild(actualElement);
@@ -331,10 +327,10 @@ export class FilesystemService {
           if (action.type === "value") {
             //inital add
             var rawElement = action.payload.val();
-            console.log("element: %o", rawElement);
+            if (this.debug) console.log("element: %o", rawElement);
             var element : Note | Folder = this.makeElement(rawElement);
             if (element == null) {
-              console.error("Unable to create element from firebase data");
+              if (this.debug) console.error("Unable to create element from firebase data");
             }
             else {
               if (element.type === "DOCUMENT") {
@@ -362,7 +358,7 @@ export class FilesystemService {
                 }
               }
               else {
-                console.error("Created an element of unknown type, unable to handle");
+                if (this.debug) console.error("Created an element of unknown type, unable to handle");
               }
             }
             /*if (element.type === "DOCUMENT") {
@@ -388,22 +384,22 @@ export class FilesystemService {
           }
           else if (action.type === "child_added") {
               //must set id
-              console.log("Called child_added which doesn't really matter");
+              if (this.debug) console.log("Called child_added which doesn't really matter");
               /*console.log("called child_added");
               if (action.payload.val().id == null) {
                 console.log("null id on insert, must set id");
                 this.fireDatabase.list('users/' + this.userid).update(action.key, {id: action.key});
               }*/
-              console.log("Action: %o", action);
+              if (this.debug) console.log("Action: %o", action);
               var child = action.payload.val();
-                console.log("Child Object: %o", child);
+              if (this.debug) console.log("Child Object: %o", child);
                 if (child.id == null) {
-                  console.log("must set id, currentpath: %o", this.currentPath);
+                  if (this.debug) console.log("must set id, currentpath: %o", this.currentPath);
                   this.fireDatabase.list(this.currentPath.toString()).update(action.key, { id : action.key});
                 }
           }
           else if (action.type === "child_removed") {
-            console.log("Called child_removed which doesn't really matter");
+            if (this.debug) console.log("Called child_removed which doesn't really matter");
             //this doesn't get called by firebase for some reason
             //console.log("remove that shit");
           }
@@ -429,7 +425,7 @@ export class FilesystemService {
       return false;
     }
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
-    console.log("Current path: %o", this.currentPath.list);
+    if (this.debug) console.log("Current path: %o", this.currentPath.list);
     if (this.currentPath.addedChild || !this.currentPath.inRootDirectory) {
       this.fireDatabase.list(this.currentPath.toInsertString()).push({ title : name, type : "DOCUMENT", id : null});
     }
@@ -460,7 +456,7 @@ export class FilesystemService {
   deleteNoteFromId(id : string) : boolean {
     var note = this.getNote(id);
     if (note == null) {
-      console.error("Unable to retrieve note in the local file system");
+      if (this.debug) console.error("Unable to retrieve note in the local file system");
       return false;
     }
     this.deleteNote(note);
@@ -478,7 +474,7 @@ export class FilesystemService {
           return true;
         }
       }
-      console.error("Failed to find note in root level, couldn't deleteNote");
+      if (this.debug) console.error("Failed to find note in root level, couldn't deleteNote");
       return false;
     }
     else {
@@ -486,7 +482,7 @@ export class FilesystemService {
         return true;
       }
       else {
-        console.error("Failed to remove note!");
+        if (this.debug) console.error("Failed to remove note!");
         return false;
       }
     }
@@ -498,7 +494,7 @@ export class FilesystemService {
   //folderPath : / refers to the root folder
   updateCurrentState(folderPath : string[]) {
     if (folderPath == null) {
-      console.error("filesystem can't updateCurrentState with a null folderPath");
+      if (this.debug) console.error("filesystem can't updateCurrentState with a null folderPath");
     }
     //console.log("Given folderPath: %o", folderPath);
     var lastFolder : Folder;
@@ -509,7 +505,7 @@ export class FilesystemService {
       var folderName : string = folderPath[i];
       if (i == 0) {
         if (folderPath[i] != '/') {
-          console.error("folderPath must start with the root folder '/'");
+          if (this.debug) console.error("folderPath must start with the root folder '/'");
           return;
         }
         if (i == folderPath.length - 1) {
@@ -550,7 +546,7 @@ export class FilesystemService {
       }
       //check if not found
       if (lastFolder.name !== folderName) {
-        console.error("Unable to find folder %s", folderName);
+        if (this.debug) console.error("Unable to find folder %s", folderName);
         return;
       }
 
@@ -560,7 +556,7 @@ export class FilesystemService {
         this.currentNotes = lastFolder.notes;
         this.currentFolder = lastFolder;
         this.currentPath = path;
-        console.log("Updated current path to %o", path);
+        if (this.debug) console.log("Updated current path to %o", path);
       }
     }
   }

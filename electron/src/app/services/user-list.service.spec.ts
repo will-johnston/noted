@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 
-import { FilesystemService } from './services/filesystem.service';
+import { UserListService } from './user-list.service';
 
-describe('FilesystemService', () => {
+describe('UserListService', () => {
   beforeEach(() => TestBed.configureTestingModule({}));
 
   it('should be created', () => {
-    const service: FilesystemService = TestBed.get(FilesystemService);
+    const service: UserListService = TestBed.get(UserListService);
     expect(service).toBeTruthy();
   });
 });

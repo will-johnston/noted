@@ -184,16 +184,14 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
     }
 
 
-    public void addNewFile(File file, DatabaseReference ref, String uid, DatabaseReference fileContents, List<SharedFile> sharedFiles, FirebaseDatabase database) {
+    public void addNewFile(File file, DatabaseReference ref, String uid,
+                           DatabaseReference fileContents, List<SharedFile> sharedFiles,
+                           FirebaseDatabase database) {
         SharedFile sf;
         if ((sf = getSharedFileIfParentIsSharedFile(sharedFiles)) != null) {
-            // if parent is shared file, the then location of the file in the database
-            // is under a different owner. Therefore, we update it on that users file
-            // system, and our listener will handle updating it for this user
-//            if (context instanceof MainActivity) {
-//                ((MainActivity) context).addNewSharedFileToOwner(file, this.parent);
-//            }
-
+            /* if parent is shared file, the then location of the file in the database
+                is under a different owner. Therefore, we update it on that users file
+                system, and our listener will handle updating it for this user  */
             // create a new database reference
             String finalPath = getFinalPath(sf, ref);
             String sfPath = sf.getPath();
@@ -211,6 +209,15 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
             } catch (com.google.firebase.database.DatabaseException e) {
                 Toast.makeText(context, "Can't add file, maximum depth exceeded", Toast.LENGTH_SHORT).show();
             }
+        }
+        if (uid == null) {
+            uid = ((MainActivity)context).getCurrentUserUid();
+        }
+        if (database == null) {
+            database = ((MainActivity)context).getDatabase();
+        }
+        if (fileContents == null) {
+            fileContents = database.getReference("fileContents");
         }
         // get the key in the database, which will serve as the id of the new file
         String key = ref.push().getKey();
@@ -243,6 +250,9 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
     }
 
     private SharedFile getSharedFileIfParentIsSharedFile(List<SharedFile> sharedFiles) {
+        if (sharedFiles == null) {
+            return null;
+        }
         File parent = this.parent;
         while (!parent.getId().equals("root")) {
             for (SharedFile f : sharedFiles) {

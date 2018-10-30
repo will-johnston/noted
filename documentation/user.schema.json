@@ -1,0 +1,41 @@
+{
+    "userID": {
+        "elementID": {                          //Note type
+            "title": "document1",               //non-unique title
+            "type": "DOCUMENT",                 //type must be DOCUMENT to signify this field is a note
+            "children": null,                   //notes can't have children
+            "parent_id" : "elementID"           //The parent ID of which we are a child of
+        },
+        "elementID": {                          //Folder type
+            "title": "folder",
+            "type": "FOLDER",                   //type must be FOLDER to signify this field is a folder
+            "children": {                       //only folders can have this field as non-null
+                "elementID": {                  //Document within a folder
+                    "title": "document2",
+                    "type": "DOCUMENT",         //Can be a DOCUMENT or a NOTE
+                    "lastEditedBy": "userID",
+                    "children": null            //may be not-null if a folder
+                }
+            }
+        },
+        "elementID": {                          //Image type
+            "title": "image",
+            "type": "IMAGE",                    //Must be IMAGE
+            "children": null                    //Always null
+        },
+        "notifications" : [                     //Array of notification objects that a user hasn't responded to
+            {
+                "text" : "shared with you",     //Never null, contains text that notification will display
+                "type" : null                   //Always null, may get used but no plans currently
+            }
+        ],
+        "shared" : [
+            {
+                "title" : "note title",         //title of note to be displayed in filesystem
+                "path" : "users/43/324",        //where the note is actually located
+                "filePath" : "fileContents/43/324",//where the fileContents of the note is actually located
+                "noteID" : "elementID"          //the id of the note that's been shared to us (can be retrieved from either of the path fields)
+            }
+        ]
+    }
+}

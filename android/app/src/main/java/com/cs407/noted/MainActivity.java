@@ -8,7 +8,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -29,11 +31,19 @@ import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -44,10 +54,12 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
+
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -66,16 +78,17 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseAuth firebaseAuth;
     private RecyclerView recyclerView;
-    private ListAdapter listAdapter;
+    public static ListAdapter listAdapter;
+    private GoogleApiClient googleApiClient;
     private FirebaseUser currentUser;
     private FirebaseDatabase database;
-    private DatabaseReference myRef;  // this will store the database reference at the current path
     private DatabaseReference fileContents;
     private List<SharedFile> sharedFiles;
 
     private int convertedSharedFilesSize;
     private List<com.cs407.noted.File> convertedSharedFiles;
 
+    public static DatabaseReference myRef;  // this will store the database reference at the current path
     private com.cs407.noted.File root;
     private static final int PICK_IMAGE = 1;
     private static final int TAKE_PICTURE = 2;
@@ -96,6 +109,11 @@ public class MainActivity extends AppCompatActivity {
         firebaseStorage = FirebaseStorage.getInstance();
         database = FirebaseDatabase.getInstance();
         sharedFiles = new ArrayList<>();
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this, null)
+                .addApi(Auth.GOOGLE_SIGN_IN_API)
+                .build();
+
         if (checkLogin()) {
             // user is logged in so we can access their data
             setupDatabase();
@@ -119,6 +137,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         checkIntent();
+        googleApiClient.connect();
+
     }
 
 
@@ -189,13 +209,15 @@ public class MainActivity extends AppCompatActivity {
         // Firebase sign out
         firebaseAuth.signOut();
 
-        // Google sign out
-        //app crashes here because the client variable doesn't persist
-        GoogleAuthSingleton.getInstance().client.signOut();
-
-        //show login activity
-        Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
+        // Google Sign out
+        Auth.GoogleSignInApi.signOut(googleApiClient).setResultCallback(
+                new ResultCallback<Status>() {
+                    @Override
+                    public void onResult(Status status) {
+                        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+                        startActivity(intent);
+                    }
+                });
     }
 
     private void setupToolbar() {
@@ -215,7 +237,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupDatabase() {
-
         // database setup
         fileContents = database.getReference("fileContents");
         String path = String.format("users/%s", currentUser.getUid());
@@ -252,18 +273,21 @@ public class MainActivity extends AppCompatActivity {
 
     private void convertSharedFilesUpdateItemList(List<com.cs407.noted.File> files,
                                                   List<SharedFile> shared) {
-        convertedSharedFilesSize = shared.size();
-        if (convertedSharedFilesSize == 0) {
+        int size = shared.size();
+        if (size == 0) {
             updateView(files);
             convertedSharedFiles = new ArrayList<>();
+            sharedFiles = new ArrayList<>();
         } else {
-            this.convertedSharedFiles = new ArrayList<>();
+            if (this.convertedSharedFiles == null) {
+                this.convertedSharedFiles = new ArrayList<>();
+            }
             for (SharedFile sharedFile : shared) {
                 if (!alreadyListening(sharedFile)) {
                     DatabaseReference databaseReference = database.getReference(sharedFile.getPath());
                     // get data of shared file
                     databaseReference.addValueEventListener(
-                            getValueEventListenerForConvertingSharedFiles(files, sharedFile));
+                            getValueEventListenerForConvertingSharedFiles(files, sharedFile, size));
                 }
             }
         }
@@ -280,7 +304,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private ValueEventListener getValueEventListenerForConvertingSharedFiles(
-            final List<com.cs407.noted.File> files, final SharedFile sharedFile) {
+            final List<com.cs407.noted.File> files, final SharedFile sharedFile, final int size) {
         return new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -306,7 +330,7 @@ public class MainActivity extends AppCompatActivity {
                 if (convertedFile != null) {
                     convertedSharedFiles.add(convertedFile);
                     sharedFiles.add(sharedFile);
-                    if (convertedSharedFiles.size() == convertedSharedFilesSize) {
+                    if (convertedSharedFiles.size() == size) {
                         // we have added all the files we need, so now we update the recycler view
                         convertedSharedFiles.addAll(files);
                         // add files as root's children
@@ -320,6 +344,11 @@ public class MainActivity extends AppCompatActivity {
 
             }
         };
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
     }
 
     public void updateView(List<com.cs407.noted.File> files) {
@@ -452,6 +481,13 @@ public class MainActivity extends AppCompatActivity {
         myRef = myRef.getParent().getParent();
     }
 
+    public String getCurrentUserUid() {
+        return currentUser.getUid();
+    }
+
+    public FirebaseDatabase getDatabase() {
+        return database;
+    }
 
     public void removeFile(com.cs407.noted.File file, com.cs407.noted.File parent) {
         try {
@@ -544,9 +580,6 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
-
-
-
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(resultCode == RESULT_CANCELED) {
@@ -574,13 +607,31 @@ public class MainActivity extends AppCompatActivity {
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
                     listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents, sharedFiles, database);
 
+                    ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                    spinner.setVisibility(View.VISIBLE);
+
                     //upload the picture to Firebase storage
                     StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
                     try {
-                        InputStream inputStream = getApplicationContext().getContentResolver().openInputStream(imageUri);
-                        ref.putStream(inputStream);
+                        ByteArrayOutputStream baos = prepareBitmap(imageUri);
+                        UploadTask task = ref.putBytes(baos.toByteArray());
+                        task.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                                spinner.setVisibility(View.GONE);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                                ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                                spinner.setVisibility(View.GONE);
+                                Toast.makeText(getApplicationContext(), "Failed to upload image", Toast.LENGTH_LONG).show();
+                            }
+                        });
                     }
-                    catch(FileNotFoundException e1) {
+                    catch(Exception e) {
+                        e.printStackTrace();
                     }
                 }
             });
@@ -613,20 +664,31 @@ public class MainActivity extends AppCompatActivity {
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
                     listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents, sharedFiles, database);
 
-                    try {
-                        //rotate the image
-                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(cr, imageUri);
-                        Matrix matrix = new Matrix();
-                        matrix.postRotate(90);
-                        Bitmap newBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                    ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                    spinner.setVisibility(View.VISIBLE);
 
-                        //upload the picture to Firebase storage
-                        StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
-                        ref.putBytes(baos.toByteArray());
+                    StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
+                    try {
+                        ByteArrayOutputStream baos = prepareBitmap(imageUri);
+                        UploadTask task = ref.putBytes(baos.toByteArray());
+                        task.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                                spinner.setVisibility(View.GONE);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                                ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+                                spinner.setVisibility(View.GONE);
+                                Toast.makeText(getApplicationContext(), "Failed to upload image", Toast.LENGTH_LONG).show();
+                            }
+                        });
                     }
-                    catch(IOException e) {}
+                    catch(Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             });
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -640,6 +702,44 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private ByteArrayOutputStream prepareBitmap(Uri imageUri) throws Exception {
+        InputStream inputStream1 = getApplicationContext().getContentResolver().openInputStream(imageUri);
+        InputStream inputStream2 = getApplicationContext().getContentResolver().openInputStream(imageUri);
+
+        ExifInterface exif = new ExifInterface(inputStream1);
+        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+        int rotate = 0;
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                rotate = 270;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                rotate = 180;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                rotate = 90;
+                break;
+        }
+
+        BufferedInputStream bis = new BufferedInputStream(inputStream2);
+        Bitmap bitmap = BitmapFactory.decodeStream(bis);
+        Matrix matrix = new Matrix();
+        matrix.postRotate(rotate);
+        Bitmap newBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+
+        int maxSize = 4 * 1024 * 1024;
+        int quality = 98;
+
+        while(baos.size() > maxSize) {
+            baos = new ByteArrayOutputStream();
+            newBitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+            quality -= 2;
+        }
+
+        return baos;
+    }
 
     private void respondToFolderOrDocumentClick(FloatingActionsMenu floatingActionsMenu, final FileType type) {
         floatingActionsMenu.collapse();
