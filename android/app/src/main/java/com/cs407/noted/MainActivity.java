@@ -255,6 +255,7 @@ public class MainActivity extends AppCompatActivity {
         convertedSharedFilesSize = shared.size();
         if (convertedSharedFilesSize == 0) {
             updateView(files);
+            convertedSharedFiles = new ArrayList<>();
         } else {
             this.convertedSharedFiles = new ArrayList<>();
             for (SharedFile sharedFile : shared) {
