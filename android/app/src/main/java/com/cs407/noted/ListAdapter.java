@@ -89,9 +89,14 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
                 if (parent.getChildren() != null) {
                     children.addAll(parent.getChildren().values());
                     setItemList(children);
+                    this.parent.setChildren(mapTheList(children));
+                } else {
+                    setItemList(new ArrayList<File>());
+                    this.parent.setChildren(mapTheList(null));
                 }
             } else {
                 setItemList(new ArrayList<File>());
+                this.parent.setChildren(mapTheList(null));
             }
         }
     }
@@ -109,52 +114,42 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         parent.setChildren(parent_children);
 
         File current_parent = bfs(this.parent.getId(), parent);
+        // current_parent.setParent(this.parent.getParent());
+        while (current_parent == null) {
+            this.parent = this.parent.getParent();
+            current_parent = bfs(this.parent.getId(), parent);
+            if (context instanceof MainActivity) {
+                ((MainActivity) context).changeActionBarTitle(this.parent.getTitle());
+            }
+        }
         List<File> children = new ArrayList<>();
         if (current_parent != null) {
             if (current_parent.getChildren() != null) {
                 children.addAll(current_parent.getChildren().values());
                 setItemList(children);
+                this.parent.setChildren(mapTheList(children));
+            } else {
+                setItemList(new ArrayList<File>());
+                this.parent.setChildren(null);
             }
         } else {
             setItemList(new ArrayList<File>());
+            this.parent.setChildren(null);
         }
-        notifyDataSetChanged();
         // set item list to the correct directory
     }
 
-    public void removeFileFromFileList(File file) {
-        fileList.remove(file);
-        notifyDataSetChanged();
+    private Map<String, File> mapTheList(List<File> list) {
+        if (list == null) {
+            return null;
+        }
+        Map<String, File> map = new HashMap<>();
+        for (File f: list) {
+            map.put(f.getId(), f);
+        }
+        return map;
     }
 
-    public void addFileToRoot(File file) {
-        File root = getRoot();
-        File sharedFile = bfs(file.getId(), root);
-        // update the file
-        Map<String, File> children_mapped = root.getChildren();
-        Map<String, File> updatedChildren = new HashMap<>();
-        for (File f: children_mapped.values()) {
-            if (!f.getId().equals(file.getId())) {
-                updatedChildren.put(f.getId(), f);
-            }
-        }
-        updatedChildren.put(file.getId(), file);
-        root.setChildren(updatedChildren);
-        setItemList((List<File>) updatedChildren.values());
-
-        String parent_id = this.parent.getId();
-        List<File> children = new ArrayList<>();
-        // find parent, set its children accordingly
-        File parent = bfs(parent_id, root);
-        if (parent != null) {
-            if (parent.getChildren() != null) {
-                children.addAll(parent.getChildren().values());
-                setItemList(children);
-            }
-        } else {
-            setItemList(new ArrayList<File>());
-        }
-    }
 
     private File getRoot() {
         File parentRef = this.parent;

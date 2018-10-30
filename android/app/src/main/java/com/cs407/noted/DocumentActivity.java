@@ -83,9 +83,13 @@ public class DocumentActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 FileContents fc = dataSnapshot.getValue(FileContents.class);
+
                 if (currentHtml  == null) {
                     // local text has not been initialized, so initialize it
                     currentHtml = knife.toHtml();
+                }
+                if (fc == null) {
+                    return;
                 }
                 if (fc.getData() == null) {
                     // no data in database yet

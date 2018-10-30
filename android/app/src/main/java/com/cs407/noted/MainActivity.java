@@ -272,8 +272,9 @@ public class MainActivity extends AppCompatActivity {
                 // get the file
                 com.cs407.noted.File convertedFile = dataSnapshot.getValue(com.cs407.noted.File.class);
                 if (alreadyListening(sharedFile)) {
-                    convertedFile.setParent(root);
-                    listAdapter.triggerUpdate(convertedFile);
+                    //convertedFile.setParent(root);
+                    com.cs407.noted.File convertedAndUpdatedFile = setFileParents(convertedFile, root);
+                    listAdapter.triggerUpdate(convertedAndUpdatedFile);
                 }
 
                 if (convertedFile != null) {
@@ -433,7 +434,7 @@ public class MainActivity extends AppCompatActivity {
             for (SharedFile sf: sharedFiles) {
                 if (sf.getNoteID().equals(file.getId())) {
                     // remove value event listeners for file
-                    DatabaseReference databaseReference = database.getReference(sf.getPath());
+                    // DatabaseReference databaseReference = database.getReference(sf.getPath());
                     // databaseReference.removeEventListener(getValueEventListenerForConvertingSharedFiles());
                     // it is a shared file
                     searchAndRemoveFileFromShared(file.getId(), currentUser.getUid());
@@ -448,6 +449,7 @@ public class MainActivity extends AppCompatActivity {
             // now remove file from current users file system and from fileContents in firebase
             myRef.child(id).removeValue(getDatabaseCompletionListener(file));
             fileContents.child(id).removeValue();
+            removeUserFromSharedUsers(file.getId(), currentUser.getUid());
         } catch (DatabaseException e) {
             e.printStackTrace();
             String err = String.format("Failed to remove %s", file.getTitle());
@@ -488,7 +490,11 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (key != null) {
                     // then we found the user and can remove it
-                    df.child(key).removeValue();
+                    try {
+                        df.child(key).removeValue();
+                    } catch (DatabaseException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
