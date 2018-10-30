@@ -33,19 +33,8 @@ public class SharedFile {
         this.path = path;
     }
 
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
-    }
-
     public String getNoteID() {
         return noteID;
     }
 
-    public void setNoteID(String noteID) {
-        this.noteID = noteID;
-    }
 }

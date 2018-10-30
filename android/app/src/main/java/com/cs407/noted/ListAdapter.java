@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -183,7 +184,34 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
     }
 
 
-    public void addNewFile(File file, DatabaseReference ref, String uid, DatabaseReference fileContents) {
+    public void addNewFile(File file, DatabaseReference ref, String uid, DatabaseReference fileContents, List<SharedFile> sharedFiles, FirebaseDatabase database) {
+        SharedFile sf;
+        if ((sf = getSharedFileIfParentIsSharedFile(sharedFiles)) != null) {
+            // if parent is shared file, the then location of the file in the database
+            // is under a different owner. Therefore, we update it on that users file
+            // system, and our listener will handle updating it for this user
+//            if (context instanceof MainActivity) {
+//                ((MainActivity) context).addNewSharedFileToOwner(file, this.parent);
+//            }
+
+            // create a new database reference
+            String finalPath = getFinalPath(sf, ref);
+            String sfPath = sf.getPath();
+            // get the owner from the shared file path
+            String owner = sf.getPath().substring(sfPath.indexOf("/") + 1, sfPath.indexOf("/", sfPath.indexOf("/") + 1));
+            DatabaseReference df = database.getReference(finalPath);
+            String key = df.push().getKey();
+            // set id and parent id
+            file.setId(key);
+            file.setParent_id(this.parent.getId());
+            try {
+                df.child(key).setValue(file);
+                // set owner of shared file as owner of the file
+                fileContents.child(file.getId()).child("owner").setValue(uid);
+            } catch (com.google.firebase.database.DatabaseException e) {
+                Toast.makeText(context, "Can't add file, maximum depth exceeded", Toast.LENGTH_SHORT).show();
+            }
+        }
         // get the key in the database, which will serve as the id of the new file
         String key = ref.push().getKey();
 
@@ -200,6 +228,31 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyViewHolder> 
         } catch (com.google.firebase.database.DatabaseException e) {
             Toast.makeText(context, "Can't add file, maximum depth exceeded", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private String getFinalPath(SharedFile sf, DatabaseReference ref) {
+        // get the path from the shared file it matches with, and adds the extra path
+        // if you have traversed deeper into the shared file directory
+        String path = sf.getPath();
+        String match = path.substring(path.lastIndexOf("/") + 1, path.length());
+        int matchLength = match.length();
+        String refPath = ref.toString();
+        String addedPath = refPath.substring(refPath.lastIndexOf(match) + matchLength + 1, refPath.length());
+        String finalPath = path + "/" + addedPath;
+        return finalPath;
+    }
+
+    private SharedFile getSharedFileIfParentIsSharedFile(List<SharedFile> sharedFiles) {
+        File parent = this.parent;
+        while (!parent.getId().equals("root")) {
+            for (SharedFile f : sharedFiles) {
+                if (f.getNoteID().equals(parent.getId())) {
+                    return f;
+                }
+            }
+            parent = parent.getParent();
+        }
+        return null;
     }
 
 

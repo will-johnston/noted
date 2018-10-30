@@ -25,7 +25,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
-import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
@@ -35,8 +34,6 @@ import android.widget.Toast;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -60,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
 import ir.mirrajabi.searchdialog.SimpleSearchDialogCompat;
 import ir.mirrajabi.searchdialog.core.BaseSearchDialogCompat;
@@ -545,7 +541,7 @@ public class MainActivity extends AppCompatActivity {
                     int icon = R.drawable.image;
                     com.cs407.noted.File file = new com.cs407.noted.File(
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
-                    listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents);
+                    listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents, sharedFiles, database);
 
                     //upload the picture to Firebase storage
                     StorageReference ref = firebaseStorage.getReference().child("androidImages/" + file.getId());
@@ -584,7 +580,7 @@ public class MainActivity extends AppCompatActivity {
                     String input_text = input.getText().toString();
                     com.cs407.noted.File file = new com.cs407.noted.File(
                             null, null, input_text, null, null, FileType.IMAGE.toString(), null);
-                    listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents);
+                    listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents, sharedFiles, database);
 
                     try {
                         //rotate the image
@@ -666,7 +662,7 @@ public class MainActivity extends AppCompatActivity {
             com.cs407.noted.File file = new com.cs407.noted.File(
                     null, null, input_text, null, null,
                     type.toString(), null);
-            listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents);
+            listAdapter.addNewFile(file, myRef, currentUser.getUid(), fileContents, sharedFiles, database);
             return true;
         } else {
             // the text is too large, so don't accept it
