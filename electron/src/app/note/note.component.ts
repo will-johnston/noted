@@ -12,6 +12,7 @@ import { Note } from './Note';
 //import Quill from 'quill';
 import { Observable, Subject } from 'rxjs';
 import { AppComponent } from '../app.component';
+import { UserListService } from '../services/user-list.service';
 
 // override p with div tag
 //const Parchment = Quill.import('parchment');
@@ -47,6 +48,9 @@ export class NoteComponent implements OnInit, OnDestroy {
   subscribed: boolean = false;
   text: string;
   html: string;
+  lastEditedBy: string;
+  private lastEditedByUID: string;
+  private currentUser: firebase.User;
 
   edits: Array<any>;
 
@@ -58,11 +62,14 @@ export class NoteComponent implements OnInit, OnDestroy {
     private storage: AngularFireStorage,
     private filesystemService: FilesystemService,
     private appComponent: AppComponent,
-    private confirmationDialogService: ConfirmationDialogService
+    private confirmationDialogService: ConfirmationDialogService,
+    private userListService: UserListService
   ) {
     this.text = "";
+    this.lastEditedBy = "somebody";
     this.html = "";
     this.edits = new Array();
+    this.currentUser = firebase.auth().currentUser;
   }
 
   ngOnInit() {
@@ -176,7 +183,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   createFileContents(value) {
     //console.log("value == null %s, value.key == null %s", value == null, value.key == null);
     //console.log("payload: %o", value.payload.val());
-    this.fireDatabase.object("/fileContents/" + this.noteid).set({ data: "" })
+    this.fireDatabase.object("/fileContents/" + this.noteid).set({ data: "", owner: this.currentUser.uid, lastEditedBy: this.currentUser.uid})
       .then(_ => {
         console.log("created File contents successfully");
         console.log("creating at %s", "fileContents/" + this.noteid);
@@ -218,6 +225,12 @@ export class NoteComponent implements OnInit, OnDestroy {
           }
           else {
             this.noteInfo.text = value.data;
+            this.lastEditedByUID = value.lastEditedBy;
+            this.userListService.get(this.lastEditedByUID).then(user => {
+              this.lastEditedBy = user.email;
+            }).catch(err => {
+              //leave the same
+            }); 
             this.appComponent.noteTitle = this.noteInfo.name;
             this.updateEditorText(this.noteInfo.text, this.editor.getSelection());
           }
@@ -408,7 +421,7 @@ export class NoteComponent implements OnInit, OnDestroy {
     var cleanHtml = this.html
       .replace('<span style=\"background-color: rgb(153, 204, 255);\">', '')
       .replace('</span>', '');
-    this.noteTextRef.update({ data: cleanHtml });
+    this.noteTextRef.update({ data: cleanHtml, lastEditedBy: this.currentUser.uid });
   }
   deleteNote(id: string, name: string) {
     /*  TODO:
@@ -418,7 +431,7 @@ export class NoteComponent implements OnInit, OnDestroy {
         3. If confirm, call do what's below, else do nothing
     */
 
-    this.confirmationDialogService.confirm('Please confirm', 'Sure you want to delete ' + name + '?')
+    this.confirmationDialogService.confirm('Confirm', "Are you sure you want to delete the note '" + name + "'?")
       .then((confirmed) => { if (confirmed) { this.__delete(); } });
 
 
