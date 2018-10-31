@@ -12,7 +12,8 @@
     <button mat-stroked-button color="primary" id="start" (click)="start();"><mat-icon>fiber_manual_record</mat-icon></button>
     <button mat-stroked-button color="warn" id="stop" disabled=true><mat-icon>stop</mat-icon></button>
 </mat-toolbar>
-<p>Last edited by {{lastEditedBy}}</p>
+<p>Last edited by {{lastEditedBy}} Share note: <input #shareEmail type="text" id="shareEmail" />
+    <button (click)="shareNote(shareEmail.value)">Share the note</button></p>
 <quill-editor class="editor2"
     (onEditorCreated)="setFocus($event)"
     (onContentChanged)="editorContentChanged($event)"

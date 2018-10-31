@@ -13,6 +13,7 @@ import { Note } from './Note';
 import { Observable, Subject } from 'rxjs';
 import { AppComponent } from '../app.component';
 import { UserListService } from '../services/user-list.service';
+import { SharingService } from '../services/sharing.service';
 
 // override p with div tag
 //const Parchment = Quill.import('parchment');
@@ -21,6 +22,9 @@ import { UserListService } from '../services/user-list.service';
 import { QuillEditorComponent } from 'ngx-quill';
 
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
+import { User } from '../services/UserList.User';
+import { SharedNote } from '../services/Sharing.SharedNote';
+import { Notif } from '../services/Notifications.Notif';
 
 declare var MediaRecorder: any;
 declare var Blob: any;
@@ -63,7 +67,8 @@ export class NoteComponent implements OnInit, OnDestroy {
     private filesystemService: FilesystemService,
     private appComponent: AppComponent,
     private confirmationDialogService: ConfirmationDialogService,
-    private userListService: UserListService
+    private userListService: UserListService,
+    private sharingService: SharingService
   ) {
     this.text = "";
     this.lastEditedBy = "somebody";
@@ -192,6 +197,34 @@ export class NoteComponent implements OnInit, OnDestroy {
       .catch(err => {
         console.log("createFileContents err: %s", err);
       });
+  }
+  resetShareNoteValue() {
+    //(<HTMLInputElement>document.getElementById("noteName")).value = "";
+    (<HTMLInputElement>document.getElementById("shareEmail")).value = "";
+  }
+  shareNote(email) {
+    console.log(`Called share Note with email: ${email}`);
+    this.userListService.search(new User(email, null, null)).then(user => {
+      //console.log("Found user to share note with!");
+      let sharedNote : SharedNote = new SharedNote(this.noteInfo.name, this.noteInfo.path, "fileContents/" + this.noteid, this.noteInfo.id);
+      Notif.ShareNoteNotification(this.userListService, this.currentUser.uid, this.noteInfo.name, false)
+      .then(notification => {
+        this.sharingService.shareNote(user.id, sharedNote, this.currentUser.uid, notification)
+        .then(() => {
+          alert("Successfully shared note!");
+          this.resetShareNoteValue();
+        })
+        .catch(err => {
+          alert(`Unable to share note, error: ${err}`);
+        });
+      })
+      .catch(err => {
+        alert(`Unable to share note, notification error: ${err}`);
+      });
+    })
+    .catch(err => {
+      alert("Can't find user to share note with!");
+    });
   }
 
   startSubscription(notepath: string) {
