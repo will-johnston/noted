@@ -135,7 +135,7 @@ export class SharingService {
           arr.forEach(data => {
             if ((data as SharedNote).noteID === noteID) {
               let value : any = (data as any);
-              resolve(new SharedNote(value.title, Path.FromString(value.path), Path.FromString(value.filePath), value.noteID));
+              resolve(new SharedNote(value.title, value.path, value.filePath, value.noteID));
               return;
             }
           });

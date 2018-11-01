@@ -23,7 +23,7 @@ export class Folder {
             this.parentId = null;
         this.childCount = 0;
         this.path = path;
-        console.log("pathof(%s) is %s", this.name, this.path);
+        //console.log("pathof(%s) is %s", this.name, this.path);
         //this.checkPath(this.path);
         this.resolveChildren(children);
     }
@@ -45,7 +45,7 @@ export class Folder {
             this.children = Array();
             for (let key in children) {
                 let value = children[key];
-                console.log("Child (parent: %s) %o", this.name, value);
+                //console.log("Child (parent: %s) %o", this.name, value);
                 if (value.type === "DOCUMENT") {
                     this.children.push(new Note(value.title, value.id, this.path + 'children/' + value.id + '/', value.parentId));
                     this.childCount++;
@@ -62,7 +62,7 @@ export class Folder {
         this.createChildBindings();
     }
     getNote(id : string) {
-        console.log("getNote called on %s", this.name);
+        //console.log("getNote called on %s", this.name);
         if (this.children == null) {
             console.error("getNote called but children is null");
             return null;

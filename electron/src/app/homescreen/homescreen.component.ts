@@ -21,12 +21,14 @@ import { Notif } from '../services/Notifications.Notif';
 export class HomescreenComponent implements OnInit {
   @Input() note: Note;
   notes : Note[];
+  sharedNotes : Note[];
   folders: Folder[];
   userid : string = null;
   //navLoc : string[];
   navList : NavList<string>;
   debug : false;
   navLoc : string[];
+  currentlyViewing : string; //My Notes or Shared With Me
   constructor(private filesystemService : FilesystemService, 
     private router : Router, 
     private activeRoute : ActivatedRoute, 
@@ -37,7 +39,8 @@ export class HomescreenComponent implements OnInit {
 
     this.navList = new NavList<string>();
     this.navLoc = this.navList.list;
-    this.navList.push("/"); 
+    this.navList.push("/");
+    this.goToMyNotes();
     /*this.sharingService.getSharedUsers(Path.FromString('fileContents/-LNGvqD26zCgP-pAt3Sw'))
     .then(users => {console.log("Shared users: %o", users);})
     .catch(err => {console.log("Error: %o", err);});*/
@@ -71,6 +74,9 @@ export class HomescreenComponent implements OnInit {
   }
   getFolders() {
     this.folders = this.filesystemService.currentFolders;
+  }
+  getSharedNotes() {
+    this.sharedNotes = this.filesystemService.sharedNotes;
   }
   createFolder(name) {
     this.filesystemService.createFolder(name);
@@ -107,6 +113,14 @@ export class HomescreenComponent implements OnInit {
       this.router.navigate(['note', { userid: this.userid, noteid : note.id, notepath: note.path}]);
     }
   }
+  gotoSharedNote(note) {
+    this.router.navigate(['note', { userid : this.userid, 
+      noteid : note.id, 
+      notepath: note.path, 
+      filepath: note.filePath,
+      isSharedNote: true
+    }]);
+  }
   logout() {
     firebase.auth().signOut().then(function() {
       // Sign-out successful.
@@ -132,6 +146,16 @@ export class HomescreenComponent implements OnInit {
     else {
       //didn't work
     }*/
+  }
+  goToMyNotes() {
+    this.getNotes();
+    this.getFolders();
+    this.currentlyViewing = "My Notes";
+  }
+  goToSharedNotes() {
+    this.getSharedNotes();
+    console.log("Shared notes: %o", this.sharedNotes);
+    this.currentlyViewing = "Shared With Me";
   }
 
   ngOnInit() {

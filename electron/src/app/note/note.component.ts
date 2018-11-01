@@ -12,6 +12,8 @@ import { Note } from './Note';
 //import Quill from 'quill';
 import { Observable, Subject } from 'rxjs';
 import { AppComponent } from '../app.component';
+import { UserListService } from '../services/user-list.service';
+import { SharingService } from '../services/sharing.service';
 
 // override p with div tag
 //const Parchment = Quill.import('parchment');
@@ -20,6 +22,9 @@ import { AppComponent } from '../app.component';
 import { QuillEditorComponent } from 'ngx-quill';
 
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
+import { User } from '../services/UserList.User';
+import { SharedNote } from '../services/Sharing.SharedNote';
+import { Notif } from '../services/Notifications.Notif';
 
 declare var MediaRecorder: any;
 declare var Blob: any;
@@ -41,12 +46,17 @@ export class NoteComponent implements OnInit, OnDestroy {
   userid: string = null;       //database userid of the note
   noteid: string = null;       //database id of the note
   notepath: string = null;     //database path for the note
+  filepath: string = null;     //fileContents path of note
   noteInfo: Note = null;
   noteRef: AngularFireObject<any>;
   noteTextRef: AngularFireObject<any>;
   subscribed: boolean = false;
   text: string;
   html: string;
+  lastEditedBy: string;
+  private lastEditedByUID: string;
+  private currentUser: firebase.User;
+  private viewingSharedNote : boolean = false;
 
   edits: Array<any>;
 
@@ -58,11 +68,14 @@ export class NoteComponent implements OnInit, OnDestroy {
     private storage: AngularFireStorage,
     private filesystemService: FilesystemService,
     private appComponent: AppComponent,
-    private confirmationDialogService: ConfirmationDialogService
+    private confirmationDialogService: ConfirmationDialogService,
+    private userListService: UserListService,
+    private sharingService: SharingService
   ) {
     this.text = "";
     this.html = "";
     this.edits = new Array();
+    this.currentUser = firebase.auth().currentUser;
   }
 
   ngOnInit() {
@@ -78,9 +91,20 @@ export class NoteComponent implements OnInit, OnDestroy {
       if (params['notepath'] !== undefined) {
         console.log("Note path: %s", params['notepath']);
         this.notepath = params['notepath'];
-        this.startSubscription(params['notepath']);
+      }
+      if (params['filepath'] !== undefined) {
+        console.log("File path: %s", params['filepath']);
+        this.filepath = params['filepath'];
+      }
+      if (params['isSharedNote'] !== undefined) {
+        console.log("viewing a shared note");
+        this.viewingSharedNote = true;
       }
     });
+    if (this.filepath == null) {
+      this.filepath = "fileContents/" + this.noteid;
+    }
+    this.startSubscription(this.notepath);
     this.loadAudio();
     this.highlightIfAudio();
   }
@@ -176,7 +200,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   createFileContents(value) {
     //console.log("value == null %s, value.key == null %s", value == null, value.key == null);
     //console.log("payload: %o", value.payload.val());
-    this.fireDatabase.object("/fileContents/" + this.noteid).set({ data: "" })
+    this.fireDatabase.object("/fileContents/" + this.noteid).set({ data: "", owner: this.currentUser.uid, lastEditedBy: this.currentUser.uid})
       .then(_ => {
         console.log("created File contents successfully");
         console.log("creating at %s", "fileContents/" + this.noteid);
@@ -185,6 +209,34 @@ export class NoteComponent implements OnInit, OnDestroy {
       .catch(err => {
         console.log("createFileContents err: %s", err);
       });
+  }
+  resetShareNoteValue() {
+    //(<HTMLInputElement>document.getElementById("noteName")).value = "";
+    (<HTMLInputElement>document.getElementById("shareEmail")).value = "";
+  }
+  shareNote(email) {
+    console.log(`Called share Note with email: ${email}`);
+    this.userListService.search(new User(email, null, null)).then(user => {
+      //console.log("Found user to share note with!");
+      let sharedNote : SharedNote = new SharedNote(this.noteInfo.name, this.noteInfo.path, "fileContents/" + this.noteid, this.noteInfo.id);
+      Notif.ShareNoteNotification(this.userListService, this.currentUser.uid, this.noteInfo.name, false)
+      .then(notification => {
+        this.sharingService.shareNote(user.id, sharedNote, this.currentUser.uid, notification)
+        .then(() => {
+          alert("Successfully shared note!");
+          this.resetShareNoteValue();
+        })
+        .catch(err => {
+          alert(`Unable to share note, error: ${err}`);
+        });
+      })
+      .catch(err => {
+        alert(`Unable to share note, notification error: ${err}`);
+      });
+    })
+    .catch(err => {
+      alert("Can't find user to share note with!");
+    });
   }
 
   startSubscription(notepath: string) {
@@ -203,7 +255,8 @@ export class NoteComponent implements OnInit, OnDestroy {
             this.noteInfo = new Note(value.title, value.id, notepath, null);
           }
         });
-      this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
+      //this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
+      this.noteTextRef = this.fireDatabase.object(this.filepath);
       console.log("noteTextRef %s", "fileContents/" + this.noteid);
       this.noteTextRef.valueChanges()
         .subscribe(value => {
@@ -218,6 +271,12 @@ export class NoteComponent implements OnInit, OnDestroy {
           }
           else {
             this.noteInfo.text = value.data;
+            this.lastEditedByUID = value.lastEditedBy;
+            this.userListService.get(this.lastEditedByUID).then(user => {
+              this.lastEditedBy = user.email;
+            }).catch(err => {
+              //leave the same
+            }); 
             this.appComponent.noteTitle = this.noteInfo.name;
             this.updateEditorText(this.noteInfo.text, this.editor.getSelection());
           }
@@ -408,7 +467,7 @@ export class NoteComponent implements OnInit, OnDestroy {
     var cleanHtml = this.html
       .replace('<span style=\"background-color: rgb(153, 204, 255);\">', '')
       .replace('</span>', '');
-    this.noteTextRef.update({ data: cleanHtml });
+    this.noteTextRef.update({ data: cleanHtml, lastEditedBy: this.currentUser.uid });
   }
   deleteNote(id: string, name: string) {
     /*  TODO:
@@ -418,7 +477,7 @@ export class NoteComponent implements OnInit, OnDestroy {
         3. If confirm, call do what's below, else do nothing
     */
 
-    this.confirmationDialogService.confirm('Please confirm', 'Sure you want to delete ' + name + '?')
+    this.confirmationDialogService.confirm('Confirm', "Are you sure you want to delete the note '" + name + "'?")
       .then((confirmed) => { if (confirmed) { this.__delete(); } });
 
 
