@@ -5,6 +5,7 @@ import { User } from './UserList.User';
 export class Notif {
     public text : string;               //what will be displayed
     public type : string;
+    public id : string;
     constructor (text: string) {
         this.text = text;
         this.type = null;

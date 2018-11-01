@@ -19,7 +19,7 @@
       <h5>Notifications</h5>
       <div mat-list-item *ngFor="let notification of notifications">
           {{notification.text}}
-          <button mat-button><mat-icon>close</mat-icon></button>
+          <button mat-button (click)="clearNotification(notification)"><mat-icon>close</mat-icon></button>
         </div>
       <!--<div mat-list-item>
         <p>ryaneverett33@outlook.com has shared 'interstellar' with you.</p>

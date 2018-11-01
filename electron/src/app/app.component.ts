@@ -7,6 +7,7 @@ import { User } from './services/UserList.User';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { Notif } from './services/Notifications.Notif';
 import { isNullOrUndefined } from 'util';
+import { NotificationsService } from './services/notifications.service';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +20,7 @@ export class AppComponent {
   public notifications : Notif[] = Array<Notif>();
   private notificationsRef : any;
 
-  constructor(private router : Router, private userHelper : UserHelperService, private userListService : UserListService, private fireDatabase: AngularFireDatabase) {
+  constructor(private router : Router, private userHelper : UserHelperService, private userListService : UserListService, private fireDatabase: AngularFireDatabase, private notificationsService: NotificationsService) {
     // init firebase
     var config = {
       apiKey: "AIzaSyBv0Xkso50BFpf6lc4_w1LJwEBHDN5IkOQ",
@@ -84,7 +85,7 @@ export class AppComponent {
   _containsNotification(notification : Notif) : boolean {
     for (let i = 0; i < this.notifications.length; i++) {
       let tmp : Notif = this.notifications[i];
-      if (tmp == notification)
+      if (tmp.text == notification.text)
         return true;
     }
     return false;
@@ -111,7 +112,19 @@ export class AppComponent {
   stopListeningForNotifications() {
     this.notificationsRef.unsubscribe();
   }
-  clearNotification() {
-
+  clearNotification(notification : Notif) {
+    this.notificationsService.clearNotification(firebase.auth().currentUser.uid, notification)
+    .then((success) => {
+      //remove notification from array
+      for (var i = 0; i < this.notifications.length; i++) {
+        var tmp : Notif = this.notifications[i];
+        if (tmp.text == notification.text) {
+          this.notifications.splice(i,1);
+        }
+      }
+    })
+    .catch(() => {
+      //don't remove it
+    });
   }
 }

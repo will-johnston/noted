@@ -84,7 +84,26 @@ export class NotificationsService {
         1. If it doesn't exists, exit
       4. remove notification from user
     */
-    throw new Error("To be Implemented");
+    return new Promise((resolve, reject) => {
+      if (isNullOrUndefined(userId) || isNullOrUndefined(notification)) {
+        reject("clearNotification() was given null arguments");
+        return;
+      }
+      this._getNotification(userId, notification)
+      .then(notification => {
+        //console.log("notification exists");
+        this.fireDatabase.object(`users/${userId}/notifications/${notification.id}`).remove()
+        .then(() => {
+          resolve(true);
+        })
+        .catch(err => {
+          reject(err);
+        });
+      })
+      .catch(err => {
+        reject(err);
+      });
+    });
   }
 
 
@@ -96,17 +115,20 @@ export class NotificationsService {
         return;
       }
       let userNotifRef = this.fireDatabase.list(`users/${userID}/notifications`);
-      userNotifRef.valueChanges().subscribe(arr => {
-        if (arr == null) {
+      userNotifRef.snapshotChanges().subscribe(actions => {
+        if (actions == null) {
           reject('_getNotification() called on user with no notifications');
           return;
         }
         else {
-          arr.forEach(data => {
-            let value : any = data;
+          actions.forEach(action => {
+            let value : any = action.payload.val();
+            console.log("notification data: %o", action);
             if (!isNullOrUndefined(value)) {
               if (value.text === notification.text) {
-                resolve(new Notif(value.text));
+                let notification : Notif = new Notif(value.text);
+                notification.id = action.key;
+                resolve(notification);
                 return;
               }
             }
@@ -120,6 +142,6 @@ export class NotificationsService {
 
   //shows a notification on whatever OS the user is running
   showNotification(notification : Notif) {
-    
+
   }
 }
