@@ -117,4 +117,9 @@ export class NotificationsService {
       });
     });
   }
+
+  //shows a notification on whatever OS the user is running
+  showNotification(notification : Notif) {
+    
+  }
 }

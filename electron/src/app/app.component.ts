@@ -4,6 +4,9 @@ import * as firebase from 'firebase'
 import { UserHelperService } from './services/userhelper.service';
 import { UserListService } from './services/user-list.service';
 import { User } from './services/UserList.User';
+import { AngularFireDatabase } from '@angular/fire/database';
+import { Notif } from './services/Notifications.Notif';
+import { isNullOrUndefined } from 'util';
 
 @Component({
   selector: 'app-root',
@@ -13,8 +16,10 @@ import { User } from './services/UserList.User';
 export class AppComponent {
   title = 'noted';
   public noteTitle = "";
+  public notifications : Notif[] = Array<Notif>();
+  private notificationsRef : any;
 
-  constructor(private router : Router, private userHelper : UserHelperService, private userListService : UserListService) {
+  constructor(private router : Router, private userHelper : UserHelperService, private userListService : UserListService, private fireDatabase: AngularFireDatabase) {
     // init firebase
     var config = {
       apiKey: "AIzaSyBv0Xkso50BFpf6lc4_w1LJwEBHDN5IkOQ",
@@ -37,12 +42,14 @@ export class AppComponent {
         //console.log("Current user: %o", firebase.auth().currentUser);
         userListService.register(this.createUser(firebase.auth().currentUser));
         userHelper.currentUser = user;
+        this.listenForNotifications();
         this.router.navigate(['homescreen']);
       } else {
         // If there is no user logged in send them to the login page
         //TODO: send to login page
         console.log("User is logged out");
         userHelper.currentUser = null;
+        this.stopListeningForNotifications();
         this.router.navigate(['login']);
       }
     });
@@ -73,5 +80,38 @@ export class AppComponent {
     }
     console.log(`created User, displayName: ${u.name}`);
     return u;
+  }
+  _containsNotification(notification : Notif) : boolean {
+    for (let i = 0; i < this.notifications.length; i++) {
+      let tmp : Notif = this.notifications[i];
+      if (tmp == notification)
+        return true;
+    }
+    return false;
+  }
+
+  //handle notifications
+  listenForNotifications() {
+    this.notificationsRef = this.fireDatabase.list('users/' + firebase.auth().currentUser.uid + '/notifications').valueChanges();
+    this.notificationsRef.subscribe(values => {
+      this.notifications.slice(0, this.notifications.length);
+      for (let i = 0; i < values.length; i++) {
+        let data = values[i];
+        console.log("Data: %o", data);
+        if (isNullOrUndefined(data) || data.text == null)
+          continue;
+        //add notification
+        let notification : Notif = new Notif(data.text);
+        notification.type = data.type;
+        if (!this._containsNotification(notification))
+          this.notifications.push(notification);
+      }
+    });
+  }
+  stopListeningForNotifications() {
+    this.notificationsRef.unsubscribe();
+  }
+  clearNotification() {
+
   }
 }

@@ -7,16 +7,29 @@
   </div>
   <div id="userbar">
     <button mat-button [matMenuTriggerFor]="notifMenu">
-      <mat-icon matBadge="1" matBadgeColor="warn" matBadgeOverlap="true">notifications</mat-icon>
+      <mat-icon matBadge="{{notifications.length}}" matBadgeColor="warn" matBadgeOverlap="true">notifications</mat-icon>
     </button>
     <mat-menu #notifMenu="matMenu">
-      <button mat-menu-item>Notification 1</button>
-      <button mat-menu-item>Notification 2</button>
+      <!--
+         *ngFor="let folder of folders"
+      colspan="1"
+      rowspan="1"
+      (click)="gotoFolder(folder.name)">
+      -->
+      <h5>Notifications</h5>
+      <div mat-list-item *ngFor="let notification of notifications">
+          {{notification.text}}
+          <button mat-button><mat-icon>close</mat-icon></button>
+        </div>
+      <!--<div mat-list-item>
+        <p>ryaneverett33@outlook.com has shared 'interstellar' with you.</p>
+        <button mat-button><mat-icon>close</mat-icon></button>
+      </div>-->
     </mat-menu>
     
     <!--<button type="button" class="btn btn-danger" (click)="logout()">Logout</button>-->
     <button mat-button [matMenuTriggerFor]="userMenu">
-        <mat-icon matBadge="1" matBadgeColor="warn" matBadgeOverlap="true">person</mat-icon>
+        <mat-icon>person</mat-icon>
       </button>
       <mat-menu #userMenu="matMenu">
         <button mat-menu-item (click)="logout()">Logout</button>

@@ -8,7 +8,7 @@ export class Note {
     path : string;
     text : string;
     constructor(name : string, id : string, path : string, folder : Folder) {
-      console.log("Created note %s at %s", name, path);
+      //console.log("Created note %s at %s", name, path);
       this.name = name;
       this.id = id;
       this.path = path;
@@ -17,7 +17,7 @@ export class Note {
         this.parentId = folder.id;
       else
         this.parentId = null;
-      console.log("pathof(%s) is %s", this.name, this.path);
+      //console.log("pathof(%s) is %s", this.name, this.path);
       //this.checkPath(this.path);
     }
     checkPath(path : string) {
