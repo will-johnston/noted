@@ -46,6 +46,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   userid: string = null;       //database userid of the note
   noteid: string = null;       //database id of the note
   notepath: string = null;     //database path for the note
+  filepath: string = null;     //fileContents path of note
   noteInfo: Note = null;
   noteRef: AngularFireObject<any>;
   noteTextRef: AngularFireObject<any>;
@@ -71,7 +72,6 @@ export class NoteComponent implements OnInit, OnDestroy {
     private sharingService: SharingService
   ) {
     this.text = "";
-    this.lastEditedBy = "somebody";
     this.html = "";
     this.edits = new Array();
     this.currentUser = firebase.auth().currentUser;
@@ -90,9 +90,16 @@ export class NoteComponent implements OnInit, OnDestroy {
       if (params['notepath'] !== undefined) {
         console.log("Note path: %s", params['notepath']);
         this.notepath = params['notepath'];
-        this.startSubscription(params['notepath']);
+      }
+      if (params['filepath'] !== undefined) {
+        console.log("File path: %s", params['filepath']);
+        this.filepath = params['filepath'];
       }
     });
+    if (this.filepath == null) {
+      this.filepath = "fileContents/" + this.noteid;
+    }
+    this.startSubscription(this.notepath);
     this.loadAudio();
     this.highlightIfAudio();
   }
@@ -243,7 +250,8 @@ export class NoteComponent implements OnInit, OnDestroy {
             this.noteInfo = new Note(value.title, value.id, notepath, null);
           }
         });
-      this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
+      //this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
+      this.noteTextRef = this.fireDatabase.object(this.filepath);
       console.log("noteTextRef %s", "fileContents/" + this.noteid);
       this.noteTextRef.valueChanges()
         .subscribe(value => {

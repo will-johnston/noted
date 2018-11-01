@@ -9,12 +9,15 @@
     </mat-list-item>
   </mat-list>
   <div id="actionbar">
-    <button mat-button [matMenuTriggerFor]="notesMenu" style="position: relative; left: 0px;">
-      My Notes
-    </button>
-    <button mat-icon-button [matMenuTriggerFor]="menu" style="position: relative; right: 0px;">
-      <mat-icon>add</mat-icon>
-    </button>
+    <mat-toolbar>
+      <button mat-button [matMenuTriggerFor]="notesMenu" style="position: relative; left: 0px;">
+        {{currentlyViewing}}
+      </button>
+      <button mat-icon-button [matMenuTriggerFor]="menu" style="position: relative; right: 0px;">
+        <mat-icon>add</mat-icon>
+      </button>
+    </mat-toolbar>
+    
 
     <mat-menu #menu="matMenu">
       <button mat-menu-item>
@@ -29,32 +32,26 @@
 
     <mat-menu #notesMenu="matMenu">
       <button mat-menu-item>
-        <span>My Notes</span>
+        <span (click)="goToMyNotes()">My Notes</span>
       </button>
       <button mat-menu-item>
-        <span>Shared With Me</span>
+        <span (click)="goToSharedNotes()">Shared With Me</span>
       </button>
     </mat-menu>
   </div>
 </div>
 
-<h6>Folders</h6>
-<mat-grid-list cols="4" rowHeight="50px">
-  <mat-grid-tile class="folder"
-      *ngFor="let folder of folders"
-      colspan="1"
-      rowspan="1"
-      (click)="gotoFolder(folder.name)">
-    {{folder.name}}
-  </mat-grid-tile>
-</mat-grid-list>
+<div *ngIf='currentlyViewing == "My Notes"; else sharedWithMe'>
+  <h6>Folders</h6>
+  <mat-grid-list cols="4" rowHeight="50px">
+    <mat-grid-tile class="folder" *ngFor="let folder of folders" colspan="1" rowspan="1" (click)="gotoFolder(folder.name)">
+      {{folder.name}}
+    </mat-grid-tile>
+  </mat-grid-list>
 
-<h6>Notes</h6>
-<mat-grid-list cols="4" rowHeight="100px">
-  <mat-grid-tile class="note"
-      *ngFor="let note of notes"
-      colspan="1"
-      rowspan="1">
+  <h6>Notes</h6>
+  <mat-grid-list cols="4" rowHeight="100px">
+    <mat-grid-tile class="note" *ngFor="let note of notes" colspan="1" rowspan="1">
       <div>
         {{note.name}}
         <input #idField id="idField" type="hidden" value={{note.id}} />
@@ -65,11 +62,30 @@
         </button>
       </div>
 
-  </mat-grid-tile>
-</mat-grid-list>
+    </mat-grid-tile>
+  </mat-grid-list>
 
-Folder name: <input #folderName type="text" id="folderName" />
-<button (click)="createFolder(folderName.value)">Create a folder</button>
-<br />
-Note name: <input #noteName type="text" id="noteName" />
-<button (click)="createNote(noteName.value)">Create a note</button>
+  Folder name: <input #folderName type="text" id="folderName" />
+  <button (click)="createFolder(folderName.value)">Create a folder</button>
+  <br />
+  Note name: <input #noteName type="text" id="noteName" />
+  <button (click)="createNote(noteName.value)">Create a note</button>
+
+</div>
+<ng-template #sharedWithMe>
+  <h6>Shared Notes</h6>
+  <mat-grid-list cols="4" rowHeight="100px">
+    <mat-grid-tile class="note" *ngFor="let note of sharedNotes" colspan="1" rowspan="1">
+      <div>
+        {{note.name}}
+        <input #idField id="idField" type="hidden" value={{note.id}} />
+        <br />
+        <button mat-raised-button color="primary" (click)="gotoSharedNote(note)">Go to Note</button>
+        <!--<button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
+          <mat-icon aria-label="Delete">delete</mat-icon>
+        </button>-->
+      </div>
+
+    </mat-grid-tile>
+  </mat-grid-list>
+</ng-template>

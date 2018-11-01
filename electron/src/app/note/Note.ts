@@ -7,6 +7,7 @@ export class Note {
     type = "DOCUMENT";
     path : string;
     text : string;
+    filePath : string;      //may be null
     constructor(name : string, id : string, path : string, folder : Folder) {
       //console.log("Created note %s at %s", name, path);
       this.name = name;

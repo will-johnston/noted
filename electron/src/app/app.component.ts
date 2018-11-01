@@ -110,7 +110,10 @@ export class AppComponent {
     });
   }
   stopListeningForNotifications() {
-    this.notificationsRef.unsubscribe();
+    try {
+      this.notificationsRef.unsubscribe();
+    }
+    catch (err) {}
   }
   clearNotification(notification : Notif) {
     this.notificationsService.clearNotification(firebase.auth().currentUser.uid, notification)

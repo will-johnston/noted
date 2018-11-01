@@ -10,6 +10,7 @@ import { UserHelperService } from './userhelper.service';
 import { HomescreenComponent } from '../homescreen/homescreen.component';
 import { UserListService } from './user-list.service';
 import { User } from './UserList.User';
+import { isNullOrUndefined } from 'util';
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +19,7 @@ export class FilesystemService {
   private userDetails: firebase.User = null;
   private notes: Note[];         //notes that are in the root level
   private folders: Folder[];     //folders and the rest of the notes
+  public sharedNotes : Note[];
   public currentNotes : Note[];
   public currentFolders : Folder[];
   private currentPath : Path;
@@ -34,6 +36,7 @@ export class FilesystemService {
   constructor(private fireDatabase: AngularFireDatabase, private userHelper : UserHelperService, private userListService : UserListService) {
     this.notes = Array();
     this.folders = Array();
+    this.sharedNotes = Array();
     this.currentNotes = Array();
     this.currentFolders = Array();
     this.currentPath = new Path(PathType.users);
@@ -50,6 +53,7 @@ export class FilesystemService {
           //this.updateCurrentState(['/']);
           this.currentPath = Path.RootPath(user.uid);
           this.startSubscription();
+          this.startSharedSubscription();
           this.currentNotes = this.notes;
           this.currentFolders = this.folders;
           this.ready();
@@ -418,6 +422,23 @@ export class FilesystemService {
       });
       this.subscribed = true;
     }
+  }
+  startSharedSubscription() {
+    let sharedNotesRef = this.fireDatabase.list(`users/${firebase.auth().currentUser.uid}/shared`);
+    sharedNotesRef.valueChanges().subscribe(values => {
+      if (values != null) {
+        this.sharedNotes.splice(0, this.sharedNotes.length);
+        for (var i = 0; i < values.length; i++) {
+          let data : any = values[i];
+          if (isNullOrUndefined(data) || isNullOrUndefined(data.title))
+            continue;
+          //console.log("Shared Note value: %o", values[i]);
+          let note : Note = new Note(data.title, data.noteID, data.path, null);
+          note.filePath = data.filePath;
+          this.sharedNotes.push(note);
+        }
+      }
+    });
   }
   createNote(name : string) : boolean {
     if (this.currentContainsNote(name)) {
