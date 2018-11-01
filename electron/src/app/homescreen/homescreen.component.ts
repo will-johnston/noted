@@ -114,7 +114,12 @@ export class HomescreenComponent implements OnInit {
     }
   }
   gotoSharedNote(note) {
-    this.router.navigate(['note', { userid : this.userid, noteid : note.id, notepath: note.path, filepath: note.filePath}]);
+    this.router.navigate(['note', { userid : this.userid, 
+      noteid : note.id, 
+      notepath: note.path, 
+      filepath: note.filePath,
+      isSharedNote: true
+    }]);
   }
   logout() {
     firebase.auth().signOut().then(function() {

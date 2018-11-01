@@ -56,6 +56,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   lastEditedBy: string;
   private lastEditedByUID: string;
   private currentUser: firebase.User;
+  private viewingSharedNote : boolean = false;
 
   edits: Array<any>;
 
@@ -94,6 +95,10 @@ export class NoteComponent implements OnInit, OnDestroy {
       if (params['filepath'] !== undefined) {
         console.log("File path: %s", params['filepath']);
         this.filepath = params['filepath'];
+      }
+      if (params['isSharedNote'] !== undefined) {
+        console.log("viewing a shared note");
+        this.viewingSharedNote = true;
       }
     });
     if (this.filepath == null) {
