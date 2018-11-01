@@ -92,6 +92,7 @@ export class Path {
     //returns a path object given an insertion string
     //assumes pathStr is an insertion string
     static FromString(pathStr : string) : Path {
+        console.log(`path:FromString for ${pathStr}`);
         var path : Path;
         var type : PathType;
         if (pathStr == null) {

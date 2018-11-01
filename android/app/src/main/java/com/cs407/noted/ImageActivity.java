@@ -154,7 +154,7 @@ public class ImageActivity extends AppCompatActivity {
                 @Override
                 public Map<String, String> getHeaders() throws AuthFailureError {
                     Map<String,String> headers = new HashMap<String, String>();
-                    headers.put("Ocp-Apim-Subscription-Key", "2d57d7caaa694a8da9f438a2fb469892");
+                    headers.put("Ocp-Apim-Subscription-Key", "8392c8aa2afb4656ae3ab8426c9d83b0");
                     return headers;
                 }
                 @Override
@@ -187,6 +187,7 @@ public class ImageActivity extends AppCompatActivity {
 
             queue.add(stringRequest);
         } catch (Exception e) {
+            Log.d("hi", "here");
             Toast.makeText(getApplicationContext(), "Error occurred while translating image", Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
@@ -276,7 +277,7 @@ public class ImageActivity extends AppCompatActivity {
                         @Override
                         public Map<String, String> getHeaders() throws AuthFailureError {
                             Map<String,String> headers = new HashMap<String, String>();
-                            headers.put("Ocp-Apim-Subscription-Key", "2d57d7caaa694a8da9f438a2fb469892");
+                            headers.put("Ocp-Apim-Subscription-Key", "8392c8aa2afb4656ae3ab8426c9d83b0");
                             return headers;
                         }
                         @Override

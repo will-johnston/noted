@@ -5,10 +5,10 @@ export class SharedNote {
     public path : Path;             //the absolute location of the file
     public filePath : Path;         //the fileContents/ location of the file
     public noteID : string;         //the ID of the file (can be derived from path or filePath)
-    constructor (title : string, path : Path, filePath : Path, noteID : string) {
+    constructor (title : string, path : string, filePath : string, noteID : string) {
         this.title = title;
-        this.path = path;
-        this.filePath = filePath;
+        this.path = Path.FromString(path);
+        this.filePath = Path.FromString(filePath);
         this.noteID = noteID;
     }
     public isValid() : boolean {
