@@ -9,19 +9,32 @@
     </mat-list-item>
   </mat-list>
   <div id="actionbar">
-      <button mat-icon-button [matMenuTriggerFor]="menu" style="position: absolute; right: 0px;">
-          <mat-icon>add</mat-icon>
-        </button>
-        <mat-menu #menu="matMenu">
-          <button mat-menu-item>
-            <mat-icon>note_add</mat-icon>
-            <span>Create Note</span>
-          </button>
-          <button mat-menu-item>
-            <mat-icon>create_new_folder</mat-icon>
-            <span>Create Folder</span>
-          </button>
-        </mat-menu>
+    <button mat-button [matMenuTriggerFor]="notesMenu" style="position: relative; left: 0px;">
+      My Notes
+    </button>
+    <button mat-icon-button [matMenuTriggerFor]="menu" style="position: relative; right: 0px;">
+      <mat-icon>add</mat-icon>
+    </button>
+
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item>
+        <mat-icon>note_add</mat-icon>
+        <span>Create Note</span>
+      </button>
+      <button mat-menu-item>
+        <mat-icon>create_new_folder</mat-icon>
+        <span>Create Folder</span>
+      </button>
+    </mat-menu>
+
+    <mat-menu #notesMenu="matMenu">
+      <button mat-menu-item (click)="">
+        <span>My Notes</span>
+      </button>
+      <button mat-menu-item (click)="">
+        <span>Shared With Me</span>
+      </button>
+    </mat-menu>
   </div>
 </div>
 

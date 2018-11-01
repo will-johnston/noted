@@ -27,6 +27,7 @@ export class HomescreenComponent implements OnInit {
   navList : NavList<string>;
   debug : false;
   navLoc : string[];
+  currentlyViewing : string; //My Notes or Shared With Me
   constructor(private filesystemService : FilesystemService, 
     private router : Router, 
     private activeRoute : ActivatedRoute, 
@@ -37,7 +38,8 @@ export class HomescreenComponent implements OnInit {
 
     this.navList = new NavList<string>();
     this.navLoc = this.navList.list;
-    this.navList.push("/"); 
+    this.navList.push("/");
+    this.currentlyViewing = "My Notes";
     /*this.sharingService.getSharedUsers(Path.FromString('fileContents/-LNGvqD26zCgP-pAt3Sw'))
     .then(users => {console.log("Shared users: %o", users);})
     .catch(err => {console.log("Error: %o", err);});*/
@@ -132,6 +134,12 @@ export class HomescreenComponent implements OnInit {
     else {
       //didn't work
     }*/
+  }
+  goToMyNotes() {
+
+  }
+  goToSharedNotes() {
+
   }
 
   ngOnInit() {
