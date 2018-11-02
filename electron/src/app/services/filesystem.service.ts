@@ -27,7 +27,7 @@ export class FilesystemService {
   public userid : string;
   private userRef : any;
   private values : Observable<any>;
-  private subscribed : boolean;
+  private sharedNotesRef : any;
   debug = false;
 
   public homescreen : HomescreenComponent;
@@ -48,7 +48,7 @@ export class FilesystemService {
     }*/
       firebase.auth().onAuthStateChanged((user) => {
         if (user) {
-          if (this.debug) console.log("userid : %s", user.uid);
+          console.log("filesystem logged in");
           this.userid = user.uid;
           //this.updateCurrentState(['/']);
           this.currentPath = Path.RootPath(user.uid);
@@ -57,6 +57,17 @@ export class FilesystemService {
           this.currentNotes = this.notes;
           this.currentFolders = this.folders;
           this.ready();
+        }
+        else {
+          console.log("filesystem logged out");
+          this.notes.splice(0, this.notes.length);
+          this.folders.splice(0, this.folders.length);
+          this.sharedNotes.splice(0, this.sharedNotes.length);
+          this.currentNotes.splice(0, this.currentNotes.length);
+          this.currentFolders.splice(0, this.currentFolders.length);
+          this.currentPath = new Path(PathType.users);
+          this.stopSubscription();
+          this.startSharedSubscription();
         }
       });
       
@@ -227,7 +238,6 @@ export class FilesystemService {
   }
   //resolvePath()
   startSubscription() {
-    if (!this.subscribed) {
       this.userRef = this.fireDatabase.list(this.userid);
       /*this.userRef.snapshotChanges(['child_added'])
       .subscribe(action => {
@@ -420,12 +430,10 @@ export class FilesystemService {
           }
         });
       });
-      this.subscribed = true;
     }
-  }
   startSharedSubscription() {
-    let sharedNotesRef = this.fireDatabase.list(`users/${firebase.auth().currentUser.uid}/shared`);
-    sharedNotesRef.valueChanges().subscribe(values => {
+    this.sharedNotesRef = this.fireDatabase.list(`users/${firebase.auth().currentUser.uid}/shared`);
+    this.sharedNotesRef.valueChanges().subscribe(values => {
       if (values != null) {
         this.sharedNotes.splice(0, this.sharedNotes.length);
         for (var i = 0; i < values.length; i++) {
@@ -439,6 +447,18 @@ export class FilesystemService {
         }
       }
     });
+  }
+  stopSubscription() {
+    try {
+      this.userRef.unsubscribe();
+    }
+    catch (err) {}
+  }
+  stopSharedSubscription() {
+    try {
+      this.sharedNotesRef.unsubscribe();
+    }
+    catch (err) {}
   }
   createNote(name : string) : boolean {
     if (this.currentContainsNote(name)) {
