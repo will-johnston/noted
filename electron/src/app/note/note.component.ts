@@ -56,7 +56,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   lastEditedBy: string;
   private lastEditedByUID: string;
   private currentUser: firebase.User;
-  private viewingSharedNote : boolean = false;
+  public viewingSharedNote : boolean = false;
 
   edits: Array<any>;
 
@@ -101,7 +101,8 @@ export class NoteComponent implements OnInit, OnDestroy {
         this.viewingSharedNote = true;
       }
     });
-    if (this.filepath == null) {
+    //fuck you javascript
+    if (this.filepath == null || this.filepath == "undefined" || this.filepath == "null" || this.filepath == undefined) {
       this.filepath = "fileContents/" + this.noteid;
     }
     this.startSubscription(this.notepath);
@@ -246,8 +247,10 @@ export class NoteComponent implements OnInit, OnDestroy {
       this.noteRef.valueChanges()
         .subscribe(value => {
           if (value == null) {
+            this.__delete();
             this.noteInfo = null;
             this.appComponent.noteTitle = "";
+
             //note has been destroyed
             //do nothing out of respect
           }
@@ -257,16 +260,18 @@ export class NoteComponent implements OnInit, OnDestroy {
         });
       //this.noteTextRef = this.fireDatabase.object("fileContents/" + this.noteid);
       this.noteTextRef = this.fireDatabase.object(this.filepath);
-      console.log("noteTextRef %s", "fileContents/" + this.noteid);
       this.noteTextRef.valueChanges()
         .subscribe(value => {
-          console.log("noteTextRef value: %o", value);
           if (value === null) {
             if (this.noteInfo !== null) {
               this.createFileContents(value);
             }
             else {
-              //has probably been destroyed
+              //this will get called concurrently with noteRef.valueChanges()
+              //So when a note is deleted from the database (external to the user deleting it), both subscriptions will get the deletion event at the same time
+              //noteRef handles deleting the file whenever it's been destroyed
+              //console.error("SHOULD HAVE BEEN DESTROYED");
+              return;
             }
           }
           else {
@@ -470,18 +475,8 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.noteTextRef.update({ data: cleanHtml, lastEditedBy: this.currentUser.uid });
   }
   deleteNote(id: string, name: string) {
-    /*  TODO:
-        1. Create a button to delete a note
-          I've created a temporary button for testing, make an actual button
-        2. Create a ‘confirm deletion’ modal to confirm the user’s intention to delete the note
-        3. If confirm, call do what's below, else do nothing
-    */
-
     this.confirmationDialogService.confirm('Confirm', "Are you sure you want to delete the note '" + name + "'?")
       .then((confirmed) => { if (confirmed) { this.__delete(); } });
-
-
-
   }
   //Permanently deletes a note
   __delete() {

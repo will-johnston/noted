@@ -27,7 +27,8 @@ function createWindow() {
     // Create the browser window.
     //`file://${__dirname}/dist/assets/logo.png`
     if (useDevelopmentServer) {
-        win = new BrowserWindow({ width: 800, height: 600, icon: 'http://127.0.0.1:4200/assets/logo.png' });
+        //Disable websecurity to ignore CORS
+        win = new BrowserWindow({ width: 800, height: 600, icon: 'http://127.0.0.1:4200/assets/logo.png' , webPreferences : { webSecurity : false}});
         win.loadURL(url.format({
             //pathname: path.join(__dirname, '/app/index.html'),
             //'${__dirname}/dist/index.html' //for angular

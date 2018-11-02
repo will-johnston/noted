@@ -160,12 +160,19 @@ export class HomescreenComponent implements OnInit {
 
   ngOnInit() {
     this.filesystemService.homescreen = this;
-    this.filesystemService.onReady.push(function(filesystemService) {
+    /*this.filesystemService.onReady.push(function(filesystemService) {
       var t : HomescreenComponent = filesystemService.homescreen;
       t.userid = t.filesystemService.userid;
       t.goBackTo('/');
-    });
+    });*/
+    //this.goToMyNotes();
+    this.goBackTo('/');
   }
-
+  ngOnDestroy() {
+    console.log("Homescreen was destroyed");
+    this.notes = null;
+    this.folders = null;
+    this.sharedNotes = null;
+  }
 
 }
