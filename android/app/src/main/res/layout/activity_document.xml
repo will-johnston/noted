@@ -108,6 +108,7 @@
         android:gravity="top|start"
         android:scrollbars="vertical"
         android:background="@android:color/transparent"
+        android:imeOptions="actionGo"
         app:bulletColor="@color/blue_500"
         app:bulletRadius="@dimen/bullet_radius"
         app:bulletGapWidth="@dimen/bullet_gap_width"
