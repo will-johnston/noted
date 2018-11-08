@@ -256,6 +256,9 @@ public class MainActivity extends AppCompatActivity {
                             SharedFile sharedFile = ds2.getValue(SharedFile.class);
                             shared.add(sharedFile);
                         }
+                    }
+                    else if (ds.getKey().equals("notifications")) {
+                        // not implemented yet
                     } else {
                         com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
                         files.add(file);
@@ -345,7 +348,7 @@ public class MainActivity extends AppCompatActivity {
                 com.cs407.noted.File convertedFile = dataSnapshot.getValue(com.cs407.noted.File.class);
                 if (convertedFile == null) {
                     // a shared file has been deleted
-                    decrementSize();
+                    // decrementSize();
                     return;
                 }
                 if (alreadyListening(sharedFile)) {
@@ -1016,6 +1019,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                     }
+
                 }
             }
             @Override

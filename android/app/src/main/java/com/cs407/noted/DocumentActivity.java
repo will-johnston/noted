@@ -11,6 +11,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -330,6 +331,9 @@ public class DocumentActivity extends AppCompatActivity {
     private void setupKnife() {
         knife = findViewById(R.id.knife);
         knife.addTextChangedListener(getTextWatcher());
+        knife.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        //knife.setImeOptions();
+        // knife.setPaintFlags(0);
         setupBold();
         setupItalic();
         setupUnderline();
