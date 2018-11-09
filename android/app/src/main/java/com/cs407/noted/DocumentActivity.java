@@ -129,7 +129,7 @@ public class DocumentActivity extends AppCompatActivity {
             // if the local version is different, update it to be the database version
             Log.e("TEXT CHANGE START/END", String.format("%d, %d", startPosition, endPosition));
             String current = String.valueOf(currentHtml);  // have this here, because next line triggers a change in currentHtml
-            knife.fromHtml(changedHtml);
+            knife.fromHtml(changedHtml, knife);
             // move cursor to its appropriate posotion
             updateCursor(startPosition, endPosition, current, changedHtml);
             currentHtml = changedHtml;
