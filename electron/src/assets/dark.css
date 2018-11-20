@@ -1,0 +1,27 @@
+/*Homescreen*/
+#navbar {
+    background-color: darkcyan;
+}
+.folder {
+    background-color: darkblue;
+}
+.note {
+    background-color: darkgray;
+}
+#actionbar {
+    background-color: coral;
+}
+/*Note*/
+/*AppComponent*/
+#header {
+    background-color: azure;
+}
+#apptitlebar {
+    background-color: darksalmon;
+}
+#notetitlebar {
+    background-color: blanchedalmond;
+}
+#userbar {
+    background-color: aqua;
+}

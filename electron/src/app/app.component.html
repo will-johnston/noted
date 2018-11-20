@@ -39,6 +39,7 @@
     
     <mat-menu #userMenu="matMenu">
       <button mat-menu-item (click)="logout()">Logout</button>
+      <button mat-button (click)="darkModeToggle()"><mat-icon>{{darkModeIcon}}</mat-icon></button>
     </mat-menu>
   </div>
 </div>
