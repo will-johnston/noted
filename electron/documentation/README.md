@@ -7,6 +7,7 @@ All Electron specific documentation, or really anything useful, should find it's
 - [Database](Database.md)
 - [Notifications](/documentation/Notifications.md)
 - [Services](Services.md)
+- [Styles](Styles.md)
 
 ## Notes
 - [RetrievingNotifications](RetrievingNotifications.md)
