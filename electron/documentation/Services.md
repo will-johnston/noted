@@ -58,5 +58,17 @@ Gets user info given the userID.
 
 Not to be confused with firebase.User!! This type represents a stored user info in the userList object.
 
-## Theme
-This Service is an rxjs service that changes theme dynamically. This user story is stored in the branch UI-theme and is not yet merged with the master due to the style configuration change from css to scss. All css file can work as scss file. Will merge after some refactoring with other functionalities.
+## DarkMode
+This service is responsible for handling global colors with respect to a dark mode and a light mode. 
+
+### API
+- Toggle()
+
+Changes the current color mode from light to dark or dark to light. Updates the stylesheets automatically.
+
+### Types
+- DarkModeState (enum)
+
+`DarkModeState.Dark, DarkModeState.Light`
+
+The current color state, globally maintained by `DarkModeService.state`
