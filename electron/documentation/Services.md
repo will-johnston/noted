@@ -71,4 +71,4 @@ Changes the current color mode from light to dark or dark to light. Updates the 
 
 `DarkModeState.Dark, DarkModeState.Light`
 
-The current color state, globally maintained by `DarkModeService.state`
+The current color state, globally maintained by `DarkModeService.state`.
