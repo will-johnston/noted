@@ -297,6 +297,7 @@ export class NoteComponent implements OnInit, OnDestroy {
     quill.focus();
     this.editor = quill;
     this.editor.root.placeholder = "Start writing your masterpiece!";
+    this.editor.getModule("toolbar").addHandler("image", this.imageHandler.bind(this));
   }
 
   editorContentChanged({ editor, html, text, content, delta, oldDelta, source }) {
@@ -488,5 +489,8 @@ export class NoteComponent implements OnInit, OnDestroy {
       console.error("Couldn't delete note from local filesystem");
       this.router.navigate(['homescreen']);
     }
+  }
+  imageHandler() {
+    console.log("Hello!!!!!!!!!!!!!!!!!!!")
   }
 }
