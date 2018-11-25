@@ -4,7 +4,7 @@ import { Router, ActivatedRoute, Params } from '@angular/router';
 import { AngularFireDatabase, AngularFireObject } from '@angular/fire/database';
 import { ElectronService } from 'ngx-electron';
 import { AngularFireStorage } from 'angularfire2/storage';
-import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, switchMap, finalize } from 'rxjs/operators';
 import * as firebase from 'firebase';
 import { FilesystemService } from '../services/filesystem.service';
 import { Note } from './Note';
@@ -490,7 +490,56 @@ export class NoteComponent implements OnInit, OnDestroy {
       this.router.navigate(['homescreen']);
     }
   }
+
   imageHandler() {
-    console.log("Hello!!!!!!!!!!!!!!!!!!!")
+    const input = document.createElement('input');
+		input.setAttribute('type', 'file');
+		input.click();
+
+		// Listen to upload local image and save to server
+		input.onchange = () => {
+			const file = input.files[0];
+      const fullpath = input.value;
+      const uploadPath = this.parseFilename(fullpath);
+      // test if file is an image
+			if (/^image\//.test(file.type)) {
+        // get the current cursor pos
+        var cursorPos = this.editor.getSelection(true);
+        // upload image to firebase 
+        this.uploadImage(file, uploadPath, cursorPos);
+			} else {
+				console.warn('You can only upload images.');
+			}
+    };
+  }
+
+  uploadImage(file, uploadPath, cursorPos) {
+    const ref = this.storage.ref("uploadedImages/" + this.noteid + "/" +  uploadPath);
+    const task = ref.put(file);
+    task.snapshotChanges().pipe(
+      finalize(() => {
+        var downloadURL = ref.getDownloadURL();
+        downloadURL.subscribe(url => this.embedImage(url, cursorPos));
+      })
+    ).subscribe();
+  }
+
+  embedImage(src, cursorPos) {
+    console.log(src);
+    // make img
+    this.editor.insertEmbed(cursorPos.index, 'image', src, 'user')
+  }
+
+  /** Helper to get the ???.txt from a path */
+  parseFilename(fullPath) {
+    if (fullPath) {
+      var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
+      var filename = fullPath.substring(startIndex);
+      if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
+          filename = filename.substring(1);
+      }
+      filename = filename.substring(0, filename.lastIndexOf('.'));
+      return filename;
+    }
   }
 }
