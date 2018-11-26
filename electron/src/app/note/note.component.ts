@@ -9,17 +9,17 @@ import * as firebase from 'firebase';
 import { FilesystemService } from '../services/filesystem.service';
 import { Note } from './Note';
 
-//import Quill from 'quill';
+import { QuillEditorComponent } from 'ngx-quill';
+
+import Quill from 'quill';
+// add image resize module
+import { ImageResize } from 'quill-image-resize-module';
+Quill.register('modules/imageResize', ImageResize);
+
 import { Observable, Subject } from 'rxjs';
 import { AppComponent } from '../app.component';
 import { UserListService } from '../services/user-list.service';
 import { SharingService } from '../services/sharing.service';
-
-// override p with div tag
-//const Parchment = Quill.import('parchment');
-//let Block = Parchment.query('block');
-
-import { QuillEditorComponent } from 'ngx-quill';
 
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { User } from '../services/UserList.User';
@@ -43,6 +43,7 @@ export class NoteComponent implements OnInit, OnDestroy {
 
   public editor;
 
+  modules = {};                // to customize editor
   userid: string = null;       //database userid of the note
   noteid: string = null;       //database id of the note
   notepath: string = null;     //database path for the note
@@ -56,7 +57,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   lastEditedBy: string;
   private lastEditedByUID: string;
   private currentUser: firebase.User;
-  public viewingSharedNote : boolean = false;
+  public viewingSharedNote: boolean = false;
 
   edits: Array<any>;
 
@@ -76,6 +77,28 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.html = "";
     this.edits = new Array();
     this.currentUser = firebase.auth().currentUser;
+    this.modules = {
+      toolbar: [
+        ['bold', 'italic', 'underline', 'strike',],
+        ['blockquote', 'code-block'],
+
+        [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        [{ 'script': 'sub' }, { 'script': 'super' }],      // superscript/subscript
+        [{ 'indent': '-1' }, { 'indent': '+1' }],          // outdent/indent
+        [{ 'direction': 'rtl' }],                         // text direction
+
+        [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+        [{ 'font': [] }],
+        [{ 'align': [] }],
+        ['image'],                                        // add image (custom)
+        ['clean'],                                         // remove formatting button
+      ],
+      imageResize: {}
+    }
   }
 
   ngOnInit() {
@@ -138,13 +161,13 @@ export class NoteComponent implements OnInit, OnDestroy {
       res.forEach(item => {
         let edit = {};
         for (let [key, value] of Object.entries(item)) {
-            if (key == "timestamp") { // log the timestamp
-              edit["timestamp"] = value;
-            }
-            else if (value[0].retain && value[1].insert) { // log the ops
-              edit["index"] = value[0].retain;
-              edit["content"] = value[1].insert;
-            }
+          if (key == "timestamp") { // log the timestamp
+            edit["timestamp"] = value;
+          }
+          else if (value[0].retain && value[1].insert) { // log the ops
+            edit["index"] = value[0].retain;
+            edit["content"] = value[1].insert;
+          }
         }
         // push the edit to global edits array
         if (Object.keys(edit).length != 0) {
@@ -201,7 +224,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   createFileContents(value) {
     //console.log("value == null %s, value.key == null %s", value == null, value.key == null);
     //console.log("payload: %o", value.payload.val());
-    this.fireDatabase.object("/fileContents/" + this.noteid).set({ data: "", owner: this.currentUser.uid, lastEditedBy: this.currentUser.uid})
+    this.fireDatabase.object("/fileContents/" + this.noteid).set({ data: "", owner: this.currentUser.uid, lastEditedBy: this.currentUser.uid })
       .then(_ => {
         console.log("created File contents successfully");
         console.log("creating at %s", "fileContents/" + this.noteid);
@@ -219,25 +242,25 @@ export class NoteComponent implements OnInit, OnDestroy {
     console.log(`Called share Note with email: ${email}`);
     this.userListService.search(new User(email, null, null)).then(user => {
       //console.log("Found user to share note with!");
-      let sharedNote : SharedNote = new SharedNote(this.noteInfo.name, this.noteInfo.path, "fileContents/" + this.noteid, this.noteInfo.id);
+      let sharedNote: SharedNote = new SharedNote(this.noteInfo.name, this.noteInfo.path, "fileContents/" + this.noteid, this.noteInfo.id);
       Notif.ShareNoteNotification(this.userListService, this.currentUser.uid, this.noteInfo.name, false)
-      .then(notification => {
-        this.sharingService.shareNote(user.id, sharedNote, this.currentUser.uid, notification)
-        .then(() => {
-          alert("Successfully shared note!");
-          this.resetShareNoteValue();
+        .then(notification => {
+          this.sharingService.shareNote(user.id, sharedNote, this.currentUser.uid, notification)
+            .then(() => {
+              alert("Successfully shared note!");
+              this.resetShareNoteValue();
+            })
+            .catch(err => {
+              alert(`Unable to share note, error: ${err}`);
+            });
         })
         .catch(err => {
-          alert(`Unable to share note, error: ${err}`);
+          alert(`Unable to share note, notification error: ${err}`);
         });
-      })
-      .catch(err => {
-        alert(`Unable to share note, notification error: ${err}`);
-      });
     })
-    .catch(err => {
-      alert("Can't find user to share note with!");
-    });
+      .catch(err => {
+        alert("Can't find user to share note with!");
+      });
   }
 
   startSubscription(notepath: string) {
@@ -281,7 +304,7 @@ export class NoteComponent implements OnInit, OnDestroy {
               this.lastEditedBy = user.email;
             }).catch(err => {
               //leave the same
-            }); 
+            });
             this.appComponent.noteTitle = this.noteInfo.name;
             this.updateEditorText(this.noteInfo.text, this.editor.getSelection());
           }
@@ -493,28 +516,28 @@ export class NoteComponent implements OnInit, OnDestroy {
 
   imageHandler() {
     const input = document.createElement('input');
-		input.setAttribute('type', 'file');
-		input.click();
+    input.setAttribute('type', 'file');
+    input.click();
 
-		// Listen to upload local image and save to server
-		input.onchange = () => {
-			const file = input.files[0];
+    // Listen to upload local image and save to server
+    input.onchange = () => {
+      const file = input.files[0];
       const fullpath = input.value;
       const uploadPath = this.parseFilename(fullpath);
       // test if file is an image
-			if (/^image\//.test(file.type)) {
+      if (/^image\//.test(file.type)) {
         // get the current cursor pos
         var cursorPos = this.editor.getSelection(true);
         // upload image to firebase 
         this.uploadImage(file, uploadPath, cursorPos);
-			} else {
-				console.warn('You can only upload images.');
-			}
+      } else {
+        console.warn('You can only upload images.');
+      }
     };
   }
 
   uploadImage(file, uploadPath, cursorPos) {
-    const ref = this.storage.ref("uploadedImages/" + this.noteid + "/" +  uploadPath);
+    const ref = this.storage.ref("uploadedImages/" + this.noteid + "/" + uploadPath);
     const task = ref.put(file);
     task.snapshotChanges().pipe(
       finalize(() => {
@@ -536,7 +559,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
       var filename = fullPath.substring(startIndex);
       if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
-          filename = filename.substring(1);
+        filename = filename.substring(1);
       }
       filename = filename.substring(0, filename.lastIndexOf('.'));
       return filename;
