@@ -5,6 +5,7 @@
     <string name="remove">Remove</string>
     <string name="rename">Rename</string>
     <string name="share">Share</string>
+    <string name="notifications">Notifications</string>
 
     <!-- Menu -->
     <string name="menu_undo">Undo</string>
