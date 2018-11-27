@@ -32,6 +32,8 @@ import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -86,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseDatabase database;
     private DatabaseReference fileContents;
     private List<SharedFile> sharedFiles;
+    public static List<Notification> notificationData = new ArrayList<>();;
 
     private int sharedFileSize;
     private List<com.cs407.noted.File> convertedSharedFiles;
@@ -259,8 +262,15 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     else if (ds.getKey().equals("notifications")) {
-                        // not implemented yet
-                        Log.d("hi", "changed");
+                        // retrieve notifications
+                        long amount = ds.getChildrenCount();
+                        notificationData.clear();
+                        for(DataSnapshot notifDs : ds.getChildren()) {
+                            Map<String, Object> data = (HashMap<String,Object>) notifDs.getValue();
+                            Notification notif = new Notification(notifDs.getKey(), (String)data.get("text"));
+                            notificationData.add(notif);
+                        }
+
                     } else {
                         com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
                         files.add(file);
@@ -1184,6 +1194,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onNotificationButtonClicked(View view) {
         Intent intent = new Intent(this, NotificationActivity.class);
+        intent.putExtra("user", getCurrentUserUid());
         startActivity(intent);
     }
 }
