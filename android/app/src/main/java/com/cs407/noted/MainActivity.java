@@ -260,6 +260,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else if (ds.getKey().equals("notifications")) {
                         // not implemented yet
+                        Log.d("hi", "changed");
                     } else {
                         com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
                         files.add(file);
@@ -1132,6 +1133,15 @@ public class MainActivity extends AppCompatActivity {
         DatabaseReference sharedRef = database.getReference(refPath);
         // add to 'shared' list in user's file system
         sharedRef.push().setValue(sharedFile);
+
+        // add a notification for the shared user
+        String notifRefPath = String.format("users/%s/notifications", userID);
+        DatabaseReference notifsRef = database.getReference(notifRefPath);
+        DatabaseReference notifRef = notifsRef.push();
+        HashMap<String, Object> notif = new HashMap<>();
+        String text = currentUser.getEmail() + " has shared '" + file.getTitle() + "' with you.";
+        notif.put("text", text);
+        notifRef.updateChildren(notif);
 
         // add user to shared files list for the file and its children
         addUserToSharedFilesList(file, userID);
