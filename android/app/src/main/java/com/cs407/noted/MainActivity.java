@@ -27,10 +27,13 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -85,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseDatabase database;
     private DatabaseReference fileContents;
     private List<SharedFile> sharedFiles;
+    public static List<Notification> notificationData = new ArrayList<>();
+    private static ImageView notificationButton;
 
     private int sharedFileSize;
     private List<com.cs407.noted.File> convertedSharedFiles;
@@ -119,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
             // user is logged in so we can access their data
             setupDatabase();
         }
+
+        notificationButton = findViewById(R.id.notifications);
     }
 
     @Override
@@ -258,7 +265,17 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     else if (ds.getKey().equals("notifications")) {
-                        // not implemented yet
+                        // retrieve notifications
+                        long amount = ds.getChildrenCount();
+                        updateNotificationButton(amount != 0);
+
+                        notificationData.clear();
+                        for(DataSnapshot notifDs : ds.getChildren()) {
+                            Map<String, Object> data = (HashMap<String,Object>) notifDs.getValue();
+                            Notification notif = new Notification(notifDs.getKey(), (String)data.get("text"));
+                            notificationData.add(notif);
+                        }
+
                     } else {
                         com.cs407.noted.File file = ds.getValue(com.cs407.noted.File.class);
                         files.add(file);
@@ -1132,6 +1149,15 @@ public class MainActivity extends AppCompatActivity {
         // add to 'shared' list in user's file system
         sharedRef.push().setValue(sharedFile);
 
+        // add a notification for the shared user
+        String notifRefPath = String.format("users/%s/notifications", userID);
+        DatabaseReference notifsRef = database.getReference(notifRefPath);
+        DatabaseReference notifRef = notifsRef.push();
+        HashMap<String, Object> notif = new HashMap<>();
+        String text = currentUser.getEmail() + " has shared '" + file.getTitle() + "' with you.";
+        notif.put("text", text);
+        notifRef.updateChildren(notif);
+
         // add user to shared files list for the file and its children
         addUserToSharedFilesList(file, userID);
         Toast.makeText(this, "File shared!", Toast.LENGTH_SHORT).show();
@@ -1171,5 +1197,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    public void onNotificationButtonClicked(View view) {
+        Intent intent = new Intent(this, NotificationActivity.class);
+        intent.putExtra("user", getCurrentUserUid());
+        startActivity(intent);
+    }
 
+    public static void updateNotificationButton(Boolean filled) {
+        notificationButton.setImageResource(filled ? R.drawable.ic_notification_filled : R.drawable.ic_notification_hollow);
+    }
 }
