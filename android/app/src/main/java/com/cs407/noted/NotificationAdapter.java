@@ -1,5 +1,6 @@
 package com.cs407.noted;
 
+import android.app.Activity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -81,5 +82,6 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         ref.removeValue();
         data.remove(index);
         notifyDataSetChanged();
+        MainActivity.updateNotificationButton(data.size() != 0);
     }
 }

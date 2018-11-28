@@ -88,7 +88,8 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseDatabase database;
     private DatabaseReference fileContents;
     private List<SharedFile> sharedFiles;
-    public static List<Notification> notificationData = new ArrayList<>();;
+    public static List<Notification> notificationData = new ArrayList<>();
+    private static ImageView notificationButton;
 
     private int sharedFileSize;
     private List<com.cs407.noted.File> convertedSharedFiles;
@@ -123,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
             // user is logged in so we can access their data
             setupDatabase();
         }
+
+        notificationButton = findViewById(R.id.notifications);
     }
 
     @Override
@@ -264,6 +267,8 @@ public class MainActivity extends AppCompatActivity {
                     else if (ds.getKey().equals("notifications")) {
                         // retrieve notifications
                         long amount = ds.getChildrenCount();
+                        updateNotificationButton(amount != 0);
+
                         notificationData.clear();
                         for(DataSnapshot notifDs : ds.getChildren()) {
                             Map<String, Object> data = (HashMap<String,Object>) notifDs.getValue();
@@ -1196,5 +1201,9 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, NotificationActivity.class);
         intent.putExtra("user", getCurrentUserUid());
         startActivity(intent);
+    }
+
+    public static void updateNotificationButton(Boolean filled) {
+        notificationButton.setImageResource(filled ? R.drawable.ic_notification_filled : R.drawable.ic_notification_hollow);
     }
 }
