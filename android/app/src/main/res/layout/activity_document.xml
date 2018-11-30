@@ -81,13 +81,13 @@
                 android:background="?android:selectableItemBackground">
             </ImageButton>
 
-            <ImageButton android:id="@+id/clear"
+            <ImageButton android:id="@+id/insert_image"
                 android:contentDescription="@null"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:src="@drawable/ic_format_clear"
+                android:src="@drawable/ic_insert_image"
                 android:scaleType="center"
-                android:background="?android:selectableItemBackground">
+                android:background="?android:selectableItemBackground" >
             </ImageButton>
 
         </LinearLayout>
