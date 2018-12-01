@@ -2,9 +2,15 @@ package com.cs407.noted;
 
 
 import android.app.AlertDialog;
-import android.content.Context;
+import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.drawable.Drawable;
+import android.media.ExifInterface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -20,8 +26,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -29,6 +38,15 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.UUID;
+
 import io.github.mthli.knife.KnifeText;
 
 public class DocumentActivity extends AppCompatActivity {
@@ -36,8 +54,9 @@ public class DocumentActivity extends AppCompatActivity {
     private KnifeText knife;
     private String title;
     private String id;
-    private DatabaseReference ref;
     private String imageId;
+    private Drawable placeholder;
+    private static final int PICK_IMAGE = 1;
 
     // cursor positions
     private int startPosition;  //the start position of the cursor
@@ -53,6 +72,12 @@ public class DocumentActivity extends AppCompatActivity {
     private long last_edit_time = 0;  // timestamp when user last edited text
     Handler handler;  // used for runnable object that determines time to save
 
+    // Firebase variables
+    private FirebaseStorage firebaseStorage;  // used for uploading images
+    private DatabaseReference storageRef;
+    private DatabaseReference ref;  // used for listening for changes in document
+
+
 
     @Override
 
@@ -67,6 +92,8 @@ public class DocumentActivity extends AppCompatActivity {
         this.id = intent.getStringExtra("id");
         currentHtml = null;
         handler = new Handler();
+        placeholder = getResources().getDrawable(R.drawable.loading, null);
+
 
         verifyUser();  // make sure user is still logged in
         setupKnife();  // initialize knife and its properties
@@ -129,8 +156,8 @@ public class DocumentActivity extends AppCompatActivity {
             // if the local version is different, update it to be the database version
             Log.e("TEXT CHANGE START/END", String.format("%d, %d", startPosition, endPosition));
             String current = String.valueOf(currentHtml);  // have this here, because next line triggers a change in currentHtml
-            knife.fromHtml(changedHtml);
-            // move cursor to its appropriate posotion
+            knife.fromHtml(changedHtml, knife, placeholder);
+            // move cursor to its appropriate position
             updateCursor(startPosition, endPosition, current, changedHtml);
             currentHtml = changedHtml;
         }
@@ -332,15 +359,14 @@ public class DocumentActivity extends AppCompatActivity {
         knife = findViewById(R.id.knife);
         knife.addTextChangedListener(getTextWatcher());
         knife.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        //knife.setImeOptions();
-        // knife.setPaintFlags(0);
         setupBold();
         setupItalic();
         setupUnderline();
         setupStrikethrough();
         setupBullet();
         setupQuote();
-        // setupLink();
+        setupImage();
+        setupLink();
         // setupClear();
     }
 
@@ -349,7 +375,7 @@ public class DocumentActivity extends AppCompatActivity {
         String path = String.format("fileContents/%s", this.id);
         this.ref = database.getReference(path);
         this.ref.addValueEventListener(getListener());
-
+        firebaseStorage = FirebaseStorage.getInstance();
     }
 
     private void setupActionBar() {
@@ -475,6 +501,16 @@ public class DocumentActivity extends AppCompatActivity {
         });
     }
 
+    private void setupImage() {
+       ImageButton image = (ImageButton) findViewById(R.id.insert_image);
+       image.setOnClickListener(new View.OnClickListener() {
+           @Override
+           public void onClick(View v) {
+               showImageDialog();
+           }
+       });
+    }
+
     private void setupLink() {
         ImageButton link = (ImageButton) findViewById(R.id.link);
 
@@ -494,24 +530,24 @@ public class DocumentActivity extends AppCompatActivity {
         });
     }
 
-    private void setupClear() {
-        ImageButton clear = (ImageButton) findViewById(R.id.clear);
-
-        clear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                knife.clearFormats();
-            }
-        });
-
-        clear.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                Toast.makeText(DocumentActivity.this, R.string.toast_format_clear, Toast.LENGTH_SHORT).show();
-                return true;
-            }
-        });
-    }
+//    private void setupClear() {
+//        ImageButton clear = (ImageButton) findViewById(R.id.clear);
+//
+//        clear.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                knife.clearFormats();
+//            }
+//        });
+//
+//        clear.setOnLongClickListener(new View.OnLongClickListener() {
+//            @Override
+//            public boolean onLongClick(View v) {
+//                Toast.makeText(DocumentActivity.this, R.string.toast_format_clear, Toast.LENGTH_SHORT).show();
+//                return true;
+//            }
+//        });
+//    }
 
     private void showLinkDialog() {
         final int start = knife.getSelectionStart();
@@ -538,6 +574,7 @@ public class DocumentActivity extends AppCompatActivity {
             }
         });
 
+
         builder.setNegativeButton(R.string.dialog_button_cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -546,5 +583,109 @@ public class DocumentActivity extends AppCompatActivity {
         });
 
         builder.create().show();
+    }
+
+    private void showImageDialog() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_CANCELED) {
+            return;
+        }
+        else if (requestCode == PICK_IMAGE) {
+            final Uri imageUri = data.getData();
+
+//            ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+//            spinner.setVisibility(View.VISIBLE);
+
+            // create unique ID to use a firebase storage name
+            String uniqueID = UUID.randomUUID().toString();
+            Toast.makeText(getApplicationContext(), "Uploading image...", Toast.LENGTH_LONG).show();
+
+            //upload the picture to Firebase storage
+            String path = String.format("uploadedImages/%s/%s", id, uniqueID);
+            final StorageReference storageRef = firebaseStorage.getReference().child(path);
+
+            try {
+                ByteArrayOutputStream baos = prepareBitmap(imageUri);
+                UploadTask task = storageRef.putBytes(baos.toByteArray());
+                task.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        Toast.makeText(getApplicationContext(), "Successfully uploaded.", Toast.LENGTH_LONG).show();
+                        // now get the download url, and add the image to the document
+                        storageRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                String imageHtml = String.format("<img src=%s>", uri.toString());
+                                HtmlLexicalAnalyzer analyzer = new HtmlLexicalAnalyzer(currentHtml);
+                                int newPos = analyzer.convertPlainTextPositionToHtmlPosition(endPosition);
+                                // insert new image into the html
+                                String updatedHtml = currentHtml.substring(0, newPos)
+                                        + imageHtml
+                                        + currentHtml.substring(newPos);
+
+                                ref.child("data").setValue(updatedHtml);
+
+                            }
+                        });
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+//                        ProgressBar spinner = (ProgressBar)findViewById(R.id.progressBar2);
+//                        spinner.setVisibility(View.GONE);
+                        Toast.makeText(getApplicationContext(), "Failed to upload image", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+            catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private ByteArrayOutputStream prepareBitmap(Uri imageUri) throws Exception {
+        InputStream inputStream1 = getApplicationContext().getContentResolver().openInputStream(imageUri);
+        InputStream inputStream2 = getApplicationContext().getContentResolver().openInputStream(imageUri);
+
+        ExifInterface exif = new ExifInterface(inputStream1);
+        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+        int rotate = 0;
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                rotate = 270;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                rotate = 180;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                rotate = 90;
+                break;
+        }
+
+        BufferedInputStream bis = new BufferedInputStream(inputStream2);
+        Bitmap bitmap = BitmapFactory.decodeStream(bis);
+        Matrix matrix = new Matrix();
+        matrix.postRotate(rotate);
+        Bitmap newBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+
+        int maxSize = 4 * 1024 * 1024;
+        int quality = 98;
+
+        while(baos.size() > maxSize) {
+            baos = new ByteArrayOutputStream();
+            newBitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+            quality -= 2;
+        }
+
+        return baos;
     }
 }
