@@ -23,7 +23,20 @@
             android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             android:minHeight="?android:attr/actionBarSize"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content" >
+
+            <ImageView
+                android:id="@+id/notifications"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right"
+                android:layout_marginRight="6dp"
+                android:src="@drawable/ic_notification_hollow"
+                android:clickable="true"
+                android:onClick="onNotificationButtonClicked"
+                android:title="@string/notifications" />
+
+        </android.support.v7.widget.Toolbar>
 
     </android.support.design.widget.AppBarLayout>
 

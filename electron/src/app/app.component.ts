@@ -1,13 +1,14 @@
 import { Component } from '@angular/core';
 import { RouterModule, Routes, Router, NavigationStart } from '@angular/router';
 import * as firebase from 'firebase'
-import { UserHelperService } from './services/userhelper.service';
-import { UserListService } from './services/user-list.service';
 import { User } from './services/UserList.User';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { Notif } from './services/Notifications.Notif';
 import { isNullOrUndefined } from 'util';
 import { NotificationsService } from './services/notifications.service';
+import { DarkModeService, DarkModeState } from './services/dark-mode.service';
+import { UserListService } from './services/user-list.service';
+import { UserHelperService } from './services/userhelper.service';
 
 @Component({
   selector: 'app-root',
@@ -19,9 +20,17 @@ export class AppComponent {
   public noteTitle = "";
   public notifications : Notif[] = Array<Notif>();
   private notificationsRef : any;
+  public darkModeIcon : string = "wb_incandescent";    //wb_incandescent or wb_iridescent
 
-  constructor(private router : Router, private userHelper : UserHelperService, private userListService : UserListService, private fireDatabase: AngularFireDatabase, private notificationsService: NotificationsService) {
-    // init firebase
+  constructor(private router : Router,
+    private userListService : UserListService,
+    private userHelper : UserHelperService,
+    private fireDatabase: AngularFireDatabase, 
+    private notificationsService: NotificationsService,
+    private darkModeService : DarkModeService) {
+    darkModeService.state == DarkModeState.Light ? this.darkModeIcon = "wb_incandescent" : this.darkModeIcon = "wb_iridescent";
+    
+      // init firebase
     var config = {
       apiKey: "AIzaSyBv0Xkso50BFpf6lc4_w1LJwEBHDN5IkOQ",
       authDomain: "noted-a0a2a.firebaseapp.com",
@@ -41,8 +50,8 @@ export class AppComponent {
         //console.log(user.email);
         //console.log("Logged in with %o", user);
         //console.log("Current user: %o", firebase.auth().currentUser);
-        userListService.register(this.createUser(firebase.auth().currentUser));
-        userHelper.currentUser = user;
+        this.userListService.register(this.createUser(firebase.auth().currentUser));
+        this.userHelper.currentUser = user;
         this.listenForNotifications();
         this.router.navigate(['homescreen']);
       } else {
@@ -129,5 +138,13 @@ export class AppComponent {
     .catch(() => {
       //don't remove it
     });
+  }
+  darkModeToggle() {
+    /*if (this.darkModeIcon == "wb_incandescent")
+      this.darkModeIcon = "wb_iridescent"
+    else
+      this.darkModeIcon = "wb_incandescent"*/
+    this.darkModeService.state == DarkModeState.Light ? this.darkModeIcon = "wb_incandescent" : this.darkModeIcon = "wb_iridescent";
+    this.darkModeService.Toggle();
   }
 }

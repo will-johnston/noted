@@ -1,16 +1,10 @@
-.folder {
-    background-color: lightblue;
-}
-.note {
-    background-color: lightgray;
-}
+.folder {}
+.note {}
 #navbar {
     width: 80%;
-    background-color: lightcyan;
 }
 #actionbar {
     width: 20%;
-    background-color: lightcoral;
 }
 #menubar {
     max-height: 75px;
