@@ -27,6 +27,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -52,6 +53,7 @@ import io.github.mthli.knife.KnifeText;
 public class DocumentActivity extends AppCompatActivity {
     // document properties
     private KnifeText knife;
+    private TextView lastEditedByView;
     private String title;
     private String id;
     private String imageId;
@@ -74,8 +76,9 @@ public class DocumentActivity extends AppCompatActivity {
 
     // Firebase variables
     private FirebaseStorage firebaseStorage;  // used for uploading images
-    private DatabaseReference storageRef;
     private DatabaseReference ref;  // used for listening for changes in document
+    private FirebaseUser currentUser;
+    private DatabaseReference userRef;
 
 
 
@@ -93,7 +96,7 @@ public class DocumentActivity extends AppCompatActivity {
         currentHtml = null;
         handler = new Handler();
         placeholder = getResources().getDrawable(R.drawable.loading, null);
-
+        lastEditedByView = findViewById(R.id.lastEditedBy);
 
         verifyUser();  // make sure user is still logged in
         setupKnife();  // initialize knife and its properties
@@ -131,6 +134,10 @@ public class DocumentActivity extends AppCompatActivity {
                     return;
                 }
                 updateFromRemoteChanges(fc);
+                if (fc.getLastEditedBy() != null) {
+                    // update the last edited by
+                    updateLastEditedBy(fc.getLastEditedBy());
+                }
             }
 
             @Override
@@ -138,6 +145,39 @@ public class DocumentActivity extends AppCompatActivity {
 
             }
         };
+    }
+
+    private void updateLastEditedBy(String lastEditedBy) {
+        this.userRef.child(lastEditedBy).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                User user = dataSnapshot.getValue(User.class);
+                String text = "Last Edited By: ";
+                if (user == null ) {
+                    lastEditedByView.setText(text);
+                }
+                String name = user.getName();
+                String email = user.getEmail();
+                String id = user.getId();
+                String update;
+                if (name != null) {
+                   update = text + name;
+                   lastEditedByView.setText(update);
+                }
+                else if (email != null) {
+                   update = text + email;
+                   lastEditedByView.setText(update);
+                } else {
+                   update = text + id;
+                   lastEditedByView.setText(update);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     /*
@@ -267,7 +307,10 @@ public class DocumentActivity extends AppCompatActivity {
     public void addChangeToDatabase() {
         currentHtml = knife.toHtml();
         if (!currentHtml.equals(changedHtml)) {
+            // add changed text
             ref.child("data").setValue(currentHtml);
+            // add last edited by
+            ref.child("lastEditedBy").setValue(currentUser.getUid());
         }
     }
 
@@ -329,7 +372,6 @@ public class DocumentActivity extends AppCompatActivity {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()) {
                     imageId = (String)dataSnapshot.getValue();
-                    Log.d("hi", imageId);
                     MenuItem item = menuFinal.findItem(R.id.showOriginalImage);
                     item.setVisible(true);
                 }
@@ -347,7 +389,7 @@ public class DocumentActivity extends AppCompatActivity {
     private void verifyUser() {
         // verify user is logged in still
         FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+        currentUser = firebaseAuth.getCurrentUser();
         if(currentUser == null) {
             //show login activity
             Intent loginIntent = new Intent(this, LoginActivity.class);
@@ -376,6 +418,7 @@ public class DocumentActivity extends AppCompatActivity {
         this.ref = database.getReference(path);
         this.ref.addValueEventListener(getListener());
         firebaseStorage = FirebaseStorage.getInstance();
+        this.userRef = database.getReference("userList");
     }
 
     private void setupActionBar() {
