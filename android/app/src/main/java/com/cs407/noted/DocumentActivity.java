@@ -134,10 +134,7 @@ public class DocumentActivity extends AppCompatActivity {
                     return;
                 }
                 updateFromRemoteChanges(fc);
-                if (fc.getLastEditedBy() != null) {
-                    // update the last edited by
-                    updateLastEditedBy(fc.getLastEditedBy());
-                }
+
             }
 
             @Override
@@ -146,6 +143,26 @@ public class DocumentActivity extends AppCompatActivity {
             }
         };
     }
+
+    private ValueEventListener getLastEditedByListener() {
+        return new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                String lastEditedBy = (String) dataSnapshot.getValue();
+                if (lastEditedBy != null) {
+                    // update the last edited by
+                    updateLastEditedBy(lastEditedBy);
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+    }
+
 
     private void updateLastEditedBy(String lastEditedBy) {
         this.userRef.child(lastEditedBy).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -415,8 +432,11 @@ public class DocumentActivity extends AppCompatActivity {
     private void setupDatabase() {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         String path = String.format("fileContents/%s", this.id);
+        String lebPath = String.format("%s/lastEditedBy", path);
         this.ref = database.getReference(path);
         this.ref.addValueEventListener(getListener());
+        DatabaseReference lastEditedByRef = database.getReference(lebPath);
+        lastEditedByRef.addValueEventListener(getLastEditedByListener());
         firebaseStorage = FirebaseStorage.getInstance();
         this.userRef = database.getReference("userList");
     }
