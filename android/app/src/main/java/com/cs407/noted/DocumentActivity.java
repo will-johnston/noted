@@ -82,6 +82,7 @@ public class DocumentActivity extends AppCompatActivity {
 
 
 
+
     @Override
 
     //TODO: create on resume and on restart methods
@@ -97,6 +98,7 @@ public class DocumentActivity extends AppCompatActivity {
         handler = new Handler();
         placeholder = getResources().getDrawable(R.drawable.loading, null);
         lastEditedByView = findViewById(R.id.lastEditedBy);
+
 
         verifyUser();  // make sure user is still logged in
         setupKnife();  // initialize knife and its properties
@@ -439,6 +441,7 @@ public class DocumentActivity extends AppCompatActivity {
         lastEditedByRef.addValueEventListener(getLastEditedByListener());
         firebaseStorage = FirebaseStorage.getInstance();
         this.userRef = database.getReference("userList");
+
     }
 
     private void setupActionBar() {
