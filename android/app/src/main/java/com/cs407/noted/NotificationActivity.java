@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -30,6 +31,7 @@ public class NotificationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_notification);
 
         ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
         actionBar.setTitle("Notifications");
 
         Intent intent = getIntent();
@@ -47,5 +49,12 @@ public class NotificationActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         adapter.notifyDataSetChanged();
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item){
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivityForResult(intent, 0);
+        return true;
+
     }
 }
