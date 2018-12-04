@@ -168,6 +168,9 @@ export class NoteComponent implements OnInit, OnDestroy {
           else if (value[0].retain && value[1].insert) { // log the ops
             edit["index"] = value[0].retain;
             edit["content"] = value[1].insert;
+          } else if (value[0].insert) { // fix index 0 bug
+            edit["index"] = 0;
+            edit["content"] = value[0].insert;
           }
         }
         // push the edit to global edits array
@@ -195,7 +198,11 @@ export class NoteComponent implements OnInit, OnDestroy {
         console.log("LENGTH = " + size);
       }
     }
-    if (index && size) {
+
+    // fix for index 0 bug
+    if (delta.ops.length == 1) index = 0;
+    
+    if (index == 0 && size) {
       // loop through database entries
       var listRef = this.fireDatabase.list('/audioTracking/' + this.noteid, ref => ref.orderByChild("retain").endAt(index))
       listRef.snapshotChanges()
