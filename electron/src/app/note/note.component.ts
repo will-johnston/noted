@@ -4,6 +4,7 @@ import { Router, ActivatedRoute, Params } from '@angular/router';
 import { AngularFireDatabase, AngularFireObject } from '@angular/fire/database';
 import { ElectronService } from 'ngx-electron';
 import { AngularFireStorage } from 'angularfire2/storage';
+import { MatDialog } from '@angular/material';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import * as firebase from 'firebase';
 import { FilesystemService } from '../services/filesystem.service';
@@ -59,6 +60,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   public viewingSharedNote : boolean = false;
   public imageUrl : string;
   public doesNotHaveImage : boolean = true;
+  private viewingImage : boolean = false;
 
   edits: Array<any>;
 
@@ -72,7 +74,8 @@ export class NoteComponent implements OnInit, OnDestroy {
     private appComponent: AppComponent,
     private confirmationDialogService: ConfirmationDialogService,
     private userListService: UserListService,
-    private sharingService: SharingService
+    private sharingService: SharingService,
+    private dialog: MatDialog
   ) {
     this.text = "";
     this.html = "";
@@ -502,4 +505,23 @@ export class NoteComponent implements OnInit, OnDestroy {
       this.router.navigate(['homescreen']);
     }
   }
+  viewImage() : void {
+    if (this.viewingImage)
+      return;
+    //console.log("Clicked viewImage");
+    const dialogRef = this.dialog.open(ImageDialog);
+    dialogRef.componentInstance.imageUrl = this.imageUrl;
+    this.viewingImage = true;
+    dialogRef.afterClosed().subscribe(result => {
+      this.viewingImage = false;
+    });
+  }
+}
+
+@Component({
+  selector: 'image-dialog',
+  templateUrl: './image-dialog.html'
+})
+export class ImageDialog {
+  public imageUrl: string;
 }

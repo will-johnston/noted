@@ -15,7 +15,7 @@
         <a routerLink="/homescreen" mat-stroked-button>
             <mat-icon>arrow_back</mat-icon>
         </a>
-        <button *ngIf="imageUrl != null" mat-stroked-button disabled={{doesNotHaveImage}}>
+        <button *ngIf="imageUrl != null" mat-stroked-button (click)='viewImage()' disabled={{doesNotHaveImage}}>
             <mat-icon>photo</mat-icon>
         </button>
         <audio controls></audio>

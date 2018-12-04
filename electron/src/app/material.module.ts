@@ -1,5 +1,5 @@
 import { MatButtonModule, MatMenuModule, MatCheckboxModule, MatGridList, MatGridListModule, MatListModule, MatBadgeModule } from '@angular/material';
-import { MatIconModule, MatToolbarModule } from '@angular/material';
+import { MatIconModule, MatToolbarModule, MatDialogModule } from '@angular/material';
 import { NgModule } from '@angular/core';
 @NgModule({
     imports : [
@@ -18,7 +18,8 @@ import { NgModule } from '@angular/core';
         MatListModule,
         MatMenuModule,
         MatToolbarModule,
-        MatBadgeModule
+        MatBadgeModule,
+        MatDialogModule
     ]
 })
 
