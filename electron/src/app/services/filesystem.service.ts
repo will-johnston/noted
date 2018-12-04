@@ -46,6 +46,7 @@ export class FilesystemService {
       //this.updateCurrentState(['/']);
       this.startSubscription();
     }*/
+    this.userid = "Kg17lhjiz6hyBOxajvzbicpCtaC2";
       firebase.auth().onAuthStateChanged((user) => {
         if (user) {
           console.log("filesystem logged in");
@@ -195,7 +196,7 @@ export class FilesystemService {
     }
     if (element.type === "DOCUMENT") {
       var note : Note;
-      if (element.parent_id != null) {
+      if (element.parent_id != null && element.parent_id != "root") {
         //element is a child, set parentId, set folder, and calculate it's path
         var parentFolder : Folder = this.getFolder(element.parent_id);
         if (parentFolder == null) {
@@ -230,6 +231,9 @@ export class FilesystemService {
         folder = new Folder(element.title, element.id, element.children, path.toString(), null);
       }
       return folder;
+    }
+    else if (element.type === "IMAGE") {
+
     }
     else {
       if (this.debug) console.error("makeElement() doesn't know how to handle type: %s", element.type);

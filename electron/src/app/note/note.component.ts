@@ -57,6 +57,8 @@ export class NoteComponent implements OnInit, OnDestroy {
   private lastEditedByUID: string;
   private currentUser: firebase.User;
   public viewingSharedNote : boolean = false;
+  public imageUrl : string;
+  public doesNotHaveImage : boolean = true;
 
   edits: Array<any>;
 
@@ -74,6 +76,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   ) {
     this.text = "";
     this.html = "";
+    this.imageUrl = "";
     this.edits = new Array();
     this.currentUser = firebase.auth().currentUser;
   }
@@ -277,6 +280,16 @@ export class NoteComponent implements OnInit, OnDestroy {
           else {
             this.noteInfo.text = value.data;
             this.lastEditedByUID = value.lastEditedBy;
+            if (value.image != null) {
+              var tmp = this.storage.ref(`androidImages/${value.image}`).getDownloadURL();
+              tmp.subscribe(value => {
+                if (value != null) {
+                  this.imageUrl = value;
+                  console.log(this.imageUrl);
+                  this.doesNotHaveImage = false;
+                }
+              });
+            }
             this.userListService.get(this.lastEditedByUID).then(user => {
               this.lastEditedBy = user.email;
             }).catch(err => {
