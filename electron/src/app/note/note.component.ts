@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { Router, ActivatedRoute, Params } from '@angular/router';
-import { AngularFireDatabase, AngularFireObject } from '@angular/fire/database';
+import { AngularFireDatabase, AngularFireObject, AngularFireList } from '@angular/fire/database';
 import { ElectronService } from 'ngx-electron';
 import { AngularFireStorage } from 'angularfire2/storage';
 import { debounceTime, distinctUntilChanged, switchMap, finalize } from 'rxjs/operators';
@@ -17,6 +17,7 @@ import { ImageResize } from 'quill-image-resize-module';
 Quill.register('modules/imageResize', ImageResize);
 
 import { Observable, Subject } from 'rxjs';
+import { take } from 'rxjs/operators'
 import { AppComponent } from '../app.component';
 import { UserListService } from '../services/user-list.service';
 import { SharingService } from '../services/sharing.service';
@@ -182,6 +183,40 @@ export class NoteComponent implements OnInit, OnDestroy {
     });
   }
 
+  updateIndices(delta) {
+    // get index
+    var index, size;
+    for (var i = 0; i < delta.ops.length; i++) {
+      if (delta.ops[i].retain) {
+        index = delta.ops[i].retain;
+        console.log(index);
+      } else if (delta.ops[i].insert) {
+        size = delta.ops[i].insert.length;
+        console.log("LENGTH = " + size);
+      }
+    }
+    if (index && size) {
+      // loop through database entries
+      var listRef = this.fireDatabase.list('/audioTracking/' + this.noteid, ref => ref.orderByChild("retain").endAt(index))
+      listRef.snapshotChanges()
+      .pipe(take(1)).subscribe(actions => {
+        actions.forEach(action => {
+          console.log("ACTION:" + action.key);
+          console.log(action.payload.val());
+          let item = <any>action.payload.val();
+          if (index < item.delta[0].retain) {
+            console.log("GOT ONE");
+            item.delta[0].retain += size;
+            listRef.update(action.key, item);
+          }
+        });
+      });
+      
+      // call highlight if audio
+      this.highlightIfAudio();
+    }
+  }
+
   highlightEdits(edits, range) {
     if (edits.length > 0) {
       for (var x = 0; x < edits.length; x++) {
@@ -336,7 +371,7 @@ export class NoteComponent implements OnInit, OnDestroy {
             const element = delta.ops[i];
             console.log(element)
           }
-          this.highlightIfAudio();
+          this.updateIndices(delta);
         }).catch(err => {
           console.log("Audio Tracking Error: %s", err);
         });
