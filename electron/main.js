@@ -45,7 +45,7 @@ function createWindow() {
         win.loadURL(url.format({
             //pathname: path.join(__dirname, '/app/index.html'),
             //'${__dirname}/dist/index.html' //for angular
-            pathname: path.join(__dirname, '/dist/electron/index.html'),
+            pathname: path.join(__dirname, '/dist/index.html'),
             protocol: 'file:',
             slashes: true
         }));
