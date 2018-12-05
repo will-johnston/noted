@@ -6,7 +6,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 import { LoginComponent } from './login/login.component';
 import { HomescreenComponent } from './homescreen/homescreen.component';
-import { NoteComponent } from './note/note.component';
+import { NoteComponent, ImageDialog } from './note/note.component';
 
 import { environment } from '../environments/environment';
 import { AngularFireModule } from 'angularfire2';
@@ -36,6 +36,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     HomescreenComponent,
     NoteComponent,
     ConfirmationDialogComponent,
+    ImageDialog
   ],
   imports: [
     BrowserModule,
@@ -52,8 +53,11 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     RouterModule,
     NgbModule.forRoot()
   ],
+  entryComponents : [
+    ConfirmationDialogComponent,
+    ImageDialog
+  ],
   providers: [AuthService, FilesystemService, ConfirmationDialogService],
-  entryComponents: [ ConfirmationDialogComponent ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
