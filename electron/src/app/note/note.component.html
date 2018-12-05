@@ -6,15 +6,18 @@
 </ng-template>
 <div *ngIf="viewingSharedNote == false; else sharedToolbar">
     <mat-toolbar>
+        <a routerLink="/homescreen" mat-stroked-button>
+            <mat-icon>arrow_back</mat-icon>
+        </a>
         <button (click)='saveNote()' mat-stroked-button>
             <mat-icon>save</mat-icon>
         </button>
         <button (click)='deleteNote(noteid, noteInfo.name)' mat-stroked-button>
             <mat-icon>delete</mat-icon>
         </button>
-        <a routerLink="/homescreen" mat-stroked-button>
-            <mat-icon>arrow_back</mat-icon>
-        </a>
+        <button mat-stroked-button (click)='shareImageDialog()'>
+            <mat-icon>share</mat-icon>
+        </button>
         <button *ngIf="imageUrl != null" mat-stroked-button (click)='viewImage()' disabled={{doesNotHaveImage}}>
             <mat-icon>photo</mat-icon>
         </button>

@@ -1,0 +1,12 @@
+<div mat-dialog-content class="mat-typography" id="shareDialogContent">
+    <form>
+        <p>Would do you want to share with?</p>
+        <mat-form-field>
+            <input matInput placeholder="Email Address" #emailField id="emailField" style="text-decoration: underline red">
+        </mat-form-field>
+    </form>
+</div>
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-button [mat-dialog-close]="emailField.value" cdkFocusInitial>Share</button>
+</mat-dialog-actions>

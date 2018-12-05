@@ -62,7 +62,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   public viewingSharedNote : boolean = false;
   public imageUrl : string;
   public doesNotHaveImage : boolean = true;
-  private viewingImage : boolean = false;
+  private viewingModal : boolean = false;
 
   edits: Array<any>;
 
@@ -592,15 +592,15 @@ export class NoteComponent implements OnInit, OnDestroy {
     }
   }
   viewImage() : void {
-    if (this.viewingImage)
+    if (this.viewingModal)
       return;
     //console.log("Clicked viewImage");
     const dialogRef = this.dialog.open(ImageDialog);
     dialogRef.componentInstance.imageUrl = this.imageUrl;
-    this.viewingImage = true;
+    this.viewingModal = true;
     this.resizeImage(dialogRef);
     dialogRef.afterClosed().subscribe(result => {
-      this.viewingImage = false;
+      this.viewingModal = false;
     });
   }
 
@@ -655,11 +655,21 @@ export class NoteComponent implements OnInit, OnDestroy {
       return filename;
     }
   }
+  shareImageDialog() {
+    if (this.viewingModal)
+      return;
+    const dialogRef = this.dialog.open(ShareDialog);
+    this.viewingModal = true;
+    dialogRef.afterClosed().subscribe(result => {
+      this.viewingModal = false;
+      console.log(result);
+    });
+  }
 }
 
 @Component({
   selector: 'image-dialog',
-  templateUrl: './image-dialog.html'
+  templateUrl: '../dialogs/image-dialog.html'
 })
 export class ImageDialog {
   public imageUrl: string;
@@ -686,3 +696,8 @@ export class ImageDialog {
     return (obj.width == width) && (obj.height == height);
   }
 }
+@Component({
+  selector: 'share-dialog',
+  templateUrl: '../dialogs/share-dialog.html'
+})
+export class ShareDialog {}

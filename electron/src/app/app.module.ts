@@ -6,15 +6,15 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 import { LoginComponent } from './login/login.component';
 import { HomescreenComponent } from './homescreen/homescreen.component';
-import { NoteComponent, ImageDialog } from './note/note.component';
+import { NoteComponent, ImageDialog, ShareDialog } from './note/note.component';
 
 import { environment } from '../environments/environment';
 import { AngularFireModule } from 'angularfire2';
 import { AngularFireDatabaseModule } from 'angularfire2/database';
 import { AngularFireAuthModule } from 'angularfire2/auth';
 import { AngularFireStorageModule } from 'angularfire2/storage';
+import { FormsModule } from '@angular/forms'
 import { MyMaterialModule } from './material.module';
-
 
 
 import { NgxElectronModule } from 'ngx-electron';
@@ -36,7 +36,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     HomescreenComponent,
     NoteComponent,
     ConfirmationDialogComponent,
-    ImageDialog
+    ImageDialog,
+    ShareDialog
   ],
   imports: [
     BrowserModule,
@@ -51,11 +52,13 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     QuillModule,
     HttpClientModule,
     RouterModule,
+    FormsModule,
     NgbModule.forRoot()
   ],
   entryComponents : [
     ConfirmationDialogComponent,
-    ImageDialog
+    ImageDialog,
+    ShareDialog
   ],
   providers: [AuthService, FilesystemService, ConfirmationDialogService],
   bootstrap: [AppComponent]
