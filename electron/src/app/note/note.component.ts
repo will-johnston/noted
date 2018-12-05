@@ -602,6 +602,7 @@ export class NoteComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed().subscribe(result => {
       this.viewingImage = false;
     });
+  }
 
   imageHandler() {
     const input = document.createElement('input');
