@@ -6,7 +6,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 import { LoginComponent } from './login/login.component';
 import { HomescreenComponent } from './homescreen/homescreen.component';
-import { NoteComponent, ImageDialog, ShareDialog } from './note/note.component';
+import { NoteComponent, ImageDialog, ShareDialog, ShareFailureSnack, ShareSuccessSnack } from './note/note.component';
 
 import { environment } from '../environments/environment';
 import { AngularFireModule } from 'angularfire2';
@@ -37,7 +37,9 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     NoteComponent,
     ConfirmationDialogComponent,
     ImageDialog,
-    ShareDialog
+    ShareDialog,
+    ShareFailureSnack,
+    ShareSuccessSnack
   ],
   imports: [
     BrowserModule,
@@ -58,7 +60,9 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
   entryComponents : [
     ConfirmationDialogComponent,
     ImageDialog,
-    ShareDialog
+    ShareDialog,
+    ShareFailureSnack,
+    ShareSuccessSnack
   ],
   providers: [AuthService, FilesystemService, ConfirmationDialogService],
   bootstrap: [AppComponent]

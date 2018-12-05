@@ -1,4 +1,4 @@
-import { MatButtonModule, MatMenuModule, MatCheckboxModule, MatGridList, MatGridListModule, MatListModule, MatBadgeModule } from '@angular/material';
+import { MatButtonModule, MatMenuModule, MatCheckboxModule, MatGridList, MatGridListModule, MatListModule, MatBadgeModule, MatSnackBarModule } from '@angular/material';
 import { MatIconModule, MatToolbarModule, MatDialogModule, MatFormFieldModule, MatInputModule } from '@angular/material';
 import { NgModule } from '@angular/core';
 @NgModule({
@@ -21,7 +21,8 @@ import { NgModule } from '@angular/core';
         MatBadgeModule,
         MatDialogModule,
         MatFormFieldModule,
-        MatInputModule
+        MatInputModule,
+        MatSnackBarModule
     ]
 })
 
