@@ -1,6 +1,8 @@
-<div mat-dialog-content class="mat-typography">
-    <img src={{imageUrl}} />
+<div mat-dialog-content class="mat-typography" id="imageDialogContent">
+    <img src={{imageUrl}} id="imageDialogImage"/>
 </div>
 <mat-dialog-actions align="end">
-    <button mat-button mat-dialog-close>Close</button>
+    <button mat-button mat-dialog-close>
+        <mat-icon>close</mat-icon>
+    </button>
 </mat-dialog-actions>

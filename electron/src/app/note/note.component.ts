@@ -4,7 +4,7 @@ import { Router, ActivatedRoute, Params } from '@angular/router';
 import { AngularFireDatabase, AngularFireObject } from '@angular/fire/database';
 import { ElectronService } from 'ngx-electron';
 import { AngularFireStorage } from 'angularfire2/storage';
-import { MatDialog } from '@angular/material';
+import { MatDialog, MatDialogRef } from '@angular/material';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import * as firebase from 'firebase';
 import { FilesystemService } from '../services/filesystem.service';
@@ -494,6 +494,26 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.confirmationDialogService.confirm('Confirm', "Are you sure you want to delete the note '" + name + "'?")
       .then((confirmed) => { if (confirmed) { this.__delete(); } });
   }
+  resizeImage(dialogRef : MatDialogRef<ImageDialog>) {
+    if (dialogRef == null || dialogRef == undefined)
+      return;
+    let obj : ImageDialog = dialogRef.componentInstance;
+    if (obj == null || obj == undefined)
+      return;
+    obj.getSize()
+    .then(dimensions => {
+      //https://stackoverflow.com/a/14731922/2220534
+      let currentWidth = (<HTMLDivElement>document.getElementById("imageDialogContent")).clientWidth;
+      let currentHeight = (<HTMLDivElement>document.getElementById("imageDialogContent")).clientHeight;
+      /*var ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
+      return { width: srcWidth*ratio, height: srcHeight*ratio };*/
+      var ratio = Math.min(currentWidth / dimensions[0], currentHeight / dimensions[1]);
+      obj.applySize(dimensions[0] * ratio, dimensions[1] * ratio);
+    })
+    .catch(err => {
+      console.log(`Failed to resize image, err: ${err}`);
+    });
+  }
   //Permanently deletes a note
   __delete() {
     if (this.filesystemService.deleteNote(this.noteInfo)) {
@@ -512,6 +532,7 @@ export class NoteComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(ImageDialog);
     dialogRef.componentInstance.imageUrl = this.imageUrl;
     this.viewingImage = true;
+    this.resizeImage(dialogRef);
     dialogRef.afterClosed().subscribe(result => {
       this.viewingImage = false;
     });
@@ -524,4 +545,26 @@ export class NoteComponent implements OnInit, OnDestroy {
 })
 export class ImageDialog {
   public imageUrl: string;
+  
+  //return new Promise [width, height]
+  public getSize() : Promise<[number, number]> {
+    return new Promise((resolve, reject) => {
+      var obj = (<HTMLImageElement>document.getElementById("imageDialogImage"));
+      if (obj == undefined || obj == null) {
+        reject("Failed to get Image Element");
+      }
+      obj.addEventListener("load", function() {
+        resolve([obj.width, obj.height]);
+      });
+    });
+  }
+
+  public applySize(width: number, height: number) : boolean {
+    var obj = (<HTMLImageElement>document.getElementById("imageDialogImage"));
+    if (obj == null || obj == undefined)
+      return false;
+    obj.width = width;
+    obj.height = height;
+    return (obj.width == width) && (obj.height == height);
+  }
 }
