@@ -466,7 +466,7 @@ export class FilesystemService {
   }
   createNote(name : string) : boolean {
     if (this.currentContainsNote(name)) {
-      alert(name + " already exists in this folder!");
+      //alert(name + " already exists in this folder!");
       return false;
     }
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "DOCUMENT", id : null});
@@ -481,7 +481,7 @@ export class FilesystemService {
   }
   createFolder(name : string) : boolean {
     if (this.currentContainsFolder(name)) {
-      alert(name + " already exists in this folder!");
+      //alert(name + " already exists in this folder!");
       return false;
     }
     //this.fireDatabase.list('users/' + this.userid).push({ title : name, type : "FOLDER", children : null});

@@ -1,9 +1,12 @@
+@import '../../node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css';
+
 /*Homescreen*/
-#navbar {
+#menubar {
     background-color: darkcyan;
 }
 .folder {
     background-color: darkblue;
+    color: white;
 }
 .note {
     background-color: darkgray;

@@ -1,0 +1,11 @@
+<div mat-dialog-content class="mat-typography" id="createFolderDialogContent">
+    <form>
+        <mat-form-field>
+            <input matInput placeholder="Folder Name" #folderNameField id="folderNameField">
+        </mat-form-field>
+    </form>
+</div>
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-button [mat-dialog-close]="folderNameField.value" cdkFocusInitial>Create</button>
+</mat-dialog-actions>
