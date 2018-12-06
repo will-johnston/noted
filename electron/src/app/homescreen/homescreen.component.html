@@ -21,6 +21,8 @@
         </mat-grid-tile>
       </mat-grid-list>
 
+      <div style="height:10px;"></div>
+
       <h5 style="padding-left: 30px">Notes</h5>
       <mat-grid-list cols="3" rowHeight="100px">
         <mat-grid-tile class="note" *ngFor="let note of notes" colspan="1" rowspan="1">
@@ -28,7 +30,7 @@
             <div style="position: absolute; left: 6%; bottom: 30px;">
               <mat-icon (click)="gotoNote(idField.value)">note</mat-icon>
             </div>
-            <div style="position: absolute; left: 18%; bottom: 35px; font-size: 20px;">
+            <div style="position: absolute; left: 18%; bottom: 35px; font-size: 20px;" (click)="gotoNote(idField.value)">
                 {{note.name}}
             </div>
             <div style="position: absolute; right: 4%; bottom: 5px;">
@@ -52,12 +54,15 @@
     </div>
   </div>
   <ng-template #emptyFolder>
-    <div style="position: absolute; left: 35%; top: 200px; width: 500px;">
-        <h3>Nothing here!</h3>
-        <div class="addmore-icon">
-            <mat-icon class="addmore-icon-image">add_circle</mat-icon>
-        </div>
+    <div style="position: absolute; left: 35%; top: 200px; width: 200px;">
+  
+      <h3>Nothing here!</h3>
+      <div class="addmore-icon">
+        <mat-icon class="addmore-icon-image">add_circle</mat-icon>
       </div>
+    </div>
+  
+    <div class="circleshape" style="position:relative; left: 31%; top: 85px;"></div>
   </ng-template>
 </div>
 
@@ -95,21 +100,61 @@
   <button (click)="createNote(noteName.value)">Create a note</button>-->
 
 <ng-template #sharedWithMe>
-  <h5 style="padding-left: 30px">Shared Notes</h5>
-  <mat-grid-list cols="4" rowHeight="100px">
-    <mat-grid-tile class="note" *ngFor="let note of sharedNotes" colspan="1" rowspan="1">
-      <div>
-        {{note.name}}
-        <input #idField id="idField" type="hidden" value={{note.id}} />
-        <br />
-        <button mat-raised-button color="primary" (click)="gotoSharedNote(note)">Go to Note</button>
-        <!--<button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
-          <mat-icon aria-label="Delete">delete</mat-icon>
-        </button>-->
+  <div *ngIf="sharedNotes.length != 0; else sharedEmpty">
+      <div style="position: absolute; left: 7.5%; width: 80%;">
+    <h5 style="padding-left: 30px">Shared Notes</h5>
+    <!--<mat-grid-list cols="4" rowHeight="100px">
+      <mat-grid-tile class="note" *ngFor="let note of sharedNotes" colspan="1" rowspan="1">
+        <div>
+          {{note.name}}
+          <input #idField id="idField" type="hidden" value={{note.id}} />
+          <br />
+          <button mat-raised-button color="primary" (click)="gotoSharedNote(note)">Go to Note</button>
+          <!--<button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
+            <mat-icon aria-label="Delete">delete</mat-icon>
+          </button>-->
+        <!--</div>
+  
+      </mat-grid-tile>
+    </mat-grid-list>-->
+    <mat-grid-list cols="3" rowHeight="100px">
+      <mat-grid-tile class="note" *ngFor="let note of sharedNotes" colspan="1" rowspan="1">
+          <div>
+              <div style="position: absolute; left: 6%; bottom: 30px;">
+                <mat-icon (click)="gotoSharedNote(note)">note</mat-icon>
+              </div>
+              <div style="position: absolute; left: 18%; bottom: 35px; font-size: 20px;" (click)="gotoSharedNote(note)">
+                  {{note.name}}
+              </div>
+              <div style="position: absolute; right: 4%; bottom: 5px;">
+                <!--<button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
+                  <mat-icon aria-label="Delete">delete</mat-icon>
+                </button>-->
+              </div>
+              <div style="position: absolute; right: 4%; top: 5px;">
+                <button mat-mini-fab color="primary">
+                  <mat-icon aria-label="Goto" (click)="gotoSharedNote(note)">arrow_forward_ios</mat-icon>
+                </button>
+              </div>
+              <input #idField id="idField" type="hidden" value={{note.id}} />
+              <br />
+              <!--<button mat-raised-button color="primary" (click)="gotoNote(idField.value)">Go to Note</button>-->
+              
+            </div>
+      </mat-grid-tile>
+    </mat-grid-list>
+      
+  </div>
+  </div>
+</ng-template>
+<ng-template #sharedEmpty>
+    <div style="position: absolute; left: 35%; top: 200px; width: 200px;">
+        <h3>Nothing here!</h3>
+        <div class="addmore-icon">
+            <mat-icon class="addmore-icon-image">share</mat-icon>
+        </div>
       </div>
-
-    </mat-grid-tile>
-  </mat-grid-list>
+      <div class="circleshape" style="position:relative; left: 31%; top: 85px;"></div>
 </ng-template>
 
 <div id="menubar">

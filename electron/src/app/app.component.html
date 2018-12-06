@@ -7,7 +7,7 @@
   </div>
   <div id="userbar">
     <mat-toolbar>
-      <button mat-button [matMenuTriggerFor]="notifMenu">
+      <button mat-button [matMenuTriggerFor]="notifMenu" id="notificationsButton">
         <mat-icon matBadge="{{notifications.length}}" matBadgeColor="warn" matBadgeOverlap="true">notifications</mat-icon>
       </button>
       <button mat-button [matMenuTriggerFor]="userMenu">
@@ -15,19 +15,28 @@
       </button>
     </mat-toolbar>
     
-    <mat-menu #notifMenu="matMenu">
+    <mat-menu #notifMenu="matMenu" id="notifMenu">
       <!--
          *ngFor="let folder of folders"
       colspan="1"
       rowspan="1"
       (click)="gotoFolder(folder.name)">
       -->
-      <h5>Notifications</h5>
-      <div mat-list-item *ngFor="let notification of notifications">
-        {{notification.text}}
-        <button mat-button (click)="clearNotification(notification)">
-          <mat-icon>close</mat-icon>
-        </button>
+      <div style="padding-left: 10px; padding-right: 10px;">
+          <h5 style="width: 100%; text-align: center;">Notifications</h5>
+          <div mat-list-item *ngFor="let notification of notifications">
+            <div style="width: 250px; height: 100px;">
+                <div style="width: 75%; position: relative; left: 0; top: 0;">
+                    {{notification.text}}
+                </div>
+                <div style="width: 25%; position: relative; left: 75%; bottom: 50%;">
+                    <button mat-button mat-icon-button (click)="clearNotification(natification)">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                </div>
+            </div>
+            
+          </div>
       </div>
       <!--<div mat-list-item>
         <p>ryaneverett33@outlook.com has shared 'interstellar' with you.</p>
