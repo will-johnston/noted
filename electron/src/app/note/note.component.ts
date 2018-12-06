@@ -59,10 +59,10 @@ export class NoteComponent implements OnInit, OnDestroy {
   lastEditedBy: string;
   private lastEditedByUID: string;
   private currentUser: firebase.User;
-  public viewingSharedNote : boolean = false;
-  public imageUrl : string;
-  public doesNotHaveImage : boolean = true;
-  private viewingImage : boolean = false;
+  public viewingSharedNote: boolean = false;
+  public imageUrl: string;
+  public doesNotHaveImage: boolean = true;
+  private viewingImage: boolean = false;
 
   edits: Array<any>;
 
@@ -143,10 +143,10 @@ export class NoteComponent implements OnInit, OnDestroy {
   //This is definitely cheating, but it seems to work... [Ryan]
   updateEditorText(text: string, range) {
     if (text != null) {
-      this.editor.root.innerHTML = text;
+      this.editor.root.innerHTML = text; // this sucks [Bryan]
       // set the cursor back to the original position
       if (range) { // cursor is somewhere
-        console.log("range: " + range.index);
+        //console.log("range: " + range.index);
         this.editor.setSelection(range.index, range.length, 'silent');
         this.editor.format('background', false, 'silent');
       } else { // editor wasn't in focus
@@ -194,37 +194,38 @@ export class NoteComponent implements OnInit, OnDestroy {
 
   updateIndices(delta) {
     // get index
+    //console.log(delta)
     var index, size;
     for (var i = 0; i < delta.ops.length; i++) {
       if (delta.ops[i].retain) {
         index = delta.ops[i].retain;
-        console.log(index);
+        //console.log(index);
       } else if (delta.ops[i].insert) {
         size = delta.ops[i].insert.length;
-        console.log("LENGTH = " + size);
+        //console.log("LENGTH = " + size);
       }
     }
 
     // fix for index 0 bug
     if (delta.ops.length == 1) index = 0;
-    
-    if (index == 0 && size) {
+
+    if ((index == 0 || index) && size) {
       // loop through database entries
       var listRef = this.fireDatabase.list('/audioTracking/' + this.noteid, ref => ref.orderByChild("retain").endAt(index))
       listRef.snapshotChanges()
-      .pipe(take(1)).subscribe(actions => {
-        actions.forEach(action => {
-          console.log("ACTION:" + action.key);
-          console.log(action.payload.val());
-          let item = <any>action.payload.val();
-          if (index < item.delta[0].retain) {
-            console.log("GOT ONE");
-            item.delta[0].retain += size;
-            listRef.update(action.key, item);
-          }
+        .pipe(take(1)).subscribe(actions => {
+          actions.forEach(action => {
+            //console.log("ACTION:" + action.key);
+            //console.log(action.payload.val());
+            let item = <any>action.payload.val();
+            if (index < item.delta[0].retain) {
+              //console.log("GOT ONE");
+              item.delta[0].retain += size;
+              listRef.update(action.key, item);
+            }
+          });
         });
-      });
-      
+
       // call highlight if audio
       this.highlightIfAudio();
     }
@@ -353,7 +354,7 @@ export class NoteComponent implements OnInit, OnDestroy {
               tmp.subscribe(value => {
                 if (value != null) {
                   this.imageUrl = value;
-                  console.log(this.imageUrl);
+                  //console.log(this.imageUrl);
                   this.doesNotHaveImage = false;
                 }
               });
@@ -384,20 +385,22 @@ export class NoteComponent implements OnInit, OnDestroy {
   editorContentChanged({ editor, html, text, content, delta, oldDelta, source }) {
     this.text = text;
     this.html = html;
-    if (this.recording) { // currently recording audio
-      var fullTimestamp = Date.now() - this.startTime;
-      var roundedTimestamp = Math.floor(fullTimestamp / 1000); // timestamp in seconds from start
-      this.fireDatabase.object("/audioTracking/" + this.noteid + "/" + fullTimestamp).set({ delta: delta.ops, timestamp: roundedTimestamp })
-        .then(_ => {
-          console.log("Tracked edit at: " + fullTimestamp);
-          for (let i = 0; i < delta.ops.length; i++) {
-            const element = delta.ops[i];
-            console.log(element)
-          }
-          this.updateIndices(delta);
-        }).catch(err => {
-          console.log("Audio Tracking Error: %s", err);
-        });
+    if (source == "user" && oldDelta != delta) {
+      this.updateIndices(delta);
+      if (this.recording) { // currently recording audio
+        var fullTimestamp = Date.now() - this.startTime;
+        var roundedTimestamp = Math.floor(fullTimestamp / 1000); // timestamp in seconds from start
+        this.fireDatabase.object("/audioTracking/" + this.noteid + "/" + fullTimestamp).set({ delta: delta.ops, timestamp: roundedTimestamp })
+          .then(_ => {
+            console.log("Tracked edit at: " + fullTimestamp);
+            for (let i = 0; i < delta.ops.length; i++) {
+              const element = delta.ops[i];
+              console.log(element)
+            }
+          }).catch(err => {
+            console.log("Audio Tracking Error: %s", err);
+          });
+      }
     }
   }
 
@@ -523,7 +526,6 @@ export class NoteComponent implements OnInit, OnDestroy {
         xhr.onload = (event) => {
           var blob = xhr.response;
           this.audioBlob = blob;
-          console.log("BLOB: " + blob)
 
           // use blob to populate audio element
           const audio = document.querySelector('audio');
@@ -560,25 +562,25 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.confirmationDialogService.confirm('Confirm', "Are you sure you want to delete the note '" + name + "'?")
       .then((confirmed) => { if (confirmed) { this.__delete(); } });
   }
-  resizeImage(dialogRef : MatDialogRef<ImageDialog>) {
+  resizeImage(dialogRef: MatDialogRef<ImageDialog>) {
     if (dialogRef == null || dialogRef == undefined)
       return;
-    let obj : ImageDialog = dialogRef.componentInstance;
+    let obj: ImageDialog = dialogRef.componentInstance;
     if (obj == null || obj == undefined)
       return;
     obj.getSize()
-    .then(dimensions => {
-      //https://stackoverflow.com/a/14731922/2220534
-      let currentWidth = (<HTMLDivElement>document.getElementById("imageDialogContent")).clientWidth;
-      let currentHeight = (<HTMLDivElement>document.getElementById("imageDialogContent")).clientHeight;
-      /*var ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
-      return { width: srcWidth*ratio, height: srcHeight*ratio };*/
-      var ratio = Math.min(currentWidth / dimensions[0], currentHeight / dimensions[1]);
-      obj.applySize(dimensions[0] * ratio, dimensions[1] * ratio);
-    })
-    .catch(err => {
-      console.log(`Failed to resize image, err: ${err}`);
-    });
+      .then(dimensions => {
+        //https://stackoverflow.com/a/14731922/2220534
+        let currentWidth = (<HTMLDivElement>document.getElementById("imageDialogContent")).clientWidth;
+        let currentHeight = (<HTMLDivElement>document.getElementById("imageDialogContent")).clientHeight;
+        /*var ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
+        return { width: srcWidth*ratio, height: srcHeight*ratio };*/
+        var ratio = Math.min(currentWidth / dimensions[0], currentHeight / dimensions[1]);
+        obj.applySize(dimensions[0] * ratio, dimensions[1] * ratio);
+      })
+      .catch(err => {
+        console.log(`Failed to resize image, err: ${err}`);
+      });
   }
   //Permanently deletes a note
   __delete() {
@@ -591,7 +593,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       this.router.navigate(['homescreen']);
     }
   }
-  viewImage() : void {
+  viewImage(): void {
     if (this.viewingImage)
       return;
     //console.log("Clicked viewImage");
@@ -638,7 +640,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   embedImage(src, cursorPos) {
-    console.log(src);
+    //console.log(src);
     // make img
     this.editor.insertEmbed(cursorPos.index, 'image', src, 'user')
   }
@@ -663,21 +665,21 @@ export class NoteComponent implements OnInit, OnDestroy {
 })
 export class ImageDialog {
   public imageUrl: string;
-  
+
   //return new Promise [width, height]
-  public getSize() : Promise<[number, number]> {
+  public getSize(): Promise<[number, number]> {
     return new Promise((resolve, reject) => {
       var obj = (<HTMLImageElement>document.getElementById("imageDialogImage"));
       if (obj == undefined || obj == null) {
         reject("Failed to get Image Element");
       }
-      obj.addEventListener("load", function() {
+      obj.addEventListener("load", function () {
         resolve([obj.width, obj.height]);
       });
     });
   }
 
-  public applySize(width: number, height: number) : boolean {
+  public applySize(width: number, height: number): boolean {
     var obj = (<HTMLImageElement>document.getElementById("imageDialogImage"));
     if (obj == null || obj == undefined)
       return false;
