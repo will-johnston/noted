@@ -87,7 +87,7 @@ export class HomescreenComponent implements OnInit {
     if (this.filesystemService.createFolder(name))
       this.snackBar.open(`Created folder ${name}!`, null, { duration: this.snackBarDuration });
     else
-      this.snackBar.open("Failed to create note", null, { duration: this.snackBarDuration });
+      this.snackBar.open("Failed to create folder", null, { duration: this.snackBarDuration });
     //(<HTMLInputElement>document.getElementById("folderName")).value = "";
     //folderName.value = "";
   }
