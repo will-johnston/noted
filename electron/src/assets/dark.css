@@ -16,15 +16,18 @@
 }
 /*Note*/
 /*AppComponent*/
-#header {
+/*#header {
     background-color: azure;
-}
+}*/
 #apptitlebar {
-    background-color: darksalmon;
+    background-color: #9840b5;
+}
+body {
+
 }
 #notetitlebar {
-    background-color: blanchedalmond;
+    background-color: #b4bbe4;
 }
-#userbar {
+/*#userbar {
     background-color: aqua;
-}
+}*/

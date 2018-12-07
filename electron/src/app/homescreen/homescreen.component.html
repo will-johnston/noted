@@ -9,8 +9,8 @@
     <div style="position: absolute; left: 7.5%; width: 80%;">
       <h5 style="padding-left: 30px">Folders</h5>
       <mat-grid-list cols="3" rowHeight="50px">
-        <mat-grid-tile class="folder" *ngFor="let folder of folders" colspan="1" rowspan="1" (click)="gotoFolder(folder.name)">
-          <div>
+        <mat-grid-tile *ngFor="let folder of folders" colspan="1" rowspan="1" (click)="gotoFolder(folder.name)">
+          <div class="folder" style="height: 100%; width: 100%;">
             <div style="position: absolute; left: 4%; bottom: 5px;">
               <mat-icon>folder</mat-icon>
             </div>
