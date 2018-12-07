@@ -2,28 +2,32 @@
 
 /*Homescreen*/
 #menubar {
-    background-color: aquamarine;
+    background-color: #b4bbe4;
 }
 .folder {
-    background-color: lightblue;
+    background-color: white;
 }
 .note {
-    background-color: lightgray;
+    background-color: white;
 }
 #actionbar {
     background-color: lightcoral;
 }
 /*Note*/
 /*AppComponent*/
-#header {
-    background-color: azure;
+/*#header {
+    background-color: #b4bbe4;
+}*/
+body {
+    background-color: white;
 }
 #apptitlebar {
-    background-color: lightsalmon;
+    background-color: #9840b5;
+    color: white;
 }
 #notetitlebar {
-    background-color: blanchedalmond;
+    background-color: #b4bbe4;
 }
 #userbar {
-    background-color: aqua;
+    /*background-color: aqua;*/
 }
