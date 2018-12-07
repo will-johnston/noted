@@ -1,27 +1,43 @@
+/*@import '../../node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css';*/
+
 /*Homescreen*/
-#navbar {
-    background-color: darkcyan;
+#menubar {
+    background-color: #4456bb;
 }
 .folder {
     background-color: darkblue;
+    color: white;
 }
 .note {
-    background-color: darkgray;
+    background-color: #737373;
+    color: white;
 }
 #actionbar {
     background-color: coral;
 }
 /*Note*/
 /*AppComponent*/
-#header {
+/*#header {
     background-color: azure;
-}
+}*/
 #apptitlebar {
-    background-color: darksalmon;
+    background-color: #9840b5;
+    color: white;
+}
+.appColor {
+    background-color: #b3b3b3;
 }
 #notetitlebar {
-    background-color: blanchedalmond;
+    background-color: #4456bb;
+    color: white;
 }
-#userbar {
+.lastEdited {
+    color: white;
+}
+.editor2 {
+    background-color: white;
+    color: black;
+}
+/*#userbar {
     background-color: aqua;
-}
+}*/

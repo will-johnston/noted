@@ -9,6 +9,7 @@ import { NotificationsService } from './services/notifications.service';
 import { DarkModeService, DarkModeState } from './services/dark-mode.service';
 import { UserListService } from './services/user-list.service';
 import { UserHelperService } from './services/userhelper.service';
+import { MatMenu } from '@angular/material';
 
 @Component({
   selector: 'app-root',
@@ -99,6 +100,10 @@ export class AppComponent {
     }
     return false;
   }
+  openNotificationsMenu() : void {
+    //let menu : MatMenuModule = (<MatMenuModule>document.getElementById("notifMenu")).openMenu();
+    (<HTMLElement>document.getElementById('notificationsButton')).click();
+  }
 
   //handle notifications
   listenForNotifications() {
@@ -113,8 +118,11 @@ export class AppComponent {
         //add notification
         let notification : Notif = new Notif(data.text);
         notification.type = data.type;
-        if (!this._containsNotification(notification))
+        if (!this._containsNotification(notification)) {
           this.notifications.push(notification);
+          //this.openNotificationsMenu();
+        }
+
       }
     });
   }

@@ -12,6 +12,8 @@ import { SharingService } from '../services/sharing.service';
 import { UserListService } from '../services/user-list.service';
 import { NotificationsService } from '../services/notifications.service';
 import { Notif } from '../services/Notifications.Notif';
+import { MatDialog, MatSnackBar } from '@angular/material';
+import { isNullOrUndefined } from 'util';
 
 @Component({
   selector: 'app-homescreen',
@@ -28,6 +30,7 @@ export class HomescreenComponent implements OnInit {
   navList : NavList<string>;
   debug : false;
   navLoc : string[];
+  snackBarDuration : number = 900;
   currentlyViewing : string; //My Notes or Shared With Me
   constructor(private filesystemService : FilesystemService, 
     private router : Router, 
@@ -35,7 +38,9 @@ export class HomescreenComponent implements OnInit {
     private confirmationDialogService: ConfirmationDialogService,
     private sharingService : SharingService,
     private userListService : UserListService,
-    private notificationService : NotificationsService) {
+    private notificationService : NotificationsService,
+    private dialog : MatDialog,
+    private snackBar : MatSnackBar) {
 
     this.navList = new NavList<string>();
     this.navLoc = this.navList.list;
@@ -79,13 +84,19 @@ export class HomescreenComponent implements OnInit {
     this.sharedNotes = this.filesystemService.sharedNotes;
   }
   createFolder(name) {
-    this.filesystemService.createFolder(name);
-    (<HTMLInputElement>document.getElementById("folderName")).value = "";
+    if (this.filesystemService.createFolder(name))
+      this.snackBar.open(`Created folder ${name}!`, null, { duration: this.snackBarDuration });
+    else
+      this.snackBar.open("Failed to create note", null, { duration: this.snackBarDuration });
+    //(<HTMLInputElement>document.getElementById("folderName")).value = "";
     //folderName.value = "";
   }
   createNote(name) {
-    this.filesystemService.createNote(name);
-    (<HTMLInputElement>document.getElementById("noteName")).value = "";
+    if (this.filesystemService.createNote(name))
+      this.snackBar.open(`Created note ${name}!`, null, { duration: this.snackBarDuration });
+    else
+      this.snackBar.open("Failed to create note", null, { duration: this.snackBarDuration });
+    //(<HTMLInputElement>document.getElementById("noteName")).value = "";
     //noteName.value = "";
   }
   gotoFolder(name) {
@@ -174,5 +185,31 @@ export class HomescreenComponent implements OnInit {
     this.folders = null;
     this.sharedNotes = null;
   }
-
+  createNoteDialog() : void {
+    let noteRef = this.dialog.open(CreateNoteDialog);
+    noteRef.afterClosed().subscribe(result => {
+      if (!isNullOrUndefined(result) && result.length != 0)
+        //this.snackBar.open(`create note returned ${result}`);
+        this.createNote(result);
+    });
+  }
+  createFolderDialog() : void {
+    let noteRef = this.dialog.open(CreateFolderDialog);
+    noteRef.afterClosed().subscribe(result => {
+      if (!isNullOrUndefined(result) && result.length != 0)
+        //this.snackBar.open(`create folder returned ${result}`);
+        this.createFolder(result);
+    });
+  }
 }
+
+@Component({
+  selector: "createNote-dialog",
+  templateUrl: "../dialogs/createNote-dialog.html"
+})
+export class CreateNoteDialog {}
+@Component({
+  selector: "createFolder-dialog",
+  templateUrl: "../dialogs/createFolder-dialog.html"
+})
+export class CreateFolderDialog {}

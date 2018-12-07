@@ -1,5 +1,10 @@
 .folder {}
-.note {}
+.note {
+    border-radius: 15px;
+    border-color: black;
+    border-width: 1px;
+    border-style: solid;
+}
 #navbar {
     width: 80%;
 }
@@ -9,6 +14,8 @@
 #menubar {
     max-height: 75px;
     width: 100%;
+    position: absolute;
+    bottom: 0%;
 }
 /*Make things flow horizontally*/
 #navbar, #actionbar {display: inline-block; *display: inline; vertical-align: top;}
@@ -25,4 +32,21 @@
 .navListItem {
     min-width: 25px;
     max-width: 100px;
+}
+.addmore-icon {
+    height: 140px;
+    width: 140px;
+}
+.addmore-icon-image {
+    position: relative;
+    font-size: 140px;
+    text-align: justify !important;
+    left: 20px;
+}
+.circleshape {
+    height: 300px;
+    width: 300px;
+    background-color: rgba(1,1,1,0.1);
+    border-radius: 50%;
+    z-index: -1;
 }

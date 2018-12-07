@@ -2,90 +2,198 @@
   <a routerLink="/note"><button>Go to the Notescreen</button></a>
 </nav>-->
 
-<div id="menubar">
-  <mat-list id="navbar">
-    <mat-list-item *ngFor="let value of navLoc">
-      <button mat-raised-button class="navListItem" (click)="goBackTo(value)">{{value}}</button>
-    </mat-list-item>
-  </mat-list>
-  <div id="actionbar">
-    <mat-toolbar>
-      <button mat-button [matMenuTriggerFor]="notesMenu" style="position: relative; left: 0px;">
-        {{currentlyViewing}}
-      </button>
-      <button mat-icon-button [matMenuTriggerFor]="menu" style="position: relative; right: 0px;">
-        <mat-icon>add</mat-icon>
-      </button>
-    </mat-toolbar>
-    
-
-    <mat-menu #menu="matMenu">
-      <button mat-menu-item>
-        <mat-icon>note_add</mat-icon>
-        <span>Create Note</span>
-      </button>
-      <button mat-menu-item>
-        <mat-icon>create_new_folder</mat-icon>
-        <span>Create Folder</span>
-      </button>
-    </mat-menu>
-
-    <mat-menu #notesMenu="matMenu">
-      <button mat-menu-item>
-        <span (click)="goToMyNotes()">My Notes</span>
-      </button>
-      <button mat-menu-item>
-        <span (click)="goToSharedNotes()">Shared With Me</span>
-      </button>
-    </mat-menu>
-  </div>
-</div>
+<div style="height:10px;"></div>
 
 <div *ngIf='currentlyViewing == "My Notes"; else sharedWithMe'>
-  <h6>Folders</h6>
-  <mat-grid-list cols="4" rowHeight="50px">
-    <mat-grid-tile class="folder" *ngFor="let folder of folders" colspan="1" rowspan="1" (click)="gotoFolder(folder.name)">
-      {{folder.name}}
-    </mat-grid-tile>
-  </mat-grid-list>
+  <div *ngIf="notes.length != 0 || folders.length != 0; else emptyFolder">
+    <div style="position: absolute; left: 7.5%; width: 80%;">
+      <h5 style="padding-left: 30px">Folders</h5>
+      <mat-grid-list cols="3" rowHeight="50px">
+        <mat-grid-tile *ngFor="let folder of folders" colspan="1" rowspan="1" (click)="gotoFolder(folder.name)">
+          <div class="folder" style="height: 100%; width: 100%;">
+            <div style="position: absolute; left: 4%; bottom: 5px;">
+              <mat-icon>folder</mat-icon>
+            </div>
+            <div style="position: absolute; left: 15%; bottom: 11px; font-size: 18px;">
+              {{folder.name}}
+            </div>
+          </div>
+        </mat-grid-tile>
+      </mat-grid-list>
 
-  <h6>Notes</h6>
-  <mat-grid-list cols="4" rowHeight="100px">
-    <mat-grid-tile class="note" *ngFor="let note of notes" colspan="1" rowspan="1">
-      <div>
-        {{note.name}}
-        <input #idField id="idField" type="hidden" value={{note.id}} />
-        <br />
-        <button mat-raised-button color="primary" (click)="gotoNote(idField.value)">Go to Note</button>
-        <button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
-          <mat-icon aria-label="Delete">delete</mat-icon>
-        </button>
+      <div style="height:10px;"></div>
+
+      <h5 style="padding-left: 30px">Notes</h5>
+      <mat-grid-list cols="3" rowHeight="100px">
+        <mat-grid-tile class="note" *ngFor="let note of notes" colspan="1" rowspan="1">
+          <div>
+            <div style="position: absolute; left: 6%; bottom: 30px;">
+              <mat-icon (click)="gotoNote(idField.value)">note</mat-icon>
+            </div>
+            <div style="position: absolute; left: 18%; bottom: 35px; font-size: 20px;" (click)="gotoNote(idField.value)">
+                {{note.name}}
+            </div>
+            <div style="position: absolute; right: 4%; bottom: 5px;">
+              <button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
+                <mat-icon aria-label="Delete">delete</mat-icon>
+              </button>
+            </div>
+            <div style="position: absolute; right: 4%; top: 5px;">
+              <button mat-mini-fab color="primary">
+                <mat-icon aria-label="Goto" (click)="gotoNote(idField.value)">arrow_forward_ios</mat-icon>
+              </button>
+            </div>
+            <input #idField id="idField" type="hidden" value={{note.id}} />
+            <br />
+            <!--<button mat-raised-button color="primary" (click)="gotoNote(idField.value)">Go to Note</button>-->
+            
+          </div>
+
+        </mat-grid-tile>
+      </mat-grid-list>
+    </div>
+  </div>
+  <ng-template #emptyFolder>
+    <div style="position: absolute; left: 35%; top: 200px; width: 200px;">
+  
+      <h3>Nothing here!</h3>
+      <div class="addmore-icon">
+        <mat-icon class="addmore-icon-image">add_circle</mat-icon>
       </div>
+    </div>
+  
+    <div class="circleshape" style="position:relative; left: 31%; top: 85px;"></div>
+  </ng-template>
+</div>
 
-    </mat-grid-tile>
-  </mat-grid-list>
+<!--<div *ngIf='currentlyViewing == "My Notes"; else sharedWithMe'>
+  <div>
+      <h5 style="padding-left: 30px">Folders</h5>
+      <mat-grid-list cols="4" rowHeight="50px">
+        <mat-grid-tile class="folder" *ngFor="let folder of folders" colspan="1" rowspan="1" (click)="gotoFolder(folder.name)">
+          {{folder.name}}
+        </mat-grid-tile>
+      </mat-grid-list>
+    
+      <h5 style="padding-left: 30px">Notes</h5>
+      <mat-grid-list cols="4" rowHeight="100px">
+        <mat-grid-tile class="note" *ngFor="let note of notes" colspan="1" rowspan="1">
+          <div>
+            {{note.name}}
+            <input #idField id="idField" type="hidden" value={{note.id}} />
+            <br />
+            <button mat-raised-button color="primary" (click)="gotoNote(idField.value)">Go to Note</button>
+            <button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
+              <mat-icon aria-label="Delete">delete</mat-icon>
+            </button>
+          </div>
+    
+        </mat-grid-tile>
+      </mat-grid-list>
+  </div>-->
+  
 
-  Folder name: <input #folderName type="text" id="folderName" />
+  <!--Folder name: <input #folderName type="text" id="folderName" />
   <button (click)="createFolder(folderName.value)">Create a folder</button>
   <br />
   Note name: <input #noteName type="text" id="noteName" />
-  <button (click)="createNote(noteName.value)">Create a note</button>
+  <button (click)="createNote(noteName.value)">Create a note</button>-->
 
-</div>
 <ng-template #sharedWithMe>
-  <h6>Shared Notes</h6>
-  <mat-grid-list cols="4" rowHeight="100px">
-    <mat-grid-tile class="note" *ngFor="let note of sharedNotes" colspan="1" rowspan="1">
-      <div>
-        {{note.name}}
-        <input #idField id="idField" type="hidden" value={{note.id}} />
-        <br />
-        <button mat-raised-button color="primary" (click)="gotoSharedNote(note)">Go to Note</button>
-        <!--<button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
-          <mat-icon aria-label="Delete">delete</mat-icon>
-        </button>-->
-      </div>
-
-    </mat-grid-tile>
-  </mat-grid-list>
+  <div *ngIf="sharedNotes.length != 0; else sharedEmpty">
+      <div style="position: absolute; left: 7.5%; width: 80%;">
+    <h5 style="padding-left: 30px">Shared Notes</h5>
+    <!--<mat-grid-list cols="4" rowHeight="100px">
+      <mat-grid-tile class="note" *ngFor="let note of sharedNotes" colspan="1" rowspan="1">
+        <div>
+          {{note.name}}
+          <input #idField id="idField" type="hidden" value={{note.id}} />
+          <br />
+          <button mat-raised-button color="primary" (click)="gotoSharedNote(note)">Go to Note</button>
+          <!--<button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
+            <mat-icon aria-label="Delete">delete</mat-icon>
+          </button>-->
+        <!--</div>
+  
+      </mat-grid-tile>
+    </mat-grid-list>-->
+    <mat-grid-list cols="3" rowHeight="100px">
+      <mat-grid-tile class="note" *ngFor="let note of sharedNotes" colspan="1" rowspan="1">
+          <div>
+              <div style="position: absolute; left: 6%; bottom: 30px;">
+                <mat-icon (click)="gotoSharedNote(note)">note</mat-icon>
+              </div>
+              <div style="position: absolute; left: 18%; bottom: 35px; font-size: 20px;" (click)="gotoSharedNote(note)">
+                  {{note.name}}
+              </div>
+              <div style="position: absolute; right: 4%; bottom: 5px;">
+                <!--<button mat-icon-button color="accent" (click)="deleteNote(idField.value, note.name)">
+                  <mat-icon aria-label="Delete">delete</mat-icon>
+                </button>-->
+              </div>
+              <div style="position: absolute; right: 4%; top: 5px;">
+                <button mat-mini-fab color="primary">
+                  <mat-icon aria-label="Goto" (click)="gotoSharedNote(note)">arrow_forward_ios</mat-icon>
+                </button>
+              </div>
+              <input #idField id="idField" type="hidden" value={{note.id}} />
+              <br />
+              <!--<button mat-raised-button color="primary" (click)="gotoNote(idField.value)">Go to Note</button>-->
+              
+            </div>
+      </mat-grid-tile>
+    </mat-grid-list>
+      
+  </div>
+  </div>
 </ng-template>
+<ng-template #sharedEmpty>
+    <div style="position: absolute; left: 35%; top: 200px; width: 200px;">
+        <h3>Nothing here!</h3>
+        <div class="addmore-icon">
+            <mat-icon class="addmore-icon-image">share</mat-icon>
+        </div>
+      </div>
+      <div class="circleshape" style="position:relative; left: 31%; top: 85px;"></div>
+</ng-template>
+
+<div id="menubar">
+    <div id="navbar">
+      <mat-list>
+          <mat-list-item *ngFor="let value of navLoc">
+            <button mat-raised-button class="navListItem" (click)="goBackTo(value)">{{value}}</button>
+          </mat-list-item>
+        </mat-list>
+    </div>
+    <div id="actionbar">
+      <mat-toolbar>
+        <button mat-button [matMenuTriggerFor]="notesMenu" style="position: relative; left: 0px;">
+          {{currentlyViewing}}
+        </button>
+        <button mat-icon-button [matMenuTriggerFor]="menu" style="position: relative; right: 0px;">
+          <mat-icon>add</mat-icon>
+        </button>
+      </mat-toolbar>
+      
+  
+      <mat-menu #menu="matMenu">
+        <button mat-menu-item (click)="createNoteDialog()">
+          <mat-icon>note_add</mat-icon>
+          <span>Create Note</span>
+        </button>
+        <button mat-menu-item (click)="createFolderDialog()">
+          <mat-icon>create_new_folder</mat-icon>
+          <span>Create Folder</span>
+        </button>
+      </mat-menu>
+  
+      <mat-menu #notesMenu="matMenu">
+        <button mat-menu-item>
+          <span (click)="goToMyNotes()">My Notes</span>
+        </button>
+        <button mat-menu-item>
+          <span (click)="goToSharedNotes()">Shared With Me</span>
+        </button>
+      </mat-menu>
+    </div>
+  </div>

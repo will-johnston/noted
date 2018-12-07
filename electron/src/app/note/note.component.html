@@ -6,15 +6,18 @@
 </ng-template>
 <div *ngIf="viewingSharedNote == false; else sharedToolbar">
     <mat-toolbar>
+        <a routerLink="/homescreen" mat-stroked-button>
+            <mat-icon>arrow_back</mat-icon>
+        </a>
         <button (click)='saveNote()' mat-stroked-button>
             <mat-icon>save</mat-icon>
         </button>
         <button (click)='deleteNote(noteid, noteInfo.name)' mat-stroked-button>
             <mat-icon>delete</mat-icon>
         </button>
-        <a routerLink="/homescreen" mat-stroked-button>
-            <mat-icon>arrow_back</mat-icon>
-        </a>
+        <button mat-stroked-button (click)='shareImageDialog()'>
+            <mat-icon>share</mat-icon>
+        </button>
         <button *ngIf="imageUrl != null" mat-stroked-button (click)='viewImage()' disabled={{doesNotHaveImage}}>
             <mat-icon>photo</mat-icon>
         </button>
@@ -29,12 +32,18 @@
 </div>
 <ng-template #sharedToolbar>
     <mat-toolbar>
-        <button (click)='saveNote()' mat-stroked-button>
-            <mat-icon>save</mat-icon>
-        </button>
         <a routerLink="/homescreen" mat-stroked-button>
             <mat-icon>arrow_back</mat-icon>
         </a>
+        <button (click)='saveNote()' mat-stroked-button>
+            <mat-icon>save</mat-icon>
+        </button>
+        <button mat-stroked-button (click)='shareImageDialog()'>
+            <mat-icon>share</mat-icon>
+        </button>
+        <button *ngIf="imageUrl != null" mat-stroked-button (click)='viewImage()' disabled={{doesNotHaveImage}}>
+            <mat-icon>photo</mat-icon>
+        </button>
         <audio controls></audio>
         <button mat-stroked-button color="primary" id="start" (click)="start();">
             <mat-icon>fiber_manual_record</mat-icon>
@@ -45,8 +54,8 @@
     </mat-toolbar>
 </ng-template>
 
-<p>Last edited by {{lastEditedBy}} Share note: <input #shareEmail type="text" id="shareEmail" />
-    <button (click)="shareNote(shareEmail.value)">Share the note</button></p>
+<p style="padding-left: 15px" class="lastEdited">Last edited by {{lastEditedBy}} <!--Share note: <input #shareEmail type="text" id="shareEmail" />
+    <button (click)="shareNote(shareEmail.value)">Share the note</button>--></p>
 <quill-editor class="editor2" [modules]="modules"
     (onEditorCreated)="setFocus($event)" 
     (onContentChanged)="editorContentChanged($event)"

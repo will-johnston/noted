@@ -1,0 +1,12 @@
+<div mat-dialog-content class="mat-typography" id="createNoteDialogContent">
+    <form>
+        <h3>Create Note</h3>
+        <mat-form-field>
+            <input matInput placeholder="Note Name" #noteNameField id="noteNameField">
+        </mat-form-field>
+    </form>
+</div>
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-button [mat-dialog-close]="noteNameField.value" cdkFocusInitial>Create</button>
+</mat-dialog-actions>

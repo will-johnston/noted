@@ -1,10 +1,10 @@
-import { Component, OnInit, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ViewEncapsulation, Inject } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { Router, ActivatedRoute, Params } from '@angular/router';
 import { AngularFireDatabase, AngularFireObject, AngularFireList } from '@angular/fire/database';
 import { ElectronService } from 'ngx-electron';
 import { AngularFireStorage } from 'angularfire2/storage';
-import { MatDialog, MatDialogRef } from '@angular/material';
+import { MatDialog, MatDialogRef, MatSnackBar, MAT_SNACK_BAR_DATA } from '@angular/material';
 import { debounceTime, distinctUntilChanged, switchMap, finalize } from 'rxjs/operators';
 import * as firebase from 'firebase';
 import { FilesystemService } from '../services/filesystem.service';
@@ -27,6 +27,7 @@ import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-d
 import { User } from '../services/UserList.User';
 import { SharedNote } from '../services/Sharing.SharedNote';
 import { Notif } from '../services/Notifications.Notif';
+import { isNullOrUndefined } from 'util';
 
 declare var MediaRecorder: any;
 declare var Blob: any;
@@ -59,10 +60,11 @@ export class NoteComponent implements OnInit, OnDestroy {
   lastEditedBy: string;
   private lastEditedByUID: string;
   private currentUser: firebase.User;
+  private viewingModal : boolean = false;
+  private snackDuration : number = 900;
   public viewingSharedNote: boolean = false;
   public imageUrl: string;
   public doesNotHaveImage: boolean = true;
-  private viewingImage: boolean = false;
 
   edits: Array<any>;
 
@@ -77,7 +79,8 @@ export class NoteComponent implements OnInit, OnDestroy {
     private confirmationDialogService: ConfirmationDialogService,
     private userListService: UserListService,
     private sharingService: SharingService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {
     this.text = "";
     this.html = "";
@@ -287,6 +290,18 @@ export class NoteComponent implements OnInit, OnDestroy {
     //(<HTMLInputElement>document.getElementById("noteName")).value = "";
     (<HTMLInputElement>document.getElementById("shareEmail")).value = "";
   }
+  ShowShareSuccess(message : string) : void {
+    this.snackBar.openFromComponent(ShareSuccessSnack, {
+      data: message,
+      duration: this.snackDuration
+    });
+  }
+  ShowShareFailure(message : string) : void {
+    this.snackBar.openFromComponent(ShareFailureSnack, {
+      data: message,
+      duration: this.snackDuration
+    });
+  }
   shareNote(email) {
     console.log(`Called share Note with email: ${email}`);
     this.userListService.search(new User(email, null, null)).then(user => {
@@ -296,19 +311,23 @@ export class NoteComponent implements OnInit, OnDestroy {
         .then(notification => {
           this.sharingService.shareNote(user.id, sharedNote, this.currentUser.uid, notification)
             .then(() => {
-              alert("Successfully shared note!");
-              this.resetShareNoteValue();
+              //alert("Successfully shared note!");
+              this.ShowShareSuccess("Successfully shared note!");
+              //this.resetShareNoteValue();
             })
             .catch(err => {
-              alert(`Unable to share note, error: ${err}`);
+              this.ShowShareFailure(`Unable to share note, error: ${err}`);
+              //alert(`Unable to share note, error: ${err}`);
             });
         })
         .catch(err => {
-          alert(`Unable to share note, notification error: ${err}`);
+          this.ShowShareFailure(`Unable to share note, notification error: ${err}`);
+          //alert(`Unable to share note, notification error: ${err}`);
         });
     })
       .catch(err => {
-        alert("Can't find user to share note with!");
+        //alert("Can't find user to share note with!");
+        this.ShowShareFailure("Can't find user to share note with!");
       });
   }
 
@@ -593,16 +612,16 @@ export class NoteComponent implements OnInit, OnDestroy {
       this.router.navigate(['homescreen']);
     }
   }
-  viewImage(): void {
-    if (this.viewingImage)
+  viewImage() : void {
+    if (this.viewingModal)
       return;
     //console.log("Clicked viewImage");
     const dialogRef = this.dialog.open(ImageDialog);
     dialogRef.componentInstance.imageUrl = this.imageUrl;
-    this.viewingImage = true;
+    this.viewingModal = true;
     this.resizeImage(dialogRef);
     dialogRef.afterClosed().subscribe(result => {
-      this.viewingImage = false;
+      this.viewingModal = false;
     });
   }
 
@@ -657,11 +676,24 @@ export class NoteComponent implements OnInit, OnDestroy {
       return filename;
     }
   }
+  shareImageDialog() {
+    if (this.viewingModal)
+      return;
+    const dialogRef = this.dialog.open(ShareDialog);
+    this.viewingModal = true;
+    dialogRef.afterClosed().subscribe(result => {
+      this.viewingModal = false;
+      if (!isNullOrUndefined(result) && result.length != 0) {
+        this.shareNote(result);
+      }
+      //console.log(result);
+    });
+  }
 }
 
 @Component({
   selector: 'image-dialog',
-  templateUrl: './image-dialog.html'
+  templateUrl: '../dialogs/image-dialog.html'
 })
 export class ImageDialog {
   public imageUrl: string;
@@ -687,4 +719,23 @@ export class ImageDialog {
     obj.height = height;
     return (obj.width == width) && (obj.height == height);
   }
+}
+@Component({
+  selector: 'share-dialog',
+  templateUrl: '../dialogs/share-dialog.html'
+})
+export class ShareDialog {}
+@Component ({
+  selector: 'share-success-snack',
+  template: '<span>{{data}}</span>'
+})
+export class ShareSuccessSnack{
+  constructor(@Inject(MAT_SNACK_BAR_DATA) public data: string) {}
+}
+@Component ({
+  selector: 'share-failure-snack',
+  template: '<span>{{data}}</span>'
+})
+export class ShareFailureSnack{
+  constructor(@Inject(MAT_SNACK_BAR_DATA) public data: string) {}
 }

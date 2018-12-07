@@ -1,27 +1,40 @@
+/*@import "../../node_modules/@angular/material/prebuilt-themes/indigo-pink.css";*/
+
 /*Homescreen*/
-#navbar {
-    background-color: lightcyan;
+#menubar {
+    background-color: #b4bbe4;
 }
 .folder {
-    background-color: lightblue;
+    background-color: #d9d9d9;
 }
 .note {
-    background-color: lightgray;
+    background-color: white;
 }
 #actionbar {
     background-color: lightcoral;
 }
 /*Note*/
 /*AppComponent*/
-#header {
-    background-color: azure;
+/*#header {
+    background-color: #b4bbe4;
+}*/
+.appColor {
+    background-color: white;
 }
 #apptitlebar {
-    background-color: lightsalmon;
+    background-color: #9840b5;
+    color: white;
 }
 #notetitlebar {
-    background-color: blanchedalmond;
+    background-color: #b4bbe4;
 }
 #userbar {
-    background-color: aqua;
+    /*background-color: aqua;*/
+}
+.lastEdited {
+    color: black;
+}
+.editor2 {
+    background-color: white;
+    color: black;
 }
