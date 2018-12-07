@@ -14,7 +14,7 @@ export class DarkModeService {
   private darkTheme : string = '../../node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css';
   private lightTheme : string = "../../node_modules/@angular/material/prebuilt-themes/indigo-pink.css";
   constructor() { 
-    this.state = DarkModeState.Dark;
+    this.state = DarkModeState.Light;
     this.__updateStyleSheet();
   }
   private __updateStyleSheet() {

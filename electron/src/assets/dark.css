@@ -31,6 +31,13 @@
     background-color: #4456bb;
     color: white;
 }
+.lastEdited {
+    color: white;
+}
+.editor2 {
+    background-color: white;
+    color: black;
+}
 /*#userbar {
     background-color: aqua;
 }*/

@@ -31,3 +31,10 @@
 #userbar {
     /*background-color: aqua;*/
 }
+.lastEdited {
+    color: black;
+}
+.editor2 {
+    background-color: white;
+    color: black;
+}
