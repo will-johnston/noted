@@ -11,6 +11,7 @@ import { HomescreenComponent } from '../homescreen/homescreen.component';
 import { UserListService } from './user-list.service';
 import { User } from './UserList.User';
 import { isNullOrUndefined } from 'util';
+import { AngularFireStorage } from 'angularfire2/storage';
 
 @Injectable({
   providedIn: 'root'
@@ -33,7 +34,7 @@ export class FilesystemService {
   public homescreen : HomescreenComponent;
   public onReady : any[] = Array();   //callbacks for when the filesystem is ready
 
-  constructor(private fireDatabase: AngularFireDatabase, private userHelper : UserHelperService, private userListService : UserListService) {
+  constructor(private fireDatabase: AngularFireDatabase, private fireStorage: AngularFireStorage, private userHelper : UserHelperService, private userListService : UserListService) {
     this.notes = Array();
     this.folders = Array();
     this.sharedNotes = Array();
@@ -494,8 +495,12 @@ export class FilesystemService {
   deleteNote(note : Note) : boolean {
     var noteRef = this.fireDatabase.object(note.path);
     var noteFileRef = this.fireDatabase.object("fileContents/" + note.id);
+    var noteAudioRef = this.fireDatabase.object("audioTracking/" + note.id);
+    var noteAudio = this.fireStorage.ref('audio/' + note.id);
     noteRef.remove();
     noteFileRef.remove();
+    noteAudioRef.remove();
+    noteAudio.delete();
     return this.deleteLocalNote(note);
   }
   deleteNoteFromId(id : string) : boolean {
