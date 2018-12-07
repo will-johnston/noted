@@ -2,14 +2,15 @@
 
 /*Homescreen*/
 #menubar {
-    background-color: darkcyan;
+    background-color: #4456bb;
 }
 .folder {
     background-color: darkblue;
     color: white;
 }
 .note {
-    background-color: darkgray;
+    background-color: #737373;
+    color: white;
 }
 #actionbar {
     background-color: coral;
@@ -21,12 +22,14 @@
 }*/
 #apptitlebar {
     background-color: #9840b5;
+    color: white;
 }
-body {
-
+.appColor {
+    background-color: #b3b3b3;
 }
 #notetitlebar {
-    background-color: #b4bbe4;
+    background-color: #4456bb;
+    color: white;
 }
 /*#userbar {
     background-color: aqua;

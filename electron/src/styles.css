@@ -4,3 +4,11 @@
 /* Bootstrap and font-awesome for stlye + icons */
 @import '~bootstrap/dist/css/bootstrap.min.css';
 @import "~font-awesome/css/font-awesome.css";
+
+.appColor {
+    position: fixed;
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+}
